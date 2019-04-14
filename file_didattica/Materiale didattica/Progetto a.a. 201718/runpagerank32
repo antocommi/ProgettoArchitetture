@@ -1,3 +1,0 @@
-nasm -f elf32 pagerank32.nasm
-gcc -O0 -m32 -msse pagerank32.o pagerank32c.c -o pagerank32c
-./pagerank32c $1 $2 $3 $4 $5 $6 $7 $8 $9 $10

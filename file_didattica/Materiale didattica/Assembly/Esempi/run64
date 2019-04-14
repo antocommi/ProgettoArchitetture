@@ -1,3 +1,0 @@
-nasm -f elf64 $1.nasm 
-gcc -m64 $1.o -o $1
-./$1

@@ -1,3 +1,0 @@
-nasm -f elf64 pagerank64.nasm
-gcc -O0 -m64 -mavx pagerank64.o pagerank64c.c -o pagerank64c
-./pagerank64c $1 $2 $3 $4 $5 $6 $7 $8 $9 $10

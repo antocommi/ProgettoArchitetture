@@ -1,10 +1,51 @@
-#include<stdio.h>
-#include<string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 typedef int boolean;
 #define true 1
 #define false 0
+
+double dist(int* p1, int* p2, int d){
+    int i;
+    double dist=0;
+    for(i=0; i<d; i++){
+        dist+=(p1[i]-p2[i])*(p1[i]-p2[i]);
+    }
+    return sqrt(dist);
+}
+
+int calcolaQ(int* x, int** codebook, int K, int d){
+    int i;
+    double min=0.0;
+    int imin=-1;
+    double temp;
+    for(i=0; i<K; i++){
+        temp=dist(x, codebook[i], d);
+        if(temp<min){
+            min=temp;
+            imin=i;
+        }
+    }
+    return imin;
+}
+
+int** kmeans(int** Y, int n, int d, int K){
+    int i;
+    int** codebook=(int**) calloc(K, sizeof(int*));
+    if(codebook==NULL) exit(-1);
+    for(i=0; i<K; i++){
+        codebook[i]=Y[rand()%n];
+    }
+    int* q=(int*) calloc(n, sizeof(int));
+    for(i=0; i<n; i++){
+        q[i]=calcolaQ(Y[i], codebook, K, d);
+    }
+    //da completare
+    return codebook;
+}
+
 
 int main (int argc, char *argv[]){
     int K=1;
@@ -25,10 +66,10 @@ int main (int argc, char *argv[]){
     int** codebook;
     int** Y;
 
-    Y=(int**)calloc(sizeof(int*)*n);
+    Y=(int**) calloc(n, sizeof(int*));
     if(Y==NULL) exit(-1);
     for(i=0; i<n; i++){
-        Y[i]=(int*)calloc(sizeof(int)*d);
+        Y[i]=(int*) calloc(d, sizeof(int));
         if(Y[i]==NULL) exit(-1);
     }
 
@@ -121,45 +162,8 @@ int main (int argc, char *argv[]){
                 tmax=atoi(argv[i++]);
         }
     }
-    
+
     codebook=kmeans(Y, n, d, K);
-}
 
-int** kmeans(int** Y, int n, int d, int K){
-    int i;
-    int** codebook=(int**)calloc(sizeof(int*)*K);
-    if(codebook==NULL) exit(-1);
-    for(i=0; i<K; i++){
-        codebook[i]=Y[rand()%n];
-    }
-    int* q=(int*)calloc(sizeof(int)*n);
-    for(i=0; i<n; i++){
-        q[i]=calcolaQ(Y[i], codebook, K, d);
-    }
-    //da completare
-    return codebook;
-}
-
-int calcolaQ(int* x, int** codebook, int K, int d){
-    int i;
-    int min=0;
-    int imin=-1;
-    int temp;
-    for(i=0; i<K; i++){
-        temp=dist(x, codebook[i],d);
-        if(temp<min){
-            min=temp;
-            imin=i;
-        }
-    }
-    return imin;
-}
-
-double dist(int* p1, int* p2, int d){
-    int i;
-    int dist=0;
-    for(i=0; i<d; i++){
-        dist+=(p1[i]-p2[i])*(p1[i]-p2[i]);
-    }
-    return sqrt(dist);
+    //da continuare
 }

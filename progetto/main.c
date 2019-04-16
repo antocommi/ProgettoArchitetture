@@ -48,5 +48,7 @@ int main (int argc, char *argv[]){
                 tmax=atoi(argv[i++]);
         }
     }
+    printf("valore di m: %d  \n",m);
+
     
 }

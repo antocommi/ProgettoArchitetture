@@ -17,7 +17,7 @@ main (int argc, char *argv[]){
     boolean esaustiva=true;
     boolean simmetrica=true;
     int i=0;
-    //prova commento
+
     while(i<argc){
         if(argv[i++]=="-exaustive")
             continue;

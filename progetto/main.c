@@ -1,9 +1,10 @@
 #include<stdio.h>
 #include<string.h>
+
 typedef int boolean;
 #define true 1
 #define false 0
-//prova
+
 int main (int argc, char *argv[]){
     int K=1;
     int m=8;

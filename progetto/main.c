@@ -1,4 +1,7 @@
 #include <stdio.h>
+typedef int boolean;
+#define true 1
+#define false 0
 
 main (int argc, char *argv[]){
     int K=1;
@@ -11,22 +14,20 @@ main (int argc, char *argv[]){
     double soglia=0.01;
     int tmin=10;
     int tmax=100;
-    int esaustiva=1;
-    int simmetrica=1;
+    boolean esaustiva=true;
+    boolean simmetrica=true;
     int i=0;
 
     while(i<argc){
         if(argv[i]=="-exaustive"){
-            esaustiva=1;
             i++;
         }else if(argv[i]=="-noexaustive"){
-            esaustiva=0;
+            esaustiva=false;
             i++;
         }else if(argv[i]=="-sdc"){
-            simmetrica=1;
             i++;
         }else if(argv[i]=="-adc"){
-            simmetrica=0;
+            simmetrica=false;
             i++;
         }else if(argv[i]=="-knn"){
             K=atoi(argv[i+1]);

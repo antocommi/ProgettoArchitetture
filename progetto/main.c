@@ -21,7 +21,7 @@ int main (int argc, char *argv[]){
 
     while(i<argc)
     {
-        if(argv[i++]=="-exaustive")
+        if(strcmp(argv[i++], "-exaustive"))
             continue;
         else if(strcmp(argv[i++], "-noexaustive"))
             esaustiva=false;

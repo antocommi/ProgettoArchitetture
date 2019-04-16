@@ -3,7 +3,7 @@ typedef int boolean;
 #define true 1
 #define false 0
 
-main (int argc, char *argv[]){
+int main (int argc, char *argv[]){
     int K=1;
     int m=8;
     int kstar=256;
@@ -18,7 +18,8 @@ main (int argc, char *argv[]){
     boolean simmetrica=true;
     int i=0;
 
-    while(i<argc){
+    while(i<argc)
+    {
         if(argv[i++]=="-exaustive")
             continue;
         else if(argv[i++]=="-noexaustive")

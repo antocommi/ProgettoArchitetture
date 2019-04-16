@@ -3,6 +3,6 @@
 int main(int argc, char const *argv[])
 {
     int i=1;
-    printf(i);
+    printf("pppp");
     return 1;
 }

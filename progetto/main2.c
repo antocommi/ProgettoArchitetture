@@ -1,8 +1,8 @@
 #include <stdio.h>
 
-int main(int argc, char const *argv[])
+int main()
 {
     int i=1;
-    printf(i);
+    printf("provaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
     return 1;
 }

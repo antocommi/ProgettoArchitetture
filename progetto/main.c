@@ -19,47 +19,33 @@ main (int argc, char *argv[]){
     int i=0;
 
     while(i<argc){
-        if(argv[i]=="-exaustive"){
-            i++;
-        }else if(argv[i]=="-noexaustive"){
+        if(argv[i++]=="-exaustive")
+            continue;
+        else if(argv[i++]=="-noexaustive")
             esaustiva=false;
-            i++;
-        }else if(argv[i]=="-sdc"){
-            i++;
-        }else if(argv[i]=="-adc"){
+        else if(argv[i++]=="-sdc")
+            continue;
+        else if(argv[i++]=="-adc")
             simmetrica=false;
-            i++;
-        }else if(argv[i]=="-knn"){
-            K=atoi(argv[i+1]);
-            i+=2;
-        }else if(argv[i]=="-m"){
-            m=atoi(argv[i+1]);
-            i+=2;
-        }else if(argv[i]=="-k"){
-            kstar=atoi(argv[i+1]);
-            i+=2;
-        }else if(argv[i]=="-kc"){
-            kc=atoi(argv[i+1]);
-            i+=2;
-        }else if(argv[i]=="-w"){
-            w=atoi(argv[i+1]);
-            i+=2;
-        }else if(argv[i]=="-nr"){
-            nr=atoi(argv[i+1]);
-            i+=2;
-        }else if(argv[i]=="-kmeans"){
-            soglia=atoi(argv[i+1]);
-            i+=2
-            if(i<argc){
-                tmin=atoi(argv[i]);
-                i++;
-            }
-            if(i<argc){
-                tmax=atoi(argv[i]);
-                i++;
-            }
+        else if(argv[i++]=="-knn")
+            K=atoi(argv[i++]);
+        else if(argv[i++]=="-m")
+            m=atoi(argv[i++]);
+        else if(argv[i++]=="-k")
+            kstar=atoi(argv[i++]);
+        else if(argv[i++]=="-kc")
+            kc=atoi(argv[i++]);
+        else if(argv[i++]=="-w")
+            w=atoi(argv[i++]);
+        else if(argv[i++]=="-nr")
+            nr=atoi(argv[i++]);
+        else if(argv[i++]=="-kmeans"){
+            soglia=atoi(argv[i++]);
+            if(i<argc)
+                tmin=atoi(argv[i++]);
+            if(i<argc)
+                tmax=atoi(argv[i++]);
         }
     }
-
     
 }

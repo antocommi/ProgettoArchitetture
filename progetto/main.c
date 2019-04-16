@@ -22,25 +22,25 @@ int main (int argc, char *argv[]){
     {
         if(argv[i++]=="-exaustive")
             continue;
-        else if(argv[i++]=="-noexaustive")
+        else if(strcmp(argv[i++], "-noexaustive"))
             esaustiva=false;
-        else if(argv[i++]=="-sdc")
+        else if(strcmp(argv[i++], "-sdc"))
             continue;
-        else if(argv[i++]=="-adc")
+        else if(strcmp(argv[i++], "-adc"))
             simmetrica=false;
-        else if(argv[i++]=="-knn")
+        else if(strcmp(argv[i++], "-knn"))
             K=atoi(argv[i++]);
-        else if(argv[i++]=="-m")
+        else if(strcmp(argv[i++], "-m"))
             m=atoi(argv[i++]);
-        else if(argv[i++]=="-k")
+        else if(strcmp(argv[i++], "-k"))
             kstar=atoi(argv[i++]);
-        else if(argv[i++]=="-kc")
+        else if(strcmp(argv[i++], "-kc"))
             kc=atoi(argv[i++]);
-        else if(argv[i++]=="-w")
+        else if(strcmp(argv[i++], "-w"))
             w=atoi(argv[i++]);
-        else if(argv[i++]=="-nr")
+        else if(strcmp(argv[i++], "-nr"))
             nr=atoi(argv[i++]);
-        else if(argv[i++]=="-kmeans"){
+        else if(strcmp(argv[i++], "-kmeans")){
             soglia=atoi(argv[i++]);
             if(i<argc)
                 tmin=atoi(argv[i++]);

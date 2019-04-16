@@ -10,6 +10,7 @@ typedef int boolean;
 double dist(int* p1, int* p2, int d){
     int i;
     double dist=0;
+
     for(i=0; i<d; i++){
         dist+=(p1[i]-p2[i])*(p1[i]-p2[i]);
     }
@@ -21,6 +22,7 @@ int calcolaQ(int* x, int** codebook, int K, int d){
     double min=0.0;
     int imin=-1;
     double temp;
+
     for(i=0; i<K; i++){
         temp=dist(x, codebook[i], d);
         if(temp<min){
@@ -34,6 +36,7 @@ int calcolaQ(int* x, int** codebook, int K, int d){
 int** kmeans(int** Y, int n, int d, int K){
     int i;
     int** codebook=(int**) calloc(K, sizeof(int*));
+    
     if(codebook==NULL) exit(-1);
     for(i=0; i<K; i++){
         codebook[i]=Y[rand()%n];
@@ -45,7 +48,6 @@ int** kmeans(int** Y, int n, int d, int K){
     //da completare
     return codebook;
 }
-
 
 int main (int argc, char *argv[]){
     int K=1;

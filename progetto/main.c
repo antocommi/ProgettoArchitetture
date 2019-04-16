@@ -146,7 +146,7 @@ int calcolaQ(int* x, int** codebook, int K, int d){
     int imin=-1;
     int temp;
     for(i=0; i<K; i++){
-        temp=dist(x, codebook[i]);
+        temp=dist(x, codebook[i],d);
         if(temp<min){
             min=temp;
             imin=i;

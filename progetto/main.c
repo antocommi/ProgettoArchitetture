@@ -13,7 +13,7 @@ int main (int argc, char *argv[]){
     int nr=n/20;  
     double soglia=0.01;
     int tmin=10;
-    int tmax=100;
+    int tmax=100; 
     boolean esaustiva=true;
     boolean simmetrica=true;
     int i=0;

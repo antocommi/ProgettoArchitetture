@@ -136,7 +136,7 @@ int** kmeans(int** Y, int n, int d, int K){
     for(i=0; i<n; i++){
         q[i]=calcolaQ(Y[i], codebook, K, d);
     }
-
+    //da completare
     return codebook;
 }
 

@@ -29,6 +29,7 @@ int main (int argc, char *argv[]){
     if(Y==NULL) return -1;
     for(i=0; i<n; i++){
         Y[i]=(int*)calloc(sizeof(int)*d);
+        if(Y[i]==NULL) return -1;
     }
 
     Y[0][0]=1;
@@ -129,14 +130,17 @@ int** kmeans(int** Y, int n, int d, int K){
     int** codebook=(int**)calloc(sizeof(int*)*K);
     if(codebook==NULL) return -1;
     for(i=0; i<K; i++){
-    //    codebook[i]=(int*)calloc(sizeof(int)*d);
         codebook[i]=Y[rand()%n];
+    }
+    int* q=(int*)calloc(sizeof(int)*n);
+    for(i=0; i<n; i++){
+        q[i]=calcolaQ(Y[i], codebook, K, d);
     }
     
     return codebook;
 }
 
-int q(int* x, int** codebook, int K, int d){
+int calcolaQ(int* x, int** codebook, int K, int d){
     int i;
     int min=0;
     int imin=-1;

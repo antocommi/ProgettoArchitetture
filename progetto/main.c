@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<string.h>
+#include <math.h>
 
 typedef int boolean;
 #define true 1
@@ -23,7 +24,9 @@ int main (int argc, char *argv[]){
     int j=0;
     int** codebook;
     int** Y;
+
     Y=(int**)calloc(sizeof(int*)*n);
+    if(Y==NULL) return -1;
     for(i=0; i<n; i++){
         Y[i]=(int*)calloc(sizeof(int)*d);
     }
@@ -118,16 +121,41 @@ int main (int argc, char *argv[]){
         }
     }
     
-
     codebook=kmeans(Y, d, K);
 }
 
-int** kmeans(int** Y, int d, int K){
+int** kmeans(int** Y, int n, int d, int K){
     int i;
     int** codebook=(int**)calloc(sizeof(int*)*K);
+    if(codebook==NULL) return -1;
     for(i=0; i<K; i++){
-        codebook[i]=(int*)calloc(sizeof(int)*d);
+    //    codebook[i]=(int*)calloc(sizeof(int)*d);
+        codebook[i]=Y[rand()%n];
     }
-
+    
     return codebook;
+}
+
+int q(int* x, int** codebook, int K, int d){
+    int i;
+    int min=0;
+    int imin=-1;
+    int temp;
+    for(i=0; i<K; i++){
+        temp=dist(x, codebook[i]);
+        if(temp<min){
+            min=temp;
+            imin=i;
+        }
+    }
+    return imin;
+}
+
+double dist(int* p1, int* p2, int d){
+    int i;
+    int dist=0;
+    for(i=0; i<d; i++){
+        dist+=(p1[i]-p2[i])*(p1[i]-p2[i])
+    }
+    return sqrt(dist);
 }

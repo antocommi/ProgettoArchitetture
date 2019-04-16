@@ -122,7 +122,7 @@ int main (int argc, char *argv[]){
         }
     }
     
-    codebook=kmeans(Y, d, K);
+    codebook=kmeans(Y, n, d, K);
 }
 
 int** kmeans(int** Y, int n, int d, int K){
@@ -146,7 +146,7 @@ int calcolaQ(int* x, int** codebook, int K, int d){
     int imin=-1;
     int temp;
     for(i=0; i<K; i++){
-        temp=dist(x, codebook[i]);
+        temp=dist(x, codebook[i],d);
         if(temp<min){
             min=temp;
             imin=i;
@@ -159,7 +159,7 @@ double dist(int* p1, int* p2, int d){
     int i;
     int dist=0;
     for(i=0; i<d; i++){
-        dist+=(p1[i]-p2[i])*(p1[i]-p2[i])
+        dist+=(p1[i]-p2[i])*(p1[i]-p2[i]);
     }
     return sqrt(dist);
 }

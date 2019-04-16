@@ -19,8 +19,7 @@ int main (int argc, char *argv[]){
     boolean simmetrica=true;
     int i=0;
 
-    while(i<argc)
-    {
+    while(i<argc){
         if(strcmp(argv[i++], "-exaustive"))
             continue;
         else if(strcmp(argv[i++], "-noexaustive"))

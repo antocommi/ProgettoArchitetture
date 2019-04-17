@@ -33,18 +33,52 @@ int calcolaQ(int* x, int** codebook, int K, int d){
     return imin;
 }
 
+int** aggiornaCodebook(int** Y, int* q, int K, int n, int d){
+    int i, j, t;
+    int** temp;
+    int* count;
+    temp=(int**) calloc(K, sizeof(int*));
+    count=(int*) calloc(K, sizeof(int));
+    for(i=0; i<K; i++){
+        temp[i]=(int*) calloc(d, sizeof(int));
+    }
+    for(i=0; i<n; i++){
+        t=q[i];
+        for(j=0; j<d; j++){
+            temp[t][j]+=Y[i][j];
+            count[t]++;
+        }
+    }
+    for(i=0; i<K; i++){
+        for(j=0; j<d; j++){
+            temp[i][j]=temp[i][j]/count[i];
+        }
+    }
+    return temp;
+}
+
 int** kmeans(int** Y, int n, int d, int K){
     int i;
     int** codebook=(int**) calloc(K, sizeof(int*));
-    
     if(codebook==NULL) exit(-1);
+    //passo 1
     for(i=0; i<K; i++){
         codebook[i]=Y[rand()%n];
     }
+
     int* q=(int*) calloc(n, sizeof(int));
     for(i=0; i<n; i++){
         q[i]=calcolaQ(Y[i], codebook, K, d);
     }
+
+    for(i=0; i<K; i++){
+        free(codebook[i]);
+    }
+    free(codebook);
+
+    //passo 2
+    codebook=aggiornaCodebook(Y, q, k, n, d);
+
     //da completare
     return codebook;
 }

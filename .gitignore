@@ -1,9 +1,4 @@
-progetto/compilatiAC/main
-progetto/.vscode/ipch/4b554034ff78effe/main.ipch
-progetto/.vscode/ipch/1380099e96f349e6/mmap_address.bin
-progetto/.vscode/ipch/4b554034ff78effe/main.ipch
-progetto/.vscode/ipch/4b554034ff78effe/main.ipch
-progetto/.vscode/settings.json
-progetto/.vscode/ipch/4b554034ff78effe/main.ipch
+progetto/compilati*
+progetto/.vscode/*
 progetto/pqnn32c
 progetto/pqnn32.o

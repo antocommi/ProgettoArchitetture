@@ -194,6 +194,19 @@ void pqnn_index(params* input) {
     // Codificare qui l'algoritmo di indicizzazione
     // -------------------------------------------------
     
+	// DA DISPENSA PROF
+	// La tecnica di indicizzazione non esaustiva opera come segue: 
+	// 
+	// (i) 	si determinano i w centrodi grossolani ci ∈ Cc che risultano essere pi`u vicini alla query x; 
+	// 
+	// (ii) per ogni centroide ci determinato al passo (i) si calcolano le distanze approssimate 
+	// 		sfruttando il quantizzatore prodotto qp — utilizzando l’Eq.  (3) in congiunzione con l’Eq. (1) 
+	// 		(SDC) oppure con l’Eq. (2) (ADC) — tra x ed ogni altro punto y tale che 
+	// 		qc(y) = ci e si collezionano i K punti associati alle distanze
+	// 		complessivamente più piccole; 
+	// 
+	// (iii) i K punti determinati al passo (ii) vengono restituiti come ANN approssimati della query x.
+
     pqnn32_index(input); // Chiamata funzione assembly
 
     // -------------------------------------------------

@@ -233,6 +233,9 @@ void pqnn_search(params* input) {
 
 }
 
+float* u_of_j(params* input, float* x){
+	
+}
 
 int main(int argc, char** argv) {
 	

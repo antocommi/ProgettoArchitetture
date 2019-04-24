@@ -1,0 +1,8 @@
+1- Calcolo distanza simmetrica-Non è necessario salvare tutte le distanze a coppie dello stesso gruppo ma
+                            solo k^* (k^*-1)/2
+questo perchè d(x,x)=0 e perchè d(x,y)=d(y,x)
+
+2- La radice quadrata è una funzione monotona crescente e quindi si può evitare di calcorla in quanto 
+l'ordine viene preservato.
+
+^motivazioni su paper in inglese

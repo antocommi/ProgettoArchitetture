@@ -77,7 +77,7 @@ int** kmeans(int** Y, int n, int d, int K){
     free(codebook);
 
     //passo 2
-    codebook=aggiornaCodebook(Y, q, k, n, d);
+    codebook=aggiornaCodebook(Y, q, K, n, d);
 
     //da completare
     return codebook;

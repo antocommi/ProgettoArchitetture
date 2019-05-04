@@ -58,10 +58,15 @@ int** aggiornaCodebook(int** Y, int* q, int K, int n, int d){
 }
 
 int** kmeans(int** Y, int n, int d, int K){
+    // 1 - crea k partizioni
+    // 2 - Ad ogni partizione assegna dei vettori in modo casuale o heuristico
+    // 3 - Calcola centroide di ogni gruppo come media geometrica
+    // 4 - Calcola le nuove partizioni associando ad ogni punto il centroide più vicino
+    // 5 - Torna al punto 3 finchè non converge
     int i;
     int** codebook=(int**) calloc(K, sizeof(int*));
     if(codebook==NULL) exit(-1);
-    //passo 1
+    //passo 1a
     for(i=0; i<K; i++){
         codebook[i]=Y[rand()%n];
     }

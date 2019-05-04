@@ -78,6 +78,9 @@ typedef struct {
 	//
 	// Inserire qui i campi necessari a memorizzare i Quantizzatori
 	//
+	VECTOR q;
+	MATRIX codebook;
+	double** distanze;
 	// ...
 	// ...
 	// ...
@@ -183,12 +186,128 @@ void save_ANN(char* filename, int* ANN, int nq, int knn) {
 extern void pqnn32_index(params* input);
 extern int* pqnn32_search(params* input);
 
+// Fuzioni fatte da noi
+
+int calcolaQ(params* input, int punto){
+    int i;
+    double min=0.0;
+    int imin=-1;
+    double temp;
+
+    for(i=0; i<input->k; i++){
+        temp=dist_e(input, punto, i);
+            min=temp;
+            imin=i;
+        }
+    }
+    return imin;
+}
+
+int dist(params* input, int punto1, int punto2){
+	if(params->symmetric==0){
+		//Distanza Asimmetrica
+	}else{
+		if(punto1==punto2){
+			return 0;
+		}else if(punto1<punto2){
+			return input->distanze[punto2][punto1];
+		}else{
+			return input->distanze[punto1][punto2];
+		}
+	}
+}
+
+int dist_e(params* input, int punto1, int punto2){
+	int i;
+	int ret=0;
+	for(i=0; i<input->d; i++){
+		ret+=pow(input->ds[punto1*d+i]-input->codebook[punto2*d+i], 2.0);
+	}
+	return ret;
+}
+
+int dist_simmetrica(params* input, int punto1, int punto2){
+	int i;
+	int ret=0;
+	for(i=0; i<input->d; i++){
+		ret+=pow(input->codebook[punto1*d+i]-input->codebook[punto2*d+i], 2);
+	}
+	return ret;
+}
+
+void kmeans(params* input){
+	int i, j, k, t;
+	int count;
+	double fob1, fob2;
+
+	codebook=alloc_matrix(input->k, input->n);
+    if(codebook==NULL) exit(-1);
+	
+    for(i=0; i<input->k; i++){
+		k=rand()%n;
+		for(j=0; j<input->d; j++){
+			codebook[i*input->d+j]=input->ds[k*input->d+j];
+		}
+    }
+
+    input->q=alloc_vector(input->n);
+    for(i=0; i<n; i++){
+        q[i]=calcolaQ(input, i);
+    }
+	fob1=0;
+	fob2=0;
+	for(t=0; t<input->tmin || (t>input->tmax && (fob2-fob1) > input->eps); t++){
+		for(i=0; i<input->k; i++){
+			count=0;
+			for(j=0; j<input->d; j++){
+				codebook[i*input->d+j]=0;
+			}
+			for(j=0; j<input->n; j++){
+				if(input->q[j]==i){
+					count++;
+					for(k=0; k<input->d; k++){
+						codebook[i*input->d+k]+=input->ds[j*input->d+k];
+					}
+				}
+			}
+			for(j=0; j<input->d; j++){
+				codebook[i*input->d+j]=codebook[i*input->d+j]/count;
+			}
+		}
+		for(i=0; i<n; i++){
+			q[i]=calcolaQ(input, i);
+		}
+		fob1=fob2;
+		fob2=0;
+		for(i=0; i<input->n; i++){
+			fob2+=pow(dist_e(input, i, input->q[i]), 2.0);
+		}
+	}
+}
+
+void creaMatriceDistanze(params* input){
+	distanze=(double**) _mm_malloc(input->k*sizeof(double*), 16);
+	if(distanze==NULL) exit(-1);
+	for(i=1; i<input->k; i++){
+		distanze[i]=(double*) _mm_malloc(i*sizeof(double), 16);
+		if(distanze[i]==NULL) exit(-1);
+		for(j=0; j<i; j++){
+			distanze[i][j]=distanza_simmetrica(input, i, j);
+		}
+	}
+}
 
 /*
  *	pqnn_index
  * 	==========
  */
 void pqnn_index(params* input) {
+
+	kmeans(input);
+
+	if(input->symmetric=1){
+		creaMatriceDistanze(input);
+	}
 	
     // -------------------------------------------------
     // Codificare qui l'algoritmo di indicizzazione

@@ -45,7 +45,7 @@
 #include <string.h>
 #include <time.h>
 #include <xmmintrin.h>
-#include <limits>
+#include <limits.h>
 
 #define	MATRIX		double*
 #define	VECTOR		double*
@@ -188,13 +188,22 @@ extern int* pqnn32_search(params* input);
 
 // Fuzioni fatte da noi
 
+int dist_e(params* input, int punto1, int punto2){
+	int i;
+	int ret=0;
+	for(i=0; i<input->d; i++){
+		ret += pow(input->ds[punto1*input->d+i]-input->codebook[punto2*input->d+i], 2.0);
+	}
+	return ret;
+}
+
 int calcolaQ(params* input, int x){
     //
     //	INPUT: 	Punto x di dimensione d.
     //	OUTPUT: Centroide c più vicino ad x. 
     //
     int i;
-    double min=std::numeric_limits<double_t>::max();
+    double min= 2.3E-308;
     int imin=-1;
     double temp;
 
@@ -210,8 +219,10 @@ int calcolaQ(params* input, int x){
 
 
 int dist(params* input, int punto1, int punto2){
-	if(params->symmetric==0){
+	if(input->symmetric==0){
 		//Distanza Asimmetrica
+		// TODO
+		return -1;
 	}else{
 		if(punto1==punto2){
 			return 0;
@@ -221,84 +232,107 @@ int dist(params* input, int punto1, int punto2){
 			return input->distanze[punto1][punto2];
 		}
 	}
+	return -1;
 }
 
-int dist_e(params* input, int punto1, int punto2){
-	int i;
-	int ret=0;
-	for(i=0; i<input->d; i++){
-		ret += pow(input->ds[punto1*d+i]-input->codebook[punto2*d+i], 2.0);
-	}
-	return ret;
-}
 
-int dist_simmetrica(params* input, int punto1, int punto2){
+
+double dist_simmetrica(params* input, int punto1, int punto2){
 	int i;
-	int ret=0;
+	double ret=0;
 	for(i=0; i<input->d; i++){
-		ret+=pow(input->codebook[punto1*d+i]-input->codebook[punto2*d+i], 2);
+		ret += pow( input->codebook[punto1*input->d+i] - input->codebook[punto2*input->d+i] , 2);
 	}
 	return ret;
 }
 
 void kmeans(params* input){
-	int i, j, k, t;
+	int k, t;
 	int count;
 	double fob1, fob2;
+	double* codebook;
 
-	codebook=alloc_matrix(input->k, input->n);
+	codebook = alloc_matrix(input->k, input->n); // row-major-order?
     if(codebook==NULL) exit(-1);
 	
-    for(i=0; i<input->k; i++){
-		k=rand()%n;
-		for(j=0; j<input->d; j++){
+	//
+	// Inizializzazione del codebook
+	//		-Scelta dei k vettori casuali
+	//
+	
+    for(int i=0; i<input->k; i++){
+		k=rand()%input->n;
+		for(int j=0; j<input->d; j++){
 			codebook[i*input->d+j]=input->ds[k*input->d+j];
 		}
     }
 
-    input->q=alloc_vector(input->n);
-    for(i=0; i<n; i++){
-        q[i]=calcolaQ(input, i);
+    input->q = alloc_matrix(input->n,1); 
+    
+    for(int i=0; i<input->n; i++){
+        input->q[i]=calcolaQ(input, i);
     }
-	fob1=0;
+    
+	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t>input->tmax && (fob2-fob1) > input->eps); t++){
-		for(i=0; i<input->k; i++){
+		for(int i=0; i<input->k; i++){
 			count=0;
-			for(j=0; j<input->d; j++){
-				codebook[i*input->d+j]=0;
+			for(int j=0; j<input->d; j++){
+				codebook[(i*input->d) + j]=0; // con calloc forse è più veloce. 
 			}
-			for(j=0; j<input->n; j++){
-				if(input->q[j]==i){
+			
+			//
+			// INIZIO: RICALCOLO NUOVI CENTROIDI
+			//
+			
+			for(int j=0; j<input->n; j++){
+				if(input->q[j]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					for(k=0; k<input->d; k++){
 						codebook[i*input->d+k]+=input->ds[j*input->d+k];
 					}
 				}
 			}
-			for(j=0; j<input->d; j++){
-				codebook[i*input->d+j]=codebook[i*input->d+j]/count;
+			
+			for(int j=0; j<input->d; j++){
+				if(count!=0){ 
+					// Alcune partizioni potrebbero essere vuote
+					// Specie se ci sono degli outliers
+					codebook[i*input->d+j]=codebook[i*input->d+j]/count;
+				}
 			}
+			
+			//
+			// FINE: RICALCOLO NUOVI CENTROIDI
+			//
 		}
-		for(i=0; i<n; i++){
-			q[i]=calcolaQ(input, i);
+		
+		
+		for(int i=0; i<input->n; i++){
+			input->q[i]=calcolaQ(input, i);
 		}
+		
+		
 		fob1=fob2;
 		fob2=0;
-		for(i=0; i<input->n; i++){
+		
+		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
+		for(int i=0; i<input->n; i++){
 			fob2+=pow(dist_e(input, i, input->q[i]), 2.0);
 		}
 	}
 }
 
 void creaMatriceDistanze(params* input){
-	distanze=(double**) _mm_malloc(input->k*sizeof(double*), 16);
+	double** distanze;
+	distanze = (double**) _mm_malloc(input->k*sizeof(double*), 16);
 	if(distanze==NULL) exit(-1);
-	for(i=1; i<input->k; i++){
+	for(int i=1; i<input->k; i++){
 		distanze[i]=(double*) _mm_malloc(i*sizeof(double), 16);
 		if(distanze[i]==NULL) exit(-1);
-		for(j=0; j<i; j++){
-			distanze[i][j]=distanza_simmetrica(input, i, j);
+		for(int j=0; j<i; j++){
+			distanze[i][j] = dist_simmetrica(input, i, j);
 		}
 	}
 }
@@ -309,9 +343,10 @@ void creaMatriceDistanze(params* input){
  */
 void pqnn_index(params* input) {
 
+	// TODO: Gestire liberazione della memoria.
 	kmeans(input);
 
-	if(input->symmetric=1){
+	if(input->symmetric==1){
 		creaMatriceDistanze(input);
 	}
 	
@@ -358,9 +393,6 @@ void pqnn_search(params* input) {
 
 }
 
-float* u_of_j(params* input, float* x){
-	
-}
 
 int main(int argc, char** argv) {
 	

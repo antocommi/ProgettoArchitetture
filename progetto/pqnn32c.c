@@ -237,7 +237,7 @@ double dist_asimmetrica(params* input, int punto1, int punto2){
 
 double dist(params* input, int punto1, int punto2){
 	if(input->symmetric==0){
-		return dist_asimmetrica(inpit, punto1, punto2);
+		return dist_asimmetrica(input, punto1, punto2);
 	}else{
 		if(punto1==punto2){
 			return 0;

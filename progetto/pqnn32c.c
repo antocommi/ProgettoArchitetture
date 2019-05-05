@@ -246,7 +246,7 @@ double dist_simmetrica(params* input, int punto1, int punto2){
 	return ret;
 }
 
-void kmeans(params* input){
+void kmeans(params* input, int start, int end){
 	int k, t;
 	int count;
 	double fob1, fob2;
@@ -262,7 +262,7 @@ void kmeans(params* input){
 	
     for(int i=0; i<input->k; i++){
 		k=rand()%input->n;
-		for(int j=0; j<input->d; j++){
+		for(int j=start; j<end; j++){
 			codebook[i*input->d+j]=input->ds[k*input->d+j];
 		}
     }
@@ -278,7 +278,7 @@ void kmeans(params* input){
 	for(t=0; t<input->tmin || (t>input->tmax && (fob2-fob1) > input->eps); t++){
 		for(int i=0; i<input->k; i++){
 			count=0;
-			for(int j=0; j<input->d; j++){
+			for(int j=start; j<end; j++){
 				codebook[(i*input->d) + j]=0; // con calloc forse è più veloce. 
 			}
 			
@@ -289,13 +289,13 @@ void kmeans(params* input){
 			for(int j=0; j<input->n; j++){
 				if(input->q[j]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
-					for(k=0; k<input->d; k++){
+					for(k=start; k<end; k++){
 						codebook[i*input->d+k]+=input->ds[j*input->d+k];
 					}
 				}
 			}
 			
-			for(int j=0; j<input->d; j++){
+			for(int j=start; j<end; j++){
 				if(count!=0){ 
 					// Alcune partizioni potrebbero essere vuote
 					// Specie se ci sono degli outliers
@@ -322,6 +322,10 @@ void kmeans(params* input){
 			fob2+=pow(dist_e(input, i, input->q[i]), 2.0);
 		}
 	}
+}
+
+void kmeans(params* input){
+	kmeans(input, 0, input->d);
 }
 
 void creaMatriceDistanze(params* input){

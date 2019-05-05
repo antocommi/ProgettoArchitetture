@@ -45,7 +45,7 @@
 #include <string.h>
 #include <time.h>
 #include <xmmintrin.h>
-
+#include <limits>
 
 #define	MATRIX		double*
 #define	VECTOR		double*
@@ -188,20 +188,26 @@ extern int* pqnn32_search(params* input);
 
 // Fuzioni fatte da noi
 
-int calcolaQ(params* input, int punto){
+int calcolaQ(params* input, int x){
+    //
+    //	INPUT: 	Punto x di dimensione d.
+    //	OUTPUT: Centroide c più vicino ad x. 
+    //
     int i;
-    double min=0.0;
+    double min=std::numeric_limits<double_t>::max();
     int imin=-1;
     double temp;
 
     for(i=0; i<input->k; i++){
-        temp=dist_e(input, punto, i);
+        temp=dist_e(input, x, i);
+        if(temp<min){ 
             min=temp;
             imin=i;
         }
     }
     return imin;
 }
+
 
 int dist(params* input, int punto1, int punto2){
 	if(params->symmetric==0){
@@ -221,7 +227,7 @@ int dist_e(params* input, int punto1, int punto2){
 	int i;
 	int ret=0;
 	for(i=0; i<input->d; i++){
-		ret+=pow(input->ds[punto1*d+i]-input->codebook[punto2*d+i], 2.0);
+		ret += pow(input->ds[punto1*d+i]-input->codebook[punto2*d+i], 2.0);
 	}
 	return ret;
 }
@@ -386,7 +392,7 @@ int main(int argc, char** argv) {
 	//
 
 	int par = 1;
-	while (par < argc) {
+	while(par < argc) {
 		if (par == 1) {
 			input->filename = argv[par];
 			par++;

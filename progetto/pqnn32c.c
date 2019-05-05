@@ -326,6 +326,8 @@ void kmeans(params* input, int start, int end){
 			fob2+=pow(dist_e(input, i, input->q[i]), 2.0);
 		}
 	}
+
+	input->codebook=codebook;
 }
 
 void kmeans(params* input){

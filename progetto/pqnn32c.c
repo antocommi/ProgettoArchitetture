@@ -203,7 +203,7 @@ int calcolaQ(params* input, int x){
     //	OUTPUT: Centroide c più vicino ad x. 
     //
     int i;
-    double min= 2.3E-308;
+    double min=1.79E+308;
     int imin=-1;
     double temp;
 
@@ -217,12 +217,27 @@ int calcolaQ(params* input, int x){
     return imin;
 }
 
+double dist_simmetrica(params* input, int punto1, int punto2){
+	int i;
+	double ret=0;
+	for(i=0; i<input->d; i++){
+		ret += pow( input->codebook[punto1*input->d+i] - input->codebook[punto2*input->d+i] , 2);
+	}
+	return ret;
+}
 
-int dist(params* input, int punto1, int punto2){
+double dist_asimmetrica(params* input, int punto1, int punto2){
+	int i;
+	double ret=0;
+	for(i=0; i<input->d; i++){
+		ret += pow( input->ds[punto1*input->d+i] - input->codebook[input->q[punto2]*input->d+i] , 2);
+	}
+	return ret;
+}
+
+double dist(params* input, int punto1, int punto2){
 	if(input->symmetric==0){
-		//Distanza Asimmetrica
-		// TODO
-		return -1;
+		return dist_asimmetrica(input, punto1, punto2);
 	}else{
 		if(punto1==punto2){
 			return 0;
@@ -235,18 +250,7 @@ int dist(params* input, int punto1, int punto2){
 	return -1;
 }
 
-
-
-double dist_simmetrica(params* input, int punto1, int punto2){
-	int i;
-	double ret=0;
-	for(i=0; i<input->d; i++){
-		ret += pow( input->codebook[punto1*input->d+i] - input->codebook[punto2*input->d+i] , 2);
-	}
-	return ret;
-}
-
-void kmeans(params* input){
+void kmeans(params* input, int start, int end){
 	int k, t;
 	int count;
 	double fob1, fob2;
@@ -262,7 +266,7 @@ void kmeans(params* input){
 	
     for(int i=0; i<input->k; i++){
 		k=rand()%input->n;
-		for(int j=0; j<input->d; j++){
+		for(int j=start; j<end; j++){
 			codebook[i*input->d+j]=input->ds[k*input->d+j];
 		}
     }
@@ -277,8 +281,13 @@ void kmeans(params* input){
 	fob2=0;
 	for(t=0; t<input->tmin || (t>input->tmax && (fob2-fob1) > input->eps); t++){
 		for(int i=0; i<input->k; i++){
+<<<<<<< HEAD
 			count=0; // numero di punti che appartengono a quella partizione
 			for(int j=0; j<input->d; j++){
+=======
+			count=0;
+			for(int j=start; j<end; j++){
+>>>>>>> f10add7c081e059ce58ffb3b72b0c598ae083818
 				codebook[(i*input->d) + j]=0; // con calloc forse è più veloce. 
 			}
 			
@@ -289,13 +298,13 @@ void kmeans(params* input){
 			for(int j=0; j<input->n; j++){
 				if(input->q[j]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
-					for(k=0; k<input->d; k++){
+					for(k=start; k<end; k++){
 						codebook[i*input->d+k]+=input->ds[j*input->d+k];
 					}
 				}
 			}
 			
-			for(int j=0; j<input->d; j++){
+			for(int j=start; j<end; j++){
 				if(count!=0){ 
 					// Alcune partizioni potrebbero essere vuote
 					// Specie se ci sono degli outliers
@@ -322,6 +331,12 @@ void kmeans(params* input){
 			fob2+=pow(dist_e(input, i, input->q[i]), 2.0);
 		}
 	}
+
+	input->codebook=codebook;
+}
+
+void kmeans(params* input){
+	kmeans(input, 0, input->d);
 }
 
 void creaMatriceDistanze(params* input){
@@ -364,7 +379,6 @@ void pqnn_index(params* input) {
     pqnn32_index(input); // Chiamata funzione assembly
 
     // -------------------------------------------------
-
 }
 
 

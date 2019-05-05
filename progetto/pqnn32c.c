@@ -329,7 +329,6 @@ void pqnn_index(params* input) {
     pqnn32_index(input); // Chiamata funzione assembly
 
     // -------------------------------------------------
-
 }
 
 

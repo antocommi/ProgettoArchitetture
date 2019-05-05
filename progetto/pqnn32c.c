@@ -277,7 +277,7 @@ void kmeans(params* input){
 	fob2=0;
 	for(t=0; t<input->tmin || (t>input->tmax && (fob2-fob1) > input->eps); t++){
 		for(int i=0; i<input->k; i++){
-			count=0;
+			count=0; // numero di punti che appartengono a quella partizione
 			for(int j=0; j<input->d; j++){
 				codebook[(i*input->d) + j]=0; // con calloc forse è più veloce. 
 			}

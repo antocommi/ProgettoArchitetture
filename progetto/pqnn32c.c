@@ -200,7 +200,7 @@ int dist_e(params* input, int punto1, int punto2){
 int calcolaQ(params* input, int x){
     //
     //	INPUT: 	Punto x di dimensione d.
-    //	OUTPUT: Centroide c più vicino ad x. 
+    //	OUTPUT: indice del centroide c più vicino ad x. 
     //
     int i;
     double min=1.79E+308;
@@ -279,7 +279,7 @@ void kmeans(params* input, int start, int end){
     
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
-	for(t=0; t<input->tmin || (t>input->tmax && (fob2-fob1) > input->eps); t++){
+	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
 		for(int i=0; i<input->k; i++){
 			count=0;
 			for(int j=start; j<end; j++){

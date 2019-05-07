@@ -80,7 +80,7 @@ typedef struct {
 	//
 	VECTOR q;
 	MATRIX codebook;
-	double** distanze;
+	MATRIX distanze;
 	// ...
 	// ...
 	// ...
@@ -188,6 +188,10 @@ extern int* pqnn32_search(params* input);
 
 // Fuzioni fatte da noi
 
+int calcolaIndice(int i, int j){
+	return i*(i-1)/2+j;
+}
+
 int dist_e(params* input, int punto1, int punto2){
 	int i;
 	int ret=0;
@@ -242,12 +246,11 @@ double dist(params* input, int punto1, int punto2){
 		if(punto1==punto2){
 			return 0;
 		}else if(punto1<punto2){
-			return input->distanze[punto2][punto1];
+			return input->distanze[calcolaIndice(punto2, punto1)];
 		}else{
-			return input->distanze[punto1][punto2];
+			return input->distanze[calcolaIndice(punto1, punto2)];
 		}
 	}
-	return -1;
 }
 
 void kmeans(params* input, int start, int end){
@@ -335,16 +338,15 @@ void kmeans(params* input){
 }
 
 void creaMatriceDistanze(params* input){
-	double** distanze;
-	distanze = (double**) _mm_malloc(input->k*sizeof(double*), 16);
+	MATRIX distanze;
+	distanze = (double*) _mm_malloc(input->k*(input->k+1)/2*sizeof(double*), 16);
 	if(distanze==NULL) exit(-1);
 	for(int i=1; i<input->k; i++){
-		distanze[i]=(double*) _mm_malloc(i*sizeof(double), 16);
-		if(distanze[i]==NULL) exit(-1);
 		for(int j=0; j<i; j++){
-			distanze[i][j] = dist_simmetrica(input, i, j);
+			distanze[calcolaIndice(i, j)] = dist_simmetrica(input, i, j);
 		}
 	}
+	input->distaze=distanze;
 }
 
 /*

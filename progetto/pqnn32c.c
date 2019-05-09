@@ -91,6 +91,16 @@ typedef struct {
 	//
 } params;
 
+//Entry della s.d. multilivello
+typedef struct {
+	int index;
+	VECTOR q;
+
+	//temporaneo
+	//Serve per gestire liste a dimensione sconosciuta. 
+	entry next;
+	entry prev; //potrebbe non servire
+} entry;
 
 /*
  * 

@@ -81,7 +81,8 @@ typedef struct {
 	//
 	// Inserire qui i campi necessari a memorizzare i Quantizzatori
 	//
-	VECTOR q;
+	VECTOR vq;
+	MATRIX pq;
 	MATRIX codebook;
 	MATRIX distanze;
 	// ...
@@ -192,19 +193,24 @@ extern int* pqnn32_search(params* input);
 // Fuzioni fatte da noi
 
 int calcolaIndice(int i, int j){
+	//funzione che calcola l'indice per la matrice delle distanze
 	return i*(i-1)/2+j;
 }
 
-int dist_e(params* input, int punto1, int punto2){
+int dist_e(params* input, int punto1, int punto2, int start, int end){
 	int i;
 	int ret=0;
-	for(i=0; i<input->d; i++){
+	for(i=start; i<end; i++){
 		ret += pow(input->ds[punto1*input->d+i]-input->codebook[punto2*input->d+i], 2.0);
 	}
 	return ret;
 }
 
-int calcolaQ(params* input, int x){
+int dist_e(params* input, int punto1, int punto2){
+	return dist_e(input, punto1, punto2);
+}
+
+int calcolaQ(params* input, int x, int start, int end){
     //
     //	INPUT: 	Punto x di dimensione d.
     //	OUTPUT: indice del centroide c più vicino ad x. 
@@ -215,7 +221,7 @@ int calcolaQ(params* input, int x){
     double temp;
 
     for(i=0; i<input->k; i++){
-        temp=dist_e(input, x, i);
+        temp=dist_e(input, x, i, start, end);
         if(temp<min){ 
             min=temp;
             imin=i;
@@ -281,6 +287,7 @@ double dist(params* input, int set, int punto1, int punto2){
 }
 
 void kmeans(params* input, int start, int end){
+	// estremi start incluso ed end escluso
 	int k, t;
 	int count;
 	double fob1, fob2;
@@ -304,7 +311,7 @@ void kmeans(params* input, int start, int end){
     input->q = alloc_matrix(input->n,1); 
     
     for(int i=0; i<input->n; i++){
-        input->q[i]=calcolaQ(input, i);
+        input->q[i]=calcolaQ(input, i, start, end);
     }
     
 	fob1=0; //Valori della funzione obiettivo
@@ -353,7 +360,7 @@ void kmeans(params* input, int start, int end){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(int i=0; i<input->n; i++){
-			fob2+=pow(dist_e(input, i, input->q[i]), 2.0);
+			fob2+=pow(dist_e(input, i, input->q[i], start, end), 2.0);
 		}
 	}
 
@@ -381,11 +388,14 @@ void creaMatriceDistanze(params* input){
  * 	==========
  */
 void pqnn_index(params* input) {
-
+	int i, dStar;
 	// TODO: Gestire liberazione della memoria.
 	if(input->exaustive==1){
-		// TODO: Aggiungere partizioni del dataset 
-		kmeans(input);
+		dStar=input->d/input->m;
+		for(i=0; i<input->m; i++){
+			kmeans(input, i*dStar, (i+1)*dStar);
+		}
+		// controllare caso in cui d non sia multiplo di m
 		if(input->symmetric==1){
 			creaMatriceDistanze(input);
 		}

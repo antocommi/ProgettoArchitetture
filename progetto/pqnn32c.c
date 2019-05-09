@@ -233,23 +233,28 @@ double dist_simmetrica(params* input, int centroide1, int centroide2){
 double dist_asimmetrica(params* input, int punto1, int punto2){
 	int i, p;
 	double ret=0;
+	p=input->q[punto2];
 	for(i=0; i<input->d; i++){
-		p=input->q[punto2];
 		ret += pow( input->ds[punto1*input->d+i] - input->codebook[p*input->d+i] , 2);
 	}
 	return ret;
 }
 
 double dist(params* input, int punto1, int punto2){
+	int p1, p2;
 	if(input->symmetric==0){
 		return dist_asimmetrica(input, punto1, punto2);
 	}else{
 		if(punto1==punto2){
 			return 0;
-		}else if(punto1<punto2){
-			return input->distanze[calcolaIndice(input->q[punto2], input->q[punto1])];
-		}else{
-			return input->distanze[calcolaIndice(input->q[punto1], input->q[punto2])];
+		else{
+			p1=input->q[punto1];
+			p2=input->q[punto2];
+			if(punto1<punto2){
+				return input->distanze[calcolaIndice(p2, p1)];
+			}else{
+				return input->distanze[calcolaIndice(p1, p2)];
+			}
 		}
 	}
 }

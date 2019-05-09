@@ -50,6 +50,9 @@
 #define	MATRIX		double*
 #define	VECTOR		double*
 
+#define DATASET		0
+#define QUERYSET	1
+
 
 typedef struct {
 	char* filename; //
@@ -230,30 +233,48 @@ double dist_simmetrica(params* input, int centroide1, int centroide2){
 	return ret;
 }
 
-double dist_asimmetrica(params* input, int punto1, int punto2){
+double dist_asimmetrica(params* input, int set, int punto1, int punto2){
+	// punto2 è un punto del dataset
+	//
+	// punto1 può essere del dataset o del query set, quindi in set si passa
+	// la constante DATASET o QUERYSET
 	int i, p;
 	double ret=0;
+	MATRIX set1;
 	p=input->q[punto2];
+	if(set==DATASET){
+		set1=input->ds;
+	}else{
+		set1=input->qs;
+	}
 	for(i=0; i<input->d; i++){
-		ret += pow( input->ds[punto1*input->d+i] - input->codebook[p*input->d+i] , 2);
+		ret += pow( set1[punto1*input->d+i] - input->codebook[p*input->d+i] , 2);
 	}
 	return ret;
 }
 
-double dist(params* input, int punto1, int punto2){
-	int p1, p2;
+double dist(params* input, int set, int punto1, int punto2){
+	// punto2 è un punto del dataset
+	//
+	// punto1 può essere del dataset o del query set, quindi in set si passa
+	// la constante DATASET o QUERYSET
+	int c1, c2;
 	if(input->symmetric==0){
-		return dist_asimmetrica(input, punto1, punto2);
+		return dist_asimmetrica(input, set, punto1, punto2);
 	}else{
 		if(punto1==punto2){
 			return 0;
-		else{
-			p1=input->q[punto1];
-			p2=input->q[punto2];
-			if(punto1<punto2){
-				return input->distanze[calcolaIndice(p2, p1)];
+		}else{
+			if(set==DATASET){
+				c1=input->q[punto1];
 			}else{
-				return input->distanze[calcolaIndice(p1, p2)];
+				//calcolo centroide corrispondente a p1
+			}
+			c2=input->q[punto2];
+			if(punto1<punto2){
+				return input->distanze[calcolaIndice(c2, c1)];
+			}else{
+				return input->distanze[calcolaIndice(c1, c2)];
 			}
 		}
 	}

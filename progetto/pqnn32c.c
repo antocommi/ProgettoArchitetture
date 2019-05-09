@@ -221,7 +221,7 @@ int calcolaQ(params* input, int x){
     return imin;
 }
 
-double dist_simmetrica(params* input, int punto1, int punto2){
+double dist_simmetrica(params* input, int centroide1, int centroide2){
 	int i;
 	double ret=0;
 	for(i=0; i<input->d; i++){
@@ -231,10 +231,11 @@ double dist_simmetrica(params* input, int punto1, int punto2){
 }
 
 double dist_asimmetrica(params* input, int punto1, int punto2){
-	int i;
+	int i, p;
 	double ret=0;
 	for(i=0; i<input->d; i++){
-		ret += pow( input->ds[punto1*input->d+i] - input->codebook[input->q[punto2]*input->d+i] , 2);
+		p=input->q[punto2];
+		ret += pow( input->ds[punto1*input->d+i] - input->codebook[p*input->d+i] , 2);
 	}
 	return ret;
 }
@@ -246,9 +247,9 @@ double dist(params* input, int punto1, int punto2){
 		if(punto1==punto2){
 			return 0;
 		}else if(punto1<punto2){
-			return input->distanze[calcolaIndice(punto2, punto1)];
+			return input->distanze[calcolaIndice(input->q[punto2], input->q[punto1])];
 		}else{
-			return input->distanze[calcolaIndice(punto1, punto2)];
+			return input->distanze[calcolaIndice(input->q[punto1], input->q[punto2])];
 		}
 	}
 }

@@ -247,7 +247,7 @@ double dist_simmetrica(params* input, int centroide1, int centroide2, int start,
 	int i;
 	double ret=0;
 	for(i=start; i<end; i++){
-		ret += pow( input->codebook[punto1*input->d+i] - input->codebook[punto2*input->d+i] , 2);
+		ret += pow( input->codebook[centroide1*input->d+i] - input->codebook[centroide2*input->d+i] , 2);
 	}
 	return ret;
 }
@@ -265,7 +265,7 @@ double dist_asimmetrica(params* input, int set, int punto1, int punto2, int star
 	int i, c;
 	double ret=0;
 	MATRIX set1;
-	c=input->q[punto2];
+	c=input->pq[punto2];
 	if(set==DATASET){
 		set1=input->ds;
 	}else{
@@ -353,7 +353,7 @@ void kmeans(params* input, int start, int end){
 			//
 			
 			for(int j=0; j<input->n; j++){
-				if(input->q[j]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+				if(input->pq[j*input->n+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					for(k=start; k<end; k++){
 						codebook[i*input->d+k]+=input->ds[j*input->d+k];
@@ -383,7 +383,7 @@ void kmeans(params* input, int start, int end){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(int i=0; i<input->n; i++){
-			fob2+=pow(dist_e(input, i, input->q[i], start, end), 2.0);
+			fob2+=pow(dist_e(input, i, input->pq[i*input->n+(start/input->m)], start, end), 2.0);
 		}
 	}
 

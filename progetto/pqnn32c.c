@@ -83,6 +83,7 @@ typedef struct {
 	//
 	VECTOR vq;
 	MATRIX pq;
+	MATRIX query_pq;
 	MATRIX codebook;
 	MATRIX distanze;
 	// ...
@@ -430,12 +431,8 @@ void pqnn_index(params* input) {
 		// RICERCA NON ESAUSTIVA
 		//
 	}
-    // -------------------------------------------------
-    // Codificare qui l'algoritmo di indicizzazione
-    // -------------------------------------------------
     
-	
-    pqnn32_index(input); // Chiamata funzione assembly
+    //pqnn32_index(input); // Chiamata funzione assembly
 
     // -------------------------------------------------
 }
@@ -446,12 +443,25 @@ void pqnn_index(params* input) {
  * 	===========
  */
 void pqnn_search(params* input) {
-	
+	int i, j;
+	if(input->exaustive==1){
+		//ricerca esaustiva
+		input->query_pq=alloc_matrix(input->nq, input->m);
+		//calcolo centroidi corrispondenti ad ogni query
+		input->ANN=alloc_matrix(input->nq, input->knn);
+		for(i=0; i<input->nq; i++){
+			for(j=0; j<input->n; j++){
+
+			}
+		}
+	}else{
+		//ricerca non esaustiva
+	}
     // -------------------------------------------------
     // Codificare qui l'algoritmo di interrogazione
     // -------------------------------------------------
     
-    pqnn32_search(input); // Chiamata funzione assembly
+    //pqnn32_search(input); // Chiamata funzione assembly
 
 	// Restituisce il risultato come una matrice di nq * knn
 	// identificatori associati agli ANN approssimati delle nq query.

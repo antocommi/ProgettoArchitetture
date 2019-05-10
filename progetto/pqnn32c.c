@@ -208,21 +208,32 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-int dist_e(params* input, int punto1, int punto2, int start, int end){
+int dist_e(params* input, int set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
 	int ret=0;
+	MATRIX set1;
+	if(set1==DATASET){
+		set1=input->ds;
+	}else{
+		set1=input->qs;
+	}
 	for(i=start; i<end; i++){
-		ret += pow(input->ds[punto1*input->d+i]-input->codebook[punto2*input->d+i], 2.0);
+		ret += pow(set1[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
 	}
 	return ret;
 }
 
-int dist_e(params* input, int punto1, int punto2){
-	return dist_e(input, punto1, punto2, 0, input->d);
+int dist_e(params* input, int set, int punto1, int punto2){
+	int i;
+	double sum=0;
+	for(i=0; i<input->m; i++){
+		sum+=pow(dist_e(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+	}
+	return sum;
 }
 
-int calcolaPQ(params* input, int x, int start, int end){
+int calcolaPQ(params* input, int set, int x, int start, int end){
 	// estremi start incluso ed end escluso
     //
     //	INPUT: 	Punto x di dimensione d.
@@ -232,9 +243,14 @@ int calcolaPQ(params* input, int x, int start, int end){
     double min=1.79E+308;
     int imin=-1;
     double temp;
-
+	MATRIX set1;
+	if(set1==DATASET){
+		set1=input->ds;
+	}else{
+		set1=input->qs;
+	}
     for(i=0; i<input->k; i++){
-        temp=dist_e(input, x, i, start, end);
+        temp=dist_e(input, set, x, i, start, end);
         if(temp<min){ 
             min=temp;
             imin=i;
@@ -254,7 +270,12 @@ double dist_simmetrica(params* input, int centroide1, int centroide2, int start,
 }
 
 double dist_simmetrica(params* input, int centroide1, int centroide2){
-	return dist_simmetrica(input, centroide1, centroide2, 0, input->d);
+	int i;
+	double sum=0;
+	for(i=0; i<input->m; i++){
+		sum+=pow(dist_simmetrica(input, centroide1, centroide2, i*input->m, (i+1)*input->m), 2);
+	}
+	return sum;
 }
 
 double dist_asimmetrica(params* input, int set, int punto1, int punto2, int start, int end){
@@ -279,7 +300,12 @@ double dist_asimmetrica(params* input, int set, int punto1, int punto2, int star
 }
 
 double dist_asimmetrica(params* input, int set, int punto1, int punto2){
-	return dist_asimmetrica(input, set, punto1, punto2, 0, input->d);
+	int i;
+	double sum=0;
+	for(i=0; i<input->m; i++){
+		sum+=pow(dist_asimmetrica(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+	}
+	return sum;
 }
 
 double dist(params* input, int set, int punto1, int punto2, int start, int end){
@@ -296,11 +322,11 @@ double dist(params* input, int set, int punto1, int punto2, int start, int end){
 			return 0;
 		}else{
 			if(set==DATASET){
-				c1=input->pq[punto1*input->n+(start/input->m)];
+				c1=input->pq[punto1*input->m+(start/input->m)];
 			}else{
 				//calcolo centroide corrispondente a p1
 			}
-			c2=input->pq[punto2*input->n+(start/input->m)];
+			c2=input->pq[punto2*input->m+(start/input->m)];
 			if(punto1<punto2){
 				return input->distanze[calcolaIndice(c2, c1)];
 			}else{
@@ -316,7 +342,7 @@ double dist(params* input, int set, int punto1, int punto2){
 
 void kmeans(params* input, int start, int end){
 	// estremi start incluso ed end escluso
-	int k, t;
+	int i, j, k, t;
 	int count;
 	double fob1, fob2;
 	double* codebook;
@@ -337,16 +363,16 @@ void kmeans(params* input, int start, int end){
     }
     
     for(int i=0; i<input->n; i++){
-        input->pq[i*input->n+(start/input->m)]=calcolaPQ(input, i, start, end);
+        input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
     }
     
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
-		for(int i=0; i<input->k; i++){
+		for(i=0; i<input->k; i++){
 			count=0;
-			for(int j=start; j<end; j++){
-				codebook[(i*input->d) + j]=0; // con calloc forse è più veloce. 
+			for(j=start; j<end; j++){
+				codebook[i*input->d+j]=0; // con calloc forse è più veloce. 
 			}
 			
 			//
@@ -354,7 +380,7 @@ void kmeans(params* input, int start, int end){
 			//
 			
 			for(int j=0; j<input->n; j++){
-				if(input->pq[j*input->n+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+				if(input->pq[j*input->m+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					for(k=start; k<end; k++){
 						codebook[i*input->d+k]+=input->ds[j*input->d+k];
@@ -376,7 +402,7 @@ void kmeans(params* input, int start, int end){
 		}
 		
 		for(int i=0; i<input->n; i++){
-			input->pq[i*input->n+(start/input->m)]=calcolaPQ(input, i, start, end);
+			input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
 		}
 		
 		fob1=fob2;
@@ -384,7 +410,7 @@ void kmeans(params* input, int start, int end){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(int i=0; i<input->n; i++){
-			fob2+=pow(dist_e(input, i, input->pq[i*input->n+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_e(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 
@@ -447,6 +473,11 @@ void pqnn_search(params* input) {
 	if(input->exaustive==1){
 		//ricerca esaustiva
 		input->query_pq=alloc_matrix(input->nq, input->m);
+		for(i=0; i<input->nq; i++){
+			for(j=0; j<input->m; j++){
+				input->query_pq[i*input->nq+j]=calcolaPQ
+			}
+		}
 		//calcolo centroidi corrispondenti ad ogni query
 		input->ANN=alloc_matrix(input->nq, input->knn);
 		for(i=0; i<input->nq; i++){

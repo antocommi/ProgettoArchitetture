@@ -209,23 +209,17 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-int dist_e(params* input, int set, int punto1, int punto2, int start, int end){
+int dist_e(params* input, MATRIX set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
 	int ret=0;
-	MATRIX set1;
-	if(set1==DATASET){
-		set1=input->ds;
-	}else{
-		set1=input->qs;
-	}
 	for(i=start; i<end; i++){
-		ret += pow(set1[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
+		ret += pow(set[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
 	}
 	return ret;
 }
 
-int dist_e(params* input, int set, int punto1, int punto2){
+int dist_e(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	double sum=0;
 	for(i=0; i<input->m; i++){
@@ -234,7 +228,7 @@ int dist_e(params* input, int set, int punto1, int punto2){
 	return sum;
 }
 
-int calcolaPQ(params* input, int set, int x, int start, int end){
+int calcolaPQ(params* input, MATRIX set, int x, int start, int end){
 	// estremi start incluso ed end escluso
     //
     //	INPUT: 	Punto x di dimensione d.
@@ -244,12 +238,6 @@ int calcolaPQ(params* input, int set, int x, int start, int end){
     double min=1.79E+308;
     int imin=-1;
     double temp;
-	MATRIX set1;
-	if(set1==DATASET){
-		set1=input->ds;
-	}else{
-		set1=input->qs;
-	}
     for(i=0; i<input->k; i++){
         temp=dist_e(input, set, x, i, start, end);
         if(temp<min){ 
@@ -279,7 +267,7 @@ double dist_simmetrica(params* input, int centroide1, int centroide2){
 	return sum;
 }
 
-double dist_asimmetrica(params* input, int set, int punto1, int punto2, int start, int end){
+double dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
@@ -287,20 +275,14 @@ double dist_asimmetrica(params* input, int set, int punto1, int punto2, int star
 	// la constante DATASET o QUERYSET
 	int i, c;
 	double ret=0;
-	MATRIX set1;
 	c=input->pq[punto2];
-	if(set==DATASET){
-		set1=input->ds;
-	}else{
-		set1=input->qs;
-	}
 	for(i=start; i<end; i++){
-		ret += pow( set1[punto1*input->d+i] - input->codebook[c*input->d+i] , 2);
+		ret += pow( set[punto1*input->d+i] - input->codebook[c*input->d+i] , 2);
 	}
 	return ret;
 }
 
-double dist_asimmetrica(params* input, int set, int punto1, int punto2){
+double dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	double sum=0;
 	for(i=0; i<input->m; i++){
@@ -309,7 +291,7 @@ double dist_asimmetrica(params* input, int set, int punto1, int punto2){
 	return sum;
 }
 
-double dist(params* input, int set, int punto1, int punto2, int start, int end){
+double dist(params* input, MATRIX set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
@@ -322,11 +304,7 @@ double dist(params* input, int set, int punto1, int punto2, int start, int end){
 		if(punto1==punto2){
 			return 0;
 		}else{
-			if(set==DATASET){
-				c1=input->pq[punto1*input->m+(start/input->m)];
-			}else{
-				c1=input->query_pq[punto1*input->m+(start/input->m)];
-			}
+			c1=set[punto1*input->m+(start/input->m)];
 			c2=input->pq[punto2*input->m+(start/input->m)];
 			if(c1<c2){
 				return input->distanze_simmetriche[calcolaIndice(c2, c1)];
@@ -336,9 +314,14 @@ double dist(params* input, int set, int punto1, int punto2, int start, int end){
 		}
 	}
 }
-
-double dist(params* input, int set, int punto1, int punto2){
-	return dist(input, set, punto1, punto2, 0, input->d);
+//le 2 funzioni dist sono ancora da controllare
+double dist(params* input, MATRIX set, int punto1, int punto2){
+	int i;
+	double sum=0;
+	for(i=0; i<input->m; i++){
+		sum+=pow(dist(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+	}
+	return sum;
 }
 
 void kmeans(params* input, int start, int end){
@@ -364,7 +347,7 @@ void kmeans(params* input, int start, int end){
     }
     
     for(int i=0; i<input->n; i++){
-        input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
+        input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, input->ds, i, start, end);
     }
     
 	fob1=0; //Valori della funzione obiettivo
@@ -403,7 +386,7 @@ void kmeans(params* input, int start, int end){
 		}
 		
 		for(int i=0; i<input->n; i++){
-			input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
+			input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, input->ds, i, start, end);
 		}
 		
 		fob1=fob2;
@@ -411,7 +394,7 @@ void kmeans(params* input, int start, int end){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(int i=0; i<input->n; i++){
-			fob2+=pow(dist_e(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_e(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 
@@ -428,7 +411,7 @@ void creaMatricedistanze(params* input){
 	if(distanze_simmetriche==NULL) exit(-1);
 	for(int i=1; i<input->k; i++){
 		for(int j=0; j<i; j++){
-			distanze_simmetriche[calcolaIndice(i, j)] = dist_simmetrica(input, i, j);
+			distanze_simmetriche[calcolaIndice(i, j)] = dist_simmetrica(input, i, j, start, end);
 			// verificare se qui va usata la distsnza simmetrica o no
 		}
 	}
@@ -454,7 +437,7 @@ void calcolaNN(params* input, int query){
 	VECTOR distanze=alloc_matrix(input->n, 1);
 	int* d2=(int*) _mm_malloc(input->n*sizeof(int),16);
 	for(i=0; i<input->n; i++){
-		distanze[i]=dist(input, QUERYSET, query, i);
+		distanze[i]=dist(input, input->qs, query, i);
 		d2[i]=i;
 	}
 	bubbleSort(distanze, d2, input->n);

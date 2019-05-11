@@ -1,0 +1,22 @@
+nasm -f elf64 prod.nasm
+nasm -f elf64 sseutils64.nasm
+nasm -f elf64 differenceNormd.nasm
+nasm -f elf64 assegnaD.nasm
+nasm -f elf64 normalizzazione.nasm
+nasm -f elf64 completaSolD.nasm
+nasm -f elf64 assegnaSoluzioneD.nasm
+nasm -f elf64 powerExtrd.nasm
+nasm -f elf64 powerExtrf.nasm
+nasm -f elf64 differenceNormf.nasm
+nasm -f elf64 completaSolF.nasm
+nasm -f elf64 assegnaSoluzioneF.nasm
+nasm -f elf64 assegnaF.nasm
+nasm -f elf64 prodSparseD.nasm
+nasm -f elf64 prodSparseF.nasm
+nasm -f elf64 sommad.nasm
+nasm -f elf64 sommaf.nasm
+nasm -f elf64 initOutF.nasm
+nasm -f elf64 initCsc.nasm
+nasm -f elf64 initOutD.nasm
+gcc -O0 -m64 -mavx prod.o sseutils64.o differenceNormd.o assegnaD.o normalizzazione.o completaSolD.o assegnaSoluzioneD.o powerExtrd.o powerExtrf.o differenceNormf.o completaSolF.o assegnaSoluzioneF.o assegnaF.o prodSparseD.o prodSparseF.o sommad.o sommaf.o initOutF.o initCsc.o initOutD.o pagerank64c_9.c -o pagerank64c_9
+./pagerank64c_9 $1 $2 $3 $4 $5 $6 $7 $8 $9 $10

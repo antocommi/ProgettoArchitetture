@@ -488,8 +488,8 @@ void inizializza_learning_set(params* input){
 
 void inizializzaSecLiv(params* input){
 	entry vettore_centroidi_grossolani[input->kc];
-	input->v= &vettore_centroidi_grossolani;
-	
+	input->v = _mm_malloc(sizeof(entry)*input->kc,16);
+	if(input->v==NULL) return;	
 }
 
 /*

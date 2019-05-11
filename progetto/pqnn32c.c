@@ -210,7 +210,7 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-int dist_e(params* input, MATRIX set, int punto1, int punto2, int start, int end){
+int dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
 	int ret=0;
@@ -224,7 +224,7 @@ int dist_e(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	double sum=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_e(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+		sum+=pow(dist_eI(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
@@ -240,7 +240,7 @@ int calcolaPQ(params* input, MATRIX set, int x, int start, int end){
     int imin=-1;
     double temp;
     for(i=0; i<input->k; i++){
-        temp=dist_e(input, set, x, i, start, end);
+        temp=dist_eI(input, set, x, i, start, end);
         if(temp<min){ 
             min=temp;
             imin=i;
@@ -249,7 +249,7 @@ int calcolaPQ(params* input, MATRIX set, int x, int start, int end){
     return imin;
 }
 
-double dist_simmetrica(params* input, int centroide1, int centroide2, int start, int end){
+double dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
 	double ret=0;
@@ -263,12 +263,12 @@ double dist_simmetrica(params* input, int centroide1, int centroide2){
 	int i;
 	double sum=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_simmetrica(input, centroide1, centroide2, i*input->m, (i+1)*input->m), 2);
+		sum+=pow(dist_simmetricaI(input, centroide1, centroide2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
 
-double dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2, int start, int end){
+double dist_asimmetricaI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
@@ -287,12 +287,12 @@ double dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	double sum=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_asimmetrica(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+		sum+=pow(dist_asimmetricaI(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
 
-double dist(params* input, MATRIX set, int punto1, int punto2, int start, int end){
+double distI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
@@ -300,7 +300,7 @@ double dist(params* input, MATRIX set, int punto1, int punto2, int start, int en
 	// la constante DATASET o QUERYSET
 	int c1, c2;
 	if(input->symmetric==0){
-		return dist_asimmetrica(input, set, punto1, punto2, start, end);
+		return dist_asimmetricaI(input, set, punto1, punto2, start, end);
 	}else{
 		if(punto1==punto2){
 			return 0;
@@ -319,7 +319,7 @@ double dist(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	double sum=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+		sum+=pow(distI(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
@@ -394,15 +394,11 @@ void kmeans(params* input, int start, int end){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(int i=0; i<input->n; i++){
-			fob2+=pow(dist_e(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 
 	input->codebook=codebook;
-}
-
-void kmeans(params* input){
-	kmeans(input, 0, input->d);
 }
 
 void creaMatricedistanze(params* input){
@@ -414,7 +410,7 @@ void creaMatricedistanze(params* input){
 	for(k=0; k<input->m; k++){
 		for(int i=1; i<input->k; i++){
 			for(int j=0; j<i; j++){
-				distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)] = dist_simmetrica(input, i, j, k*input->m, (k+1)*input->m);
+				distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
 				// verificare se qui va usata la distanza simmetrica o no
 			}
 		}

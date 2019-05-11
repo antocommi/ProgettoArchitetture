@@ -103,7 +103,7 @@ typedef struct {
 	//temporaneo
 	//Serve per gestire liste a dimensione sconosciuta. 
 	entry next;
-	entry prev; //potrebbe non servire
+	
 } entry;
 
 /*
@@ -487,9 +487,19 @@ void inizializza_learning_set(params* input){
 }
 
 void inizializzaSecLiv(params* input){
-	entry vettore_centroidi_grossolani[input->kc];
+
 	input->v = _mm_malloc(sizeof(entry)*input->kc,16);
-	if(input->v==NULL) return;	
+	if(input->v==NULL) return;
+	for(int i=0;i<input->kc;i++){
+		input->v[i].next=NULL;
+
+	}	
+}
+
+void add (entry e,int i,params* input){
+	if(input->v==)
+	input->v=
+	
 }
 
 /*

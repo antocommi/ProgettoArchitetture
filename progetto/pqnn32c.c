@@ -487,10 +487,9 @@ void inizializza_learning_set(params* input){
 }
 
 void inizializzaSecLiv(params* input){
-	input->v=str_mm_malloc(input->kc*96, 16);//da rivedere
-	for(i=0; i<input->kc; i++){
-		v[i]=struct entry;
-	}
+	entry vettore_centroidi_grossolani[input->kc];
+	input->v= &vettore_centroidi_grossolani;
+	
 }
 
 /*

@@ -487,11 +487,11 @@ void inizializza_learning_set(params* input){
 }
 
 void inizializzaSecLiv(params* input){
-
 	input->v = _mm_malloc(sizeof(entry)*input->kc,16);
 	if(input->v==NULL) return;
 	for(int i=0;i<input->kc;i++){
 		input->v[i].next=NULL;
+		
 
 	}	
 }

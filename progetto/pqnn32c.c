@@ -503,7 +503,7 @@ void pqnn_index(params* input) {
 		input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
 		dStar=input->d/input->m;
 		for(i=0; i<input->m; i++){
-			kmeans(input, i*dStar, (i+1)*dStar);
+			kmeans(input, i*dStar, (i+1)*dStar, input->k);
 		}
 		// controllare caso in cui d non sia multiplo di m
 		if(input->symmetric==1){

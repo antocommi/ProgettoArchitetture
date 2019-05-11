@@ -91,19 +91,20 @@ typedef struct {
 	// ...
 	// ...
 	// ...
+	struct entry* v;
 	//
 } params;
 
 //Entry della s.d. multilivello
-//typedef struct {
-//	int index;
-//	VECTOR q;
-//
-//	//temporaneo
+typedef struct {
+	int index;
+	VECTOR q;
+
+	//temporaneo
 	//Serve per gestire liste a dimensione sconosciuta. 
-//	entry next;
-//	entry prev; //potrebbe non servire
-//} entry;
+	entry next;
+	entry prev; //potrebbe non servire
+} entry;
 
 /*
  * 
@@ -350,14 +351,14 @@ int calcolaQueryPQ(params* input, int x, int start, int end){
 	return imin;
 }
 
-void kmeans(params* input, int start, int end){
+void kmeans(params* input, int start, int end, int n_centroidi){
 	// estremi start incluso ed end escluso
 	int i, j, k, t;
 	int count;
 	double fob1, fob2;
 	double* codebook;
 
-	codebook = alloc_matrix(input->k, input->n); // row-major-order?
+	codebook = alloc_matrix(n_centroidi, input->n); // row-major-order?
     if(codebook==NULL) exit(-1);
 	
 	//
@@ -365,7 +366,7 @@ void kmeans(params* input, int start, int end){
 	//		-Scelta dei k vettori casuali
 	//
 	
-    for(i=0; i<input->k; i++){
+    for(i=0; i<n_centroidi; i++){
 		k=rand()%input->n;
 		for(j=start; j<end; j++){
 			codebook[i*input->d+j]=input->ds[k*input->d+j];
@@ -379,7 +380,7 @@ void kmeans(params* input, int start, int end){
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
-		for(i=0; i<input->k; i++){
+		for(i=0; i<n_centroidi; i++){
 			count=0;
 			for(j=start; j<end; j++){
 				codebook[i*input->d+j]=0; // con calloc forse è più veloce. 
@@ -481,6 +482,17 @@ void calcolaNN(params* input, int query){
 	_mm_free(d2);
 }
 
+void inizializza_learning_set(params* input){
+	//to do
+}
+
+void inizializzaSecLiv(params* input){
+	input->v=str_mm_malloc(input->kc*96, 16);//da rivedere
+	for(i=0; i<input->kc; i++){
+		v[i]=struct entry;
+	}
+}
+
 /*
  *	pqnn_index
  * 	==========
@@ -503,6 +515,9 @@ void pqnn_index(params* input) {
 		//
 		// RICERCA NON ESAUSTIVA
 		//
+		inizializza_learning_set(input);//selezionati i primi nr del dataset
+		kmeans(input, 0, input->d, input->kc);//calcolo i grossolani
+		inizializzaSecLiv(input);
 	}
     
     //pqnn32_index(input); // Chiamata funzione assembly

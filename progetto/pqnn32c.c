@@ -82,8 +82,8 @@ typedef struct {
 	// Inserire qui i campi necessari a memorizzare i Quantizzatori
 	//
 	VECTOR vq;
-	MATRIX pq;
-	MATRIX query_pq;
+	int* pq;
+	int* query_pq;
 	MATRIX codebook;
 	MATRIX distanze_simmetriche;
 	int nDist;
@@ -95,15 +95,15 @@ typedef struct {
 } params;
 
 //Entry della s.d. multilivello
-typedef struct {
-	int index;
-	VECTOR q;
-
-	//temporaneo
+//typedef struct {
+//	int index;
+//	VECTOR q;
+//
+//	//temporaneo
 	//Serve per gestire liste a dimensione sconosciuta. 
-	entry next;
-	entry prev; //potrebbe non servire
-} entry;
+//	entry next;
+//	entry prev; //potrebbe non servire
+//} entry;
 
 /*
  * 
@@ -210,26 +210,26 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-int dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
+int dist_eI(params* input,int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
 	int ret=0;
 	for(i=start; i<end; i++){
-		ret += pow(set[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
+		ret += pow(input->ds[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
 	}
 	return ret;
 }
 
-int dist_e(params* input, MATRIX set, int punto1, int punto2){
+int dist_e(params* input,int punto1, int punto2){
 	int i;
 	double sum=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_eI(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+		sum+=pow(dist_eI(input, punto1, punto2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
 
-int calcolaPQ(params* input, MATRIX set, int x, int start, int end){
+int calcolaPQ(params* input, int x, int start, int end){
 	// estremi start incluso ed end escluso
     //
     //	INPUT: 	Punto x di dimensione d.
@@ -240,7 +240,7 @@ int calcolaPQ(params* input, MATRIX set, int x, int start, int end){
     int imin=-1;
     double temp;
     for(i=0; i<input->k; i++){
-        temp=dist_eI(input, set, x, i, start, end);
+        temp=dist_eI(input, x, i, start, end);
         if(temp<min){ 
             min=temp;
             imin=i;
@@ -292,36 +292,62 @@ double dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 	return sum;
 }
 
-double distI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
+double distI(params* input, int* quantizer, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
 	// punto1 può essere del dataset o del query set, quindi in set si passa
 	// la constante DATASET o QUERYSET
 	int c1, c2;
-	if(input->symmetric==0){
-		return dist_asimmetricaI(input, set, punto1, punto2, start, end);
+	if(punto1==punto2){
+		return 0;
 	}else{
-		if(punto1==punto2){
-			return 0;
+		c1=quantizer[punto1*input->m+(start/input->m)];
+		c2=input->pq[punto2*input->m+(start/input->m)];
+		if(c1<c2){
+			return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c2, c1)];
 		}else{
-			c1=set[punto1*input->m+(start/input->m)];
-			c2=input->pq[punto2*input->m+(start/input->m)];
-			if(c1<c2){
-				return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c2, c1)];
-			}else{
-				return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c1, c2)];
-			}
+			return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c1, c2)];
 		}
 	}
 }
-double dist(params* input, MATRIX set, int punto1, int punto2){
+double dist(params* input, int* quantizer, int punto1, int punto2){
 	int i;
 	double sum=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(distI(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+		sum+=pow(distI(input, quantizer, punto1, punto2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
+}
+
+int calcolaQueryPQ(params* input, int x, int start, int end){
+	// estremi start incluso ed end escluso
+    //
+    //	INPUT: 	Punto x di dimensione d.
+    //	OUTPUT: indice del centroide c più vicino ad x. 
+    //
+    int i;
+    double min=1.79E+308;
+    int imin=-1;
+    double temp;
+	if(input->symmetric==1){
+		for(i=0; i<input->k; i++){
+			temp=distI(input, input->query_pq, x, i, start, end);
+			if(temp<min){ 
+				min=temp;
+				imin=i;
+			}
+		}
+	}else{
+		for(i=0; i<input->k; i++){
+			temp=dist_asimmetricaI(input, input->qs, x, i, start, end);
+			if(temp<min){ 
+				min=temp;
+				imin=i;
+			}
+		}
+	}
+	return imin;
 }
 
 void kmeans(params* input, int start, int end){
@@ -339,15 +365,15 @@ void kmeans(params* input, int start, int end){
 	//		-Scelta dei k vettori casuali
 	//
 	
-    for(int i=0; i<input->k; i++){
+    for(i=0; i<input->k; i++){
 		k=rand()%input->n;
-		for(int j=start; j<end; j++){
+		for(j=start; j<end; j++){
 			codebook[i*input->d+j]=input->ds[k*input->d+j];
 		}
     }
     
-    for(int i=0; i<input->n; i++){
-        input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, input->ds, i, start, end);
+    for(i=0; i<input->n; i++){
+        input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
     }
     
 	fob1=0; //Valori della funzione obiettivo
@@ -363,7 +389,7 @@ void kmeans(params* input, int start, int end){
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
 			
-			for(int j=0; j<input->n; j++){
+			for(j=0; j<input->n; j++){
 				if(input->pq[j*input->m+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					for(k=start; k<end; k++){
@@ -372,7 +398,7 @@ void kmeans(params* input, int start, int end){
 				}
 			}
 			
-			for(int j=start; j<end; j++){
+			for(j=start; j<end; j++){
 				if(count!=0){ 
 					// Alcune partizioni potrebbero essere vuote
 					// Specie se ci sono degli outliers
@@ -385,16 +411,16 @@ void kmeans(params* input, int start, int end){
 			//
 		}
 		
-		for(int i=0; i<input->n; i++){
-			input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, input->ds, i, start, end);
+		for(i=0; i<input->n; i++){
+			input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
 		}
 		
 		fob1=fob2;
 		fob2=0;
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
-		for(int i=0; i<input->n; i++){
-			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+		for(i=0; i<input->n; i++){
+			fob2+=pow(dist_eI(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 
@@ -408,8 +434,8 @@ void creaMatricedistanze(params* input){
 	distanze_simmetriche = alloc_matrix(input->m, input->nDist);
 	if(distanze_simmetriche==NULL) exit(-1);
 	for(k=0; k<input->m; k++){
-		for(int i=1; i<input->k; i++){
-			for(int j=0; j<i; j++){
+		for(i=1; i<input->k; i++){
+			for(j=0; j<i; j++){
 				distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
 				// verificare se qui va usata la distanza simmetrica o no
 			}
@@ -418,7 +444,7 @@ void creaMatricedistanze(params* input){
 	input->distanze_simmetriche=distanze_simmetriche;
 }
 
-void bubbleSort(int* arr, int* arr2, int n){ 
+void bubbleSort(double* arr, int* arr2, int n){ 
    int i, j, temp; 
    for (i = 0; i < n-1; i++)    
        for (j = 0; j < n-i-1; j++)  
@@ -435,16 +461,17 @@ void bubbleSort(int* arr, int* arr2, int n){
 void calcolaNN(params* input, int query){
 	int i;
 	VECTOR distanze=alloc_matrix(input->n, 1);
-	MATRIX set;
-	if(input->symmetric==0){
-		set=input->qs;
-	}else{
-		set=input->query_pq;
-	}
 	int* d2=(int*) _mm_malloc(input->n*sizeof(int),16);
-	for(i=0; i<input->n; i++){
-		distanze[i]=dist(input, set, query, i);
-		d2[i]=i;
+	if(input->symmetric==0){
+		for(i=0; i<input->n; i++){
+			distanze[i]=dist_asimmetrica(input, input->qs, query, i);
+			d2[i]=i;
+		}
+	}else{
+		for(i=0; i<input->n; i++){
+			distanze[i]=dist(input, input->query_pq, query, i);
+			d2[i]=i;
+		}
 	}
 	bubbleSort(distanze, d2, input->n);
 	dealloc_matrix(distanze);
@@ -462,7 +489,7 @@ void pqnn_index(params* input) {
 	int i, dStar;
 	// TODO: Gestire liberazione della memoria.
 	if(input->exaustive==1){
-		input->pq = alloc_matrix(input->n,input->m); 
+		input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
 		dStar=input->d/input->m;
 		for(i=0; i<input->m; i++){
 			kmeans(input, i*dStar, (i+1)*dStar);
@@ -492,13 +519,13 @@ void pqnn_search(params* input) {
 	int i, j;
 	if(input->exaustive==1){
 		//ricerca esaustiva
-		input->query_pq=alloc_matrix(input->nq, input->m);
+		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
 		for(i=0; i<input->nq; i++){
 			for(j=0; j<input->m; j++){
-				input->query_pq[i*input->nq+j]=calcolaPQ(input, QUERYSET, i, i*input->m, (i+1)*input->m);
+				input->query_pq[i*input->nq+j]=calcolaPQ(input, i, i*input->m, (i+1)*input->m);
 			}
 		}
-		input->ANN=alloc_matrix(input->nq, input->knn);
+		input->ANN=(int*)_mm_malloc(input->nq*input->knn*sizeof(int),16);
 		for(i=0; i<input->nq; i++){
 			calcolaNN(input, i);
 		}

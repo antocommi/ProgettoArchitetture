@@ -315,7 +315,6 @@ double dist(params* input, MATRIX set, int punto1, int punto2, int start, int en
 		}
 	}
 }
-//le 2 funzioni dist sono ancora da controllare
 double dist(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	double sum=0;

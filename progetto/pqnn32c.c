@@ -86,6 +86,7 @@ typedef struct {
 	MATRIX query_pq;
 	MATRIX codebook;
 	MATRIX distanze_simmetriche;
+	int nDist;
 	MATRIX distanze_asimmetriche;
 	// ...
 	// ...
@@ -307,9 +308,9 @@ double dist(params* input, MATRIX set, int punto1, int punto2, int start, int en
 			c1=set[punto1*input->m+(start/input->m)];
 			c2=input->pq[punto2*input->m+(start/input->m)];
 			if(c1<c2){
-				return input->distanze_simmetriche[calcolaIndice(c2, c1)];
+				return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c2, c1)];
 			}else{
-				return input->distanze_simmetriche[calcolaIndice(c1, c2)];
+				return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c1, c2)];
 			}
 		}
 	}
@@ -406,13 +407,17 @@ void kmeans(params* input){
 }
 
 void creaMatricedistanze(params* input){
+	int i, j, k;
 	MATRIX distanze_simmetriche;
-	distanze_simmetriche = (double*) _mm_malloc(input->k*(input->k+1)/2*sizeof(double*), 16);
+	input->nDist=input->k*(input->k+1)/2;
+	distanze_simmetriche = alloc_matrix(input->m, input->nDist);
 	if(distanze_simmetriche==NULL) exit(-1);
-	for(int i=1; i<input->k; i++){
-		for(int j=0; j<i; j++){
-			distanze_simmetriche[calcolaIndice(i, j)] = dist_simmetrica(input, i, j, start, end);
-			// verificare se qui va usata la distsnza simmetrica o no
+	for(k=0; k<input->m; k++){
+		for(int i=1; i<input->k; i++){
+			for(int j=0; j<i; j++){
+				distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)] = dist_simmetrica(input, i, j, k*input->m, (k+1)*input->m);
+				// verificare se qui va usata la distanza simmetrica o no
+			}
 		}
 	}
 	input->distanze_simmetriche=distanze_simmetriche;
@@ -435,9 +440,15 @@ void bubbleSort(int* arr, int* arr2, int n){
 void calcolaNN(params* input, int query){
 	int i;
 	VECTOR distanze=alloc_matrix(input->n, 1);
+	MATRIX set;
+	if(input->symmetric==0){
+		set=input->qs;
+	}else{
+		set=input->query_pq;
+	}
 	int* d2=(int*) _mm_malloc(input->n*sizeof(int),16);
 	for(i=0; i<input->n; i++){
-		distanze[i]=dist(input, input->qs, query, i);
+		distanze[i]=dist(input, set, query, i);
 		d2[i]=i;
 	}
 	bubbleSort(distanze, d2, input->n);

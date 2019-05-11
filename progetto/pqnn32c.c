@@ -102,8 +102,7 @@ typedef struct {
 
 	//temporaneo
 	//Serve per gestire liste a dimensione sconosciuta. 
-	entry next;
-	entry prev; //potrebbe non servire
+	struct entry * next;
 } entry;
 
 /*
@@ -483,7 +482,8 @@ void calcolaNN(params* input, int query){
 }
 
 void inizializza_learning_set(params* input){
-	//to do
+	//TODO: 
+	//AL momento sceglie i primi nr come elementi del learning set. 
 }
 
 void inizializzaSecLiv(params* input){
@@ -501,6 +501,67 @@ void add (entry* e,int i,params* input){
 		e->next=vett[i].next;
 		vett[i].next=e;//TODO:da controllare
 
+	}
+}
+
+double dist_coarse_and_residual(params* input, int qc, int y){
+	// qc 		: indice del quantizzatore grossolano nel codebook in input
+	// y	: puntatore al vettore residuo pari a r(y)=y-qc(y)
+	//	
+	//	<-------------------------------------------------------------->
+	//	
+	//	return -> distanza euclidea tra qc e residual, entrambi vettori a d coordinate
+	int i; 
+	double sum=0; //somma parziale
+	for(i=0; i<input->m; i++){
+		sum+=pow(input->codebook[qc*input->d+i]-input->ds[y*input->d+i], 2);
+	}
+	return sum;
+
+
+}
+
+int qc_index(params* input, int y){
+	// 
+	// 
+	// 
+	// <--------------------------------------------------->
+	// 
+	// out	    : indice del quantizzatore grossolano calcolato
+	// 
+	// 
+	// 	
+	int i_min=-1; 
+	double min=1.79E+308,nuova_distanza;//da modificare
+	for(int i=0;i<input->kc;i++){
+		nuova_distanza = dist_coarse_and_residual(input,i,y);
+		if(nuova_distanza<min){
+			i_min = i;
+			min = nuova_distanza;
+		}
+	}
+	return i_min;
+}
+
+double* compute_residual(params* input, int qc_i, int y){
+	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
+	// y 	: indice del punto y appartenente al dataset ds in input
+	//
+	// -----------------------------------------
+	// ritorna un puntatore al residuo r(y)
+
+	double* res = _mm_malloc(input->d*sizeof(double),16);
+	for(int i=0; i<input->d;i++)
+		res[i]=input->ds[y*input->d+i] - input->codebook[qc_i*input->d+i]; // r(y) = y - qc(y)
+	return input;
+}
+
+void aggiungi_residui(params* input){
+	int qc_i;
+	double* ry;
+	for(int y=0;y<input->nr;y++){
+		qc_i = qc_index(input,y);
+		y = compute_residual(input,qc_i,y);
 	}
 }
 
@@ -529,6 +590,7 @@ void pqnn_index(params* input) {
 		inizializza_learning_set(input);//selezionati i primi nr del dataset
 		kmeans(input, 0, input->d, input->kc);//calcolo i grossolani
 		inizializzaSecLiv(input);
+		aggiungi_residui(input);
 	}
     
     //pqnn32_index(input); // Chiamata funzione assembly

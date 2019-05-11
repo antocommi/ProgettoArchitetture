@@ -487,18 +487,20 @@ void inizializza_learning_set(params* input){
 }
 
 void inizializzaSecLiv(params* input){
-	entry* vett;
 	input->v = _mm_malloc(sizeof(entry)*input->kc,16);
 	if(input->v==NULL) return;
-	vett = input->v;
-	for(int i=0;i<input->kc;i++){
-		printf("%p",vett[i].next);
-	}	
 }
 
-void add (entry e,int i,params* input){
-	if(input->v==NULL){
-		return;
+void add (entry* e,int i,params* input){
+	entry* vett;
+	vett=input->v;
+	if(vett[i].next==NULL){
+		vett[i].next=e;
+	}
+	else{
+		e->next=vett[i].next;
+		vett[i].next=e;//TODO:da controllare
+
 	}
 }
 

@@ -105,13 +105,13 @@ typedef struct {
 } params;
 
 //Entry della s.d. multilivello
-typedef struct {
+typedef struct entry{
 	int index;
 	VECTOR q;
 	//temporaneo
 	//Serve per gestire liste a dimensione sconosciuta. 
 	struct entry * next;
-} entry;
+};
 
 /*
  * 
@@ -608,23 +608,24 @@ void inizializza_learning_set(params* input){
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
 void inizializzaSecLiv(params* input){
-	input->v = _mm_malloc(sizeof(entry)*input->kc,16);
+	input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
 	if(input->v==NULL) return;
-	for(int i = 0;i<input->nr;i++){
+	// for(int i = 0;i<input->nr;i++){
 
-	}
+	// }
 }
 
-void add (entry * e, int i, params* input){
-	// struct entry vett;
-	// vett=input->v;
-	// if(input->v[i]->next==NULL){
-	// 	input->v[i]->next= * e;
-	// }
-	// else{
-	// 	e->next = &(vett[i]->next);
-	// 	vett[i]->next=e;//TODO:da controllare
-	// }
+void add (struct entry * new, int i, params* input){
+	struct entry* vett;
+	vett=input->v;
+	if(vett[i].next== NULL){
+		vett[i].next= new;
+		new->next=NULL;
+	}
+	else{
+		new->next = vett[i].next;
+		vett[i].next= new;
+	}
 }
 
 double dist_coarse_and_residual(params* input, int qc, int y){

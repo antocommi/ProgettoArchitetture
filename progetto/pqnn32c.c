@@ -105,7 +105,7 @@ typedef struct {
 } params;
 
 //Entry della s.d. multilivello
-typedef struct entry{
+struct entry{
 	int index;
 	VECTOR q;
 	//temporaneo
@@ -605,16 +605,22 @@ void inizializza_learning_set(params* input){
 
 }
 
-// Inizializza il vettore di entry v in modo tale da avere una lista di liste
-// 
-void inizializzaSecLiv(params* input){
-	input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
-	if(input->v==NULL) return;
-	// for(int i = 0;i<input->nr;i++){
-
-	// }
+// Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
+VECTOR qp_of_r(params* input, int r){
+	int qp_index, dStar;
+	double* res;
+	dStar = input->d/input->m;
+	res = _mm_malloc(sizeof(double)*input->d, 16);
+	for(int i=0;i<input->m;i++){
+		qp_index = input->pq[r*input->d+i];
+		for(int j=0;j<dStar;j++){
+			res[i*input->m+j] = input->residual_codebook[qp_index*input->d+i*dStar+j];
+		}
+	}
+	return res;
 }
 
+// Aggiunge a input.v la entry new alla posizione i-esima
 void add (struct entry * new, int i, params* input){
 	struct entry* vett;
 	vett=input->v;
@@ -624,7 +630,24 @@ void add (struct entry * new, int i, params* input){
 	}
 	else{
 		new->next = vett[i].next;
-		vett[i].next= new;
+		vett[i].next = new;
+	}
+}
+
+// Inizializza il vettore di entry v in modo tale da avere una lista di liste
+// 
+void inizializzaSecLiv(params* input){
+	int qc_i;
+	struct entry* new;
+	input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
+	if(input->v==NULL) return;
+	for(int y= 0;y<input->nr;y++){
+		qc_i = input->qc_indexes[y];
+		new = _mm_malloc(sizeof(struct entry),16);
+		if(new==NULL) exit(-1);
+		new->index=y;
+		new->q = qp_of_r(input, y);
+		add(new,qc_i,input);
 	}
 }
 
@@ -645,21 +668,9 @@ double dist_coarse_and_residual(params* input, int qc, int y){
 
 }
 
-// Calcola il centroide grossolano associato ad y se non è stato calcolato in precedenza.
-int qc_index(params* input, int y){
-	// if(input->qc_indexes[y]!=-1) 
+// Calcola il centroide grossolano associato ad y.
+int qc_index(params* input, int y){ 
 	return input->qc_indexes[y];
-	// int i_min=-1; 
-	// double min=1.79E+308,nuova_distanza;//da modificare
-	// for(int i=0;i<input->kc;i++){
-	// 	nuova_distanza = dist_coarse_and_residual(input,i,y);
-	// 	if(nuova_distanza<min){
-	// 		i_min = i;
-	// 		min = nuova_distanza;
-	// 	}
-	// }
-	// input->qc_indexes[y] = i_min;
-	// return i_min;
 }
 
 void compute_residual(params* input, double* res, int qc_i, int y){
@@ -698,6 +709,16 @@ void pqnn_index(params* input) {
 		input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16);
 		for(i=0; i<input->m; i++){
 			kmeans(input, i*dStar, (i+1)*dStar, input->k);
+		}
+		
+		//stampa dei centroidi 
+		if(input->display==1){
+			for(int i=0;i<input->k/20;i++){
+				for(int j=0;i<input->d;j++){
+					printf("%.2f ", input->codebook[i*input->d+j]);
+				}
+				printf("\n");
+			}
 		}
 		// controllare caso in cui d non sia multiplo di m
 		if(input->symmetric==1){

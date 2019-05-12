@@ -98,7 +98,7 @@ typedef struct {
 	MATRIX residual_codebook;
 
 	// Learning set nella ricerca non esastiva. Contiene i residui dei primi nr vettori
-	MATRIX learning_set;
+	MATRIX residual_set;
 
 	// Lista di liste (secondo livello dell'inverted index)
 	struct entry* v; 
@@ -362,6 +362,7 @@ int calcolaQueryPQ(params* input, int x, int start, int end){
 	return imin;
 }
 
+//ritorna indice del centroide c più vicino ad x.
 int PQ_non_esaustiva(params* input, int x, int start, int end){
 	// estremi start incluso ed end escluso
     //
@@ -404,7 +405,7 @@ void kmeans_from_learning_set(params* input, int start, int end, int n_centroidi
     for(i=0; i<n_centroidi; i++){
 		k=rand()%input->nr;
 		for(j=start; j<end; j++){
-			residual_codebook[i*input->d+j]=input->ds[k*input->d+j];
+			residual_codebook[i*input->d+j]=input->residual_set[k*input->d+j];
 		}
     }
 
@@ -419,7 +420,7 @@ void kmeans_from_learning_set(params* input, int start, int end, int n_centroidi
 	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
 		for(i=0; i<n_centroidi; i++){
 			count=0; 
-			
+			memset(&residual_codebook[i*input->d], 0, end-start);
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
@@ -428,7 +429,7 @@ void kmeans_from_learning_set(params* input, int start, int end, int n_centroidi
 				if(input->pq[j*input->m+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					for(k=start; k<end; k++){
-						residual_codebook[i*input->d+k]+=input->ds[j*input->d+k];
+						residual_codebook[i*input->d+k]+=input->residual_set[j*input->d+k];
 					}
 				}
 			}
@@ -595,33 +596,34 @@ void calcolaNN(params* input, int query){
 void inizializza_learning_set(params* input){
 	//TODO: 
 	//AL momento sceglie i primi nr come elementi del learning set. 
-	input->learning_set = _mm_malloc(sizeof(double)*input->nr*input->d, 16);
-	if(input->learning_set==NULL) exit(-1);
-
+	input->residual_set = _mm_malloc(sizeof(double)*input->nr*input->d, 16);
+	if(input->residual_set==NULL) exit(-1);
+	
 	//inizializza vettore
 	input->qc_indexes = _mm_malloc(sizeof(unsigned char)*input->nr,16);
 	if(input->qc_indexes==NULL) exit(-1);
-	
-	//inizializza a valori non significativi
-	memset(input->qc_indexes,-1,input->nr);
 
 }
 
+// Inizializza il vettore di entry v in modo tale da avere una lista di liste
+// 
 void inizializzaSecLiv(params* input){
 	input->v = _mm_malloc(sizeof(entry)*input->kc,16);
 	if(input->v==NULL) return;
+	for(int i = 0;i<input->nr;i++){
+
+	}
 }
 
-void add (entry* e,int i,params* input){
-	struct entry * vett;
-	vett=input->v;
-	// if(vett[i].next==NULL){
-	// 	vett[i].next=e;
+void add (entry * e, int i, params* input){
+	// struct entry vett;
+	// vett=input->v;
+	// if(input->v[i]->next==NULL){
+	// 	input->v[i]->next= * e;
 	// }
 	// else{
-	// 	e->next=vett[i].next;
-	// 	vett[i].next=e;//TODO:da controllare
-
+	// 	e->next = &(vett[i]->next);
+	// 	vett[i]->next=e;//TODO:da controllare
 	// }
 }
 
@@ -644,19 +646,19 @@ double dist_coarse_and_residual(params* input, int qc, int y){
 
 // Calcola il centroide grossolano associato ad y se non è stato calcolato in precedenza.
 int qc_index(params* input, int y){
-	if(input->qc_indexes[y]!=-1) 
-		return input->qc_indexes[y];
-	int i_min=-1; 
-	double min=1.79E+308,nuova_distanza;//da modificare
-	for(int i=0;i<input->kc;i++){
-		nuova_distanza = dist_coarse_and_residual(input,i,y);
-		if(nuova_distanza<min){
-			i_min = i;
-			min = nuova_distanza;
-		}
-	}
-	input->qc_indexes[y] = i_min;
-	return i_min;
+	// if(input->qc_indexes[y]!=-1) 
+	return input->qc_indexes[y];
+	// int i_min=-1; 
+	// double min=1.79E+308,nuova_distanza;//da modificare
+	// for(int i=0;i<input->kc;i++){
+	// 	nuova_distanza = dist_coarse_and_residual(input,i,y);
+	// 	if(nuova_distanza<min){
+	// 		i_min = i;
+	// 		min = nuova_distanza;
+	// 	}
+	// }
+	// input->qc_indexes[y] = i_min;
+	// return i_min;
 }
 
 void compute_residual(params* input, double* res, int qc_i, int y){
@@ -669,19 +671,19 @@ void compute_residual(params* input, double* res, int qc_i, int y){
 		res[i]=input->ds[y*input->d+i] - input->codebook[qc_i*input->d+i]; // r(y) = y - qc(y)
 }
 
+// Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
 	int qc_i; 
 	double* ry; // puntatore al residuo corrente nel residual_codebook
 	//ry = _mm_malloc(input->d*sizeof(double),16);
 	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
 		qc_i = qc_index(input,y); // Calcola il suo quantizzatore grossolano qc(y)
-		ry = &input->learning_set[y*input->nr];
+		ry = &input->residual_set[y*input->nr];
 		compute_residual(input,ry,qc_i,y); // calcolo del residuo r(y) = y - qc(y)
 	}
 
 	
 }
-
 
 /*
  *	pqnn_index
@@ -690,9 +692,9 @@ void calcola_residui(params* input){
 void pqnn_index(params* input) {
 	int i, dStar;
 	// TODO: Gestire liberazione della memoria.
+	dStar=input->d/input->m;
 	if(input->exaustive==1){
-		input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
-		dStar=input->d/input->m;
+		input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16);
 		for(i=0; i<input->m; i++){
 			kmeans(input, i*dStar, (i+1)*dStar, input->k);
 		}
@@ -706,9 +708,13 @@ void pqnn_index(params* input) {
 		// RICERCA NON ESAUSTIVA
 		//
 		inizializza_learning_set(input);//selezionati i primi nr del dataset
-		kmeans(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati in codebook
-		inizializzaSecLiv(input);
+		kmeans(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
 		calcola_residui(input);
+		//calcolo dei quantizzatori prodotto
+		for(int i=0;i<input->m;i++){
+			kmeans_from_learning_set(input, i*dStar, (i+1)*dStar, input->k);
+		}
+		inizializzaSecLiv(input);
 
 	}
     

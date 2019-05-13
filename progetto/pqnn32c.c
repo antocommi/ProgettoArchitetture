@@ -387,7 +387,6 @@ void kmeans_from_learning_set(params* input, int start, int end, int n_centroidi
 	// TODO
 	// estremi start incluso ed end escluso
 
-	// IL LEARNING SET È FATTO DAI RESIDUI!!
 	int i, j, k, t;
 	int count;
 	float fob1, fob2;
@@ -703,6 +702,7 @@ void calcola_residui(params* input){
  */
 void pqnn_index(params* input) {
 	int i, dStar;
+	float* tmp;
 	// TODO: Gestire liberazione della memoria.
 	dStar=input->d/input->m;
 	if(input->exaustive==1){
@@ -730,7 +730,10 @@ void pqnn_index(params* input) {
 		// RICERCA NON ESAUSTIVA
 		//
 		inizializza_learning_set(input);//selezionati i primi nr del dataset
-		kmeans(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
+		tmp = input->residual_set;
+		input->residual_set=input->qs;
+		kmeans_from_learning_set(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
+		input->residual_set=tmp; //scambio di puntatori per calcolare i centroidi grossolani dal learning set
 		calcola_residui(input);
 		//calcolo dei quantizzatori prodotto
 		for(int i=0;i<input->m;i++){

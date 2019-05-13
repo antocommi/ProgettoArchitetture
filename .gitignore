@@ -8,3 +8,6 @@ progetto/pqnn32c.o
 .vscode/ipch/a199ae427399f8b8/pqnn32c.ipch
 progetto/pqnn32c.o
 .vscode/ipch/a199ae427399f8b8/pqnn32c.ipch
+execute.sh
+.project
+progetto/pqnn32c.o

@@ -47,8 +47,8 @@
 #include <xmmintrin.h>
 #include <limits.h>
 
-#define	MATRIX		double*
-#define	VECTOR		double*
+#define	MATRIX		float*
+#define	VECTOR		float*
 
 #define DATASET		0
 #define QUERYSET	1
@@ -121,7 +121,7 @@ void free_block(void* p) {
 
 
 MATRIX alloc_matrix(int rows, int cols) {
-	return (MATRIX) get_block(sizeof(double),rows*cols);
+	return (MATRIX) get_block(sizeof(float),rows*cols);
 }
 
 
@@ -164,7 +164,7 @@ MATRIX load_data(char* filename, int *n, int *d) {
 	status = fread(&rows, sizeof(int), 1, fp);
 		
 	MATRIX data = alloc_matrix(rows,cols);
-	status = fread(data, sizeof(double), rows*cols, fp);
+	status = fread(data, sizeof(float), rows*cols, fp);
 	fclose(fp);
 	
 	*n = rows;
@@ -212,7 +212,7 @@ int dist_eI(params* input,int punto1, int punto2, int start, int end){
 
 int dist_e(params* input,int punto1, int punto2){
 	int i;
-	double sum=0;
+	float sum=0;
 	for(i=0; i<input->m; i++){
 		sum+=pow(dist_eI(input, punto1, punto2, i*input->m, (i+1)*input->m), 2);
 	}
@@ -226,9 +226,9 @@ int calcolaPQ(params* input, int x, int start, int end){
     //	OUTPUT: indice del centroide c più vicino ad x. 
     //
     int i;
-    double min=1.79E+308;
+    float min=1.79E+308;
     int imin=-1;
-    double temp;
+    float temp;
     for(i=0; i<input->k; i++){
         temp=dist_eI(input, x, i, start, end);
         if(temp<min){ 
@@ -239,49 +239,49 @@ int calcolaPQ(params* input, int x, int start, int end){
     return imin;
 }
 
-double dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end){
+float dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
-	double ret=0;
+	float ret=0;
 	for(i=start; i<end; i++){
 		ret += pow( input->codebook[centroide1*input->d+i] - input->codebook[centroide2*input->d+i] , 2);
 	}
 	return ret;
 }
 
-double dist_simmetrica(params* input, int centroide1, int centroide2){
+float dist_simmetrica(params* input, int centroide1, int centroide2){
 	int i;
-	double sum=0;
+	float sum=0;
 	for(i=0; i<input->m; i++){
 		sum+=pow(dist_simmetricaI(input, centroide1, centroide2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
 
-double dist_asimmetricaI(params* input, MATRIX set, int punto1, int centroide2, int start, int end){
+float dist_asimmetricaI(params* input, MATRIX set, int punto1, int centroide2, int start, int end){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
 	// punto1 può essere del dataset o del query set, quindi in set si passa
 	// la constante DATASET o QUERYSET
 	int i, c;
-	double ret=0;
+	float ret=0;
 	for(i=start; i<end; i++){
 		ret += pow( set[punto1*input->d+i] - input->codebook[centroide2*input->d+i] , 2);
 	}
 	return ret;
 }
 
-double dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
+float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 	int i;
-	double sum=0;
+	float sum=0;
 	for(i=0; i<input->m; i++){
 		sum+=pow(dist_asimmetricaI(input, set, punto1, input->pq[punto2], i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
 
-double distI(params* input, int* quantizer, int punto1, int centroide2, int start, int end){
+float distI(params* input, int* quantizer, int punto1, int centroide2, int start, int end){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
@@ -292,17 +292,25 @@ double distI(params* input, int* quantizer, int punto1, int centroide2, int star
 	if(c1==centroide2){
 		return 0;
 	}else{
+		//row major order-------------------------------------------
+//		if(c1<centroide2){
+//			return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(centroide2, c1)];
+//		}else{
+//			return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c1, centroide2)];
+//		}
+		//column major order-------------------------------------------
 		if(c1<centroide2){
-			return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(centroide2, c1)];
+			return input->distanze_simmetriche[start/input->m+calcolaIndice(centroide2, c1)*input->m];
 		}else{
-			return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c1, centroide2)];
+			return input->distanze_simmetriche[start/input->m+calcolaIndice(c1, centroide2)*input->m];
 		}
+		//-------------------------------------------
 	}
 }
 
-double dist(params* input, int* quantizer, int punto1, int punto2){
+float dist(params* input, int* quantizer, int punto1, int punto2){
 	int i;
-	double sum=0;
+	float sum=0;
 	for(i=0; i<input->m; i++){
 		sum+=pow(distI(input, quantizer, punto1, input->pq[punto2], i*input->m, (i+1)*input->m), 2);
 	}
@@ -316,9 +324,9 @@ int calcolaQueryPQ(params* input, int x, int start, int end){
     //	OUTPUT: indice del centroide c più vicino ad x. 
     //
     int i;
-    double min=1.79E+308;
+    float min=1.79E+308;
     int imin=-1;
-    double temp;
+    float temp;
 	//printf("breakpoint PQ\n");
 	// valore 2 messo temporaneamente, inpossibile calcolare la distanza simmetrica per calcolare il centroide
 	if(input->symmetric==2){
@@ -346,9 +354,9 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	// estremi start incluso ed end escluso
 	int i, j, k, t;
 	int count;
-	double fob1, fob2;
-	double* codebook;
-	double* min;
+	float fob1, fob2;
+	MATRIX codebook;
+	VECTOR min;
 
 	codebook = alloc_matrix(n_centroidi, input->n); // row-major-order?
     if(codebook==NULL) exit(-1);
@@ -369,11 +377,11 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 //		input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
 //	}
 	//--------------------------------------------------------
-	min=(double*) alloc_matrix(input->n, 1);
+	min=(VECTOR) alloc_matrix(input->n, 1);
 	for(i=0; i<input->n; i++){
 		min[i]=1.79E+308;
 	}
-	double temp;
+	float temp;
 	for(i=0; i<input->n; i++){
 		for(j=0; j<input->k; j++){
 			temp=dist_eI(input, i, j, start, end);
@@ -426,7 +434,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		for(i=0; i<input->n; i++){
 			min[i]=1.79E+308;
 		}
-		double temp;
+		float temp;
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->k; j++){
 				temp=dist_eI(input, i, j, start, end);
@@ -459,20 +467,31 @@ void creaMatricedistanze(params* input){
 	input->nDist=input->k*(input->k+1)/2;
 	distanze_simmetriche = alloc_matrix(input->m, input->nDist);
 	if(distanze_simmetriche==NULL) exit(-1);
-	for(k=0; k<input->m; k++){
-		for(i=1; i<input->k; i++){
-			for(j=0; j<i; j++){
-				distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
+	//row major order---------------------------------------------------------
+//	for(k=0; k<input->m; k++){
+//		for(i=1; i<input->k; i++){
+//			for(j=0; j<i; j++){
+//				distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
+//				// verificare se qui va usata la distanza simmetrica o no
+//			}
+//		}
+//	}
+	//column major order---------------------------------------------------------
+	for(i=1; i<input->k; i++){
+		for(j=0; j<i; j++){
+			for(k=0; k<input->m; k++){
+				distanze_simmetriche[k+calcolaIndice(i, j)*input->m] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
 				// verificare se qui va usata la distanza simmetrica o no
 			}
 		}
 	}
+	//---------------------------------------------------------
 	input->distanze_simmetriche=distanze_simmetriche;
 }
 
-void bubbleSort(double* arr, int* arr2, int n, int nit){ 
+void bubbleSort(VECTOR arr, int* arr2, int n, int nit){ 
    int i, j, t1;
-   double t2; 
+   float t2; 
    for (i = 0; i < nit; i++)
        for (j = n-2; j > i-1; j--)  
            if (arr[j] > arr[j+1]){
@@ -488,7 +507,7 @@ void bubbleSort(double* arr, int* arr2, int n, int nit){
 void calcolaNN(params* input, int query){
 	int i, j, k;
 	VECTOR distanze=alloc_matrix(input->n, 1);
-	double* m;
+	VECTOR m;
 	int* ind;
 
 	if(input->knn<1050){
@@ -502,7 +521,7 @@ void calcolaNN(params* input, int query){
 			}
 		}
 
-		m=(double*) _mm_malloc(input->knn*sizeof(double),16);
+		m=(VECTOR) _mm_malloc(input->knn*sizeof(float),16);
 		for(i=0; i<input->knn; i++){
 			m[i]=1.79E+308;
 			input->ANN[query*input->knn+i]=-1;
@@ -511,13 +530,14 @@ void calcolaNN(params* input, int query){
 			for(j=0; j<input->knn; j++){
 				if(distanze[i]<m[j]){
 					for(k=input->knn-1; k>j; k--){
-						if(m[k+1]!=-1){
+						if(m[k-1]!=-1){
 							input->ANN[query*input->knn+k]=input->ANN[query*input->knn+k-1];
 							m[k]=m[k-1];
 						}
 					}
 					input->ANN[query*input->knn+j]=i;
 					m[j]=distanze[i];
+					printf("%d %d", i, j);
 					break;
 				}
 			}
@@ -591,10 +611,10 @@ void pqnn_search(params* input) {
 				}
 			}
 		}
-		_mm_free(input->codebook);
 		for(i=0; i<input->nq; i++){
 			calcolaNN(input, i);
 		}
+		_mm_free(input->codebook);
 		_mm_free(input->pq);
 		if(input->symmetric==1){
 			_mm_free(input->distanze_simmetriche);

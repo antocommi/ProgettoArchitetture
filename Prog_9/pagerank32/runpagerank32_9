@@ -1,0 +1,22 @@
+nasm -f elf32 prod.nasm
+nasm -f elf32 sseutils.nasm
+nasm -f elf32 differenceNormd.nasm
+nasm -f elf32 normalizzazione.nasm
+nasm -f elf32 assegnaD.nasm
+nasm -f elf32 prodSparseD.nasm
+nasm -f elf32 completaSolD.nasm
+nasm -f elf32 assegnaSoluzioneD.nasm
+nasm -f elf32 completaSolF.nasm
+nasm -f elf32 differenceNormf.nasm
+nasm -f elf32 assegnaSoluzioneF.nasm
+nasm -f elf32 prodSparseF.nasm
+nasm -f elf32 assegnaF.nasm
+nasm -f elf32 powerExtrd.nasm
+nasm -f elf32 powerExtrf.nasm
+nasm -f elf32 sommad.nasm
+nasm -f elf32 sommaf.nasm
+nasm -f elf32 initOutF.nasm
+nasm -f elf32 initOutD.nasm
+nasm -f elf32 initCsc.nasm
+gcc -O0 -m32 -msse prod.o sseutils.o differenceNormd.o normalizzazione.o assegnaD.o prodSparseD.o completaSolD.o assegnaSoluzioneD.o completaSolF.o differenceNormf.o prodSparseF.o assegnaSoluzioneF.o assegnaF.o powerExtrd.o powerExtrf.o sommad.o sommaf.o initOutF.o initOutD.o initCsc.o pagerank32c_9.c -o pagerank32c_9
+./pagerank32c_9 test1 -d -sparse -double -nopt

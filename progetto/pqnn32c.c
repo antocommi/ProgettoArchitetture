@@ -333,7 +333,7 @@ float dist(params* input, int* quantizer, int punto1, int punto2){
 }
 
 int calcolaQueryPQ(params* input, int x, int start, int end){
-	// estremi start incluso ed end escluso
+	//  Estremi start incluso ed end escluso
     //
     //	INPUT: 	Punto x di dimensione d.
     //	OUTPUT: indice del centroide c più vicino ad x. 
@@ -362,10 +362,10 @@ int calcolaQueryPQ(params* input, int x, int start, int end){
 	return imin;
 }
 
-//ritorna indice del centroide c più vicino ad x.
-int PQ_non_esaustiva(params* input, int x, int start, int end){
-	// estremi start incluso ed end escluso
-    //
+// ritorna indice del centroide c più vicino ad x.
+int PQ_non_esaustiva(params* input, int x, int start, int end, int n_centroidi){
+	// 	Estremi start incluso ed end escluso
+    //	
     //	INPUT: 	Punto x di dimensione d.
     //	OUTPUT: indice del centroide c più vicino ad x. 
     //
@@ -373,29 +373,33 @@ int PQ_non_esaustiva(params* input, int x, int start, int end){
     float min=1.79E+308;
     int imin=-1;
     float temp;
-    for(i=0; i<input->k; i++){
+    for(i=0; i<n_centroidi; i++){
         temp=dist_eI(input, x, i, start, end);
         if(temp<min){ 
             min=temp;
             imin=i;
         }
     }
+	
     return imin;
 }
 
-void kmeans_from_learning_set(params* input, int start, int end, int n_centroidi){
-	// TODO
+// source : Rappresenta la sorgente da cui calcolare il codebook (prodotto o vettoriale)
+//			lo spazio deve essere già allocato a priori. 
+// dest   : Rappresenta la destinazione dove dovranno essere inseriti i centroidi calcolati
+void kmeans_from(params* input, int start, int end, int n_centroidi, float* source, float* dest, int dest_columns){
+	
 	// estremi start incluso ed end escluso
 
 	int i, j, k, t;
 	int count;
 	float fob1, fob2;
-	float* residual_codebook;
 
-	residual_codebook = alloc_matrix(n_centroidi, input->nr); // row-major-order?
-    if(residual_codebook==NULL) exit(-1);
-	memset(residual_codebook,0,n_centroidi*input->nr); //azzera tutto il codebook
+	// residual_codebook = alloc_matrix(n_centroidi, input->nr); // row-major-order?
+    // if(residual_codebook==NULL) exit(-1);
+	// memset(residual_codebook,0,n_centroidi*input->nr); //azzera tutto il codebook
 
+	
 	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
@@ -404,31 +408,35 @@ void kmeans_from_learning_set(params* input, int start, int end, int n_centroidi
     for(i=0; i<n_centroidi; i++){
 		k=rand()%input->nr;
 		for(j=start; j<end; j++){
-			residual_codebook[i*input->d+j]=input->residual_set[k*input->d+j];
+			dest[i*dest_columns+j]=source[k*input->d+j];
 		}
     }
+	printf("--4--\n");
 
 	// Assegnazione dei vettori ai centroidi casuali individuati
-
-    for(i=0; i<input->n; i++){
-        input->pq[i*input->m+(start/input->m)]=PQ_non_esaustiva(input, i, start, end);
+    for(i=0; i<input->nr; i++){
+       dest[i*+(start/input->m)]=PQ_non_esaustiva(input, i, start, end, n_centroidi);
     }
-
+	printf("--5--\n");
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
 		for(i=0; i<n_centroidi; i++){
 			count=0; 
-			memset(&residual_codebook[i*input->d], 0, end-start);
+			memset(&dest[i*dest_columns+start], 0, end-start);
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
-			
-			for(j=0; j<input->n; j++){
-				if(input->pq[j*input->m+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+			printf("--7--\n");
+			for(j=0; j<input->nr; j++){
+				printf("--8--\n");
+				// pq[i][j]: centroide i-esimo del j-esimo sottogruppo
+				if(input->pq[i*input->d+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+					printf("--9--\n");
 					count++;
 					for(k=start; k<end; k++){
-						residual_codebook[i*input->d+k]+=input->residual_set[j*input->d+k];
+						dest[i*input->d+k]+=sorg[j*input->d+k];
+						printf("--11--\n");
 					}
 				}
 			}
@@ -437,7 +445,8 @@ void kmeans_from_learning_set(params* input, int start, int end, int n_centroidi
 				if(count!=0){ 
 					// Alcune partizioni potrebbero essere vuote
 					// Specie se ci sono degli outliers
-					residual_codebook[i*input->d+j]=residual_codebook[i*input->d+j]/count;
+					printf("--12--\n");
+					dest[i*input->d+j]=dest[i*input->d+j]/count;
 				}
 			}
 			
@@ -446,19 +455,18 @@ void kmeans_from_learning_set(params* input, int start, int end, int n_centroidi
 			//
 		}
 		
-		for(i=0; i<input->n; i++){
-			input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
+		for(i=0; i<input->nr; i++){
+			dest[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
 		}
 		
 		fob1=fob2;
 		fob2=0;
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
-		for(i=0; i<input->n; i++){
+		for(i=0; i<input->nr; i++){
 			fob2+=pow(dist_eI(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
-	input->residual_codebook=residual_codebook;
 }
 
 void kmeans(params* input, int start, int end, int n_centroidi){
@@ -729,15 +737,19 @@ void pqnn_index(params* input) {
 		//
 		// RICERCA NON ESAUSTIVA
 		//
+		printf("--1--\n");
 		inizializza_learning_set(input);//selezionati i primi nr del dataset
+		input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
+		printf("--2--\n");
 		tmp = input->residual_set;
 		input->residual_set=input->qs;
-		kmeans_from_learning_set(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
+		kmeans_from(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
 		input->residual_set=tmp; //scambio di puntatori per calcolare i centroidi grossolani dal learning set
+		
 		calcola_residui(input);
 		//calcolo dei quantizzatori prodotto
 		for(int i=0;i<input->m;i++){
-			kmeans_from_learning_set(input, i*dStar, (i+1)*dStar, input->k);
+			kmeans_from(input, i*dStar, (i+1)*dStar, input->k);
 		}
 		inizializzaSecLiv(input);
 

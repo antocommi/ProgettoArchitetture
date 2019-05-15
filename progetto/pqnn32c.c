@@ -435,7 +435,7 @@ void kmeans_from(params* input, int start, int end, int n_centroidi, float* sour
 					printf("--9--\n");
 					count++;
 					for(k=start; k<end; k++){
-						dest[i*input->d+k]+=sorg[j*input->d+k];
+						//dest[i*input->d+k]+=sorg[j*input->d+k];
 						printf("--11--\n");
 					}
 				}

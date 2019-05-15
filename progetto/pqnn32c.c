@@ -344,7 +344,7 @@ int calcolaQueryPQ(params* input, int x, int start, int end){
     float temp;
 	if(input->symmetric==1){
 		for(i=0; i<input->k; i++){
-			temp=distI(input, input->query_pq, x, i, start, end);
+			temp=dist_eI(input, input->query_pq, x, i, start, end);
 			if(temp<min){ 
 				min=temp;
 				imin=i;

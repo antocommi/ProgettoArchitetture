@@ -72,6 +72,25 @@ struct entry{
 	struct entry * next;
 };
 
+void* get_block(int size, int elements) { 
+	return _mm_malloc(elements*size,16); 
+}
+
+
+void free_block(void* p) { 
+	_mm_free(p);
+}
+
+
+MATRIX alloc_matrix(int rows, int cols) {
+	return (MATRIX) get_block(sizeof(float),rows*cols);
+}
+
+
+void dealloc_matrix(MATRIX mat) {
+	free_block(mat);
+}
+
 int calcolaIndice(int i, int j){
 	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
 	return i*(i-1)/2+j;

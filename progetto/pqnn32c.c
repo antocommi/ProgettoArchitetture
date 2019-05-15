@@ -703,8 +703,9 @@ void calcola_residui(params* input){
 }
 
 void pqnn_index_non_esaustiva(params* input){
-	int i;
+	int i, dstar;
 	float* tmp;
+	dStar=input->d/input->m;
 	printf("--1--\n");
 	inizializza_learning_set(input);//selezionati i primi nr del dataset
 	input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);

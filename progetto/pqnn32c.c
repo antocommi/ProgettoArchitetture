@@ -475,10 +475,6 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	int i, j, k, t;
 	int count;
 	float fob1, fob2;
-	float* codebook;
-
-	codebook = alloc_matrix(n_centroidi, input->n); // row-major-order?
-    if(codebook==NULL) exit(-1);
 	
 	//
 	// Inizializzazione del codebook
@@ -488,7 +484,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
     for(i=0; i<n_centroidi; i++){
 		k=rand()%input->n;
 		for(j=start; j<end; j++){
-			codebook[i*input->d+j]=input->ds[k*input->d+j];
+			input->codebook[i*input->d+j]=input->ds[k*input->d+j];
 		}
     }
     
@@ -502,7 +498,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		for(i=0; i<n_centroidi; i++){
 			count=0;
 			for(j=start; j<end; j++){
-				codebook[i*input->d+j]=0; // con calloc forse è più veloce. 
+				input->codebook[i*input->d+j]=0; // con calloc forse è più veloce. 
 			}
 			
 			//
@@ -513,7 +509,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 				if(input->pq[j*input->m+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					for(k=start; k<end; k++){
-						codebook[i*input->d+k]+=input->ds[j*input->d+k];
+						input->codebook[i*input->d+k]+=input->ds[j*input->d+k];
 					}
 				}
 			}
@@ -522,7 +518,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 				if(count!=0){ 
 					// Alcune partizioni potrebbero essere vuote
 					// Specie se ci sono degli outliers
-					codebook[i*input->d+j]=codebook[i*input->d+j]/count;
+					input->codebook[i*input->d+j]=input->codebook[i*input->d+j]/count;
 				}
 			}
 			
@@ -543,8 +539,6 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			fob2+=pow(dist_eI(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
-
-	input->codebook=codebook;
 }
 
 void creaMatricedistanze(params* input){
@@ -734,6 +728,8 @@ void pqnn_index_esaustiva(params* input){
 	int i, dStar;
 	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
 	dStar=input->d/input->m;
+	input->codebook = alloc_matrix(n_centroidi, input->n); // row-major-order?
+    if(codebook==NULL) exit(-1);
 	for(i=0; i<input->m; i++){
 		kmeans(input, i*dStar, (i+1)*dStar, input->k);
 	}

@@ -218,21 +218,21 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-int dist_eI(params* input,int punto1, int punto2, int start, int end){
+int dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
 	int ret=0;
 	for(i=start; i<end; i++){
-		ret += pow(input->ds[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
+		ret += pow(set[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
 	}
 	return ret;
 }
 
-int dist_e(params* input,int punto1, int punto2){
+int dist_e(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	float sum=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_eI(input, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+		sum+=pow(dist_eI(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
@@ -250,7 +250,7 @@ int calcolaPQ(params* input, int x, int start, int end){
     int imin=-1;
     float temp;
     for(i=0; i<input->k; i++){
-        temp=dist_eI(input, x, i, start, end);
+        temp=dist_eI(input, input->ds, x, i, start, end);
         if(temp<min){ 
             min=temp;
             imin=i;
@@ -344,7 +344,7 @@ int calcolaQueryPQ(params* input, int x, int start, int end){
     float temp;
 	if(input->symmetric==1){
 		for(i=0; i<input->k; i++){
-			temp=dist_eI(input, input->query_pq, x, i, start, end);
+			temp=dist_eI(input, input->qs, x, i, start, end);
 			if(temp<min){ 
 				min=temp;
 				imin=i;
@@ -374,7 +374,7 @@ int PQ_non_esaustiva(params* input, int x, int start, int end, int n_centroidi){
     int imin=-1;
     float temp;
     for(i=0; i<n_centroidi; i++){
-        temp=dist_eI(input, x, i, start, end);
+        temp=dist_eI(input, input->ds, x, i, start, end);
         if(temp<min){ 
             min=temp;
             imin=i;
@@ -465,7 +465,7 @@ void kmeans_from(params* input, int start, int end, int n_centroidi, float* sour
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->nr; i++){
-			fob2+=pow(dist_eI(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 }
@@ -536,7 +536,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			fob2+=pow(dist_eI(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 }

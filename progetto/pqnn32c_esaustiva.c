@@ -6,90 +6,14 @@
 #include <xmmintrin.h>
 #include <limits.h>
 
+#include "pqnn32c.c"
+
 #define	MATRIX		float*
 #define	VECTOR		float*
 
 #define DATASET		0
 #define QUERYSET	1
 
-
-typedef struct {
-	char* filename; //
-	MATRIX ds; // data set 
-	MATRIX qs; // query set
-	int n; // numero di punti del data set
-	int d; // numero di dimensioni del data/query set
-	int nq; // numero di punti del query set
-	int knn; // numero di ANN approssimati da restituire per ogni query
-	int m; // numero di gruppi del quantizzatore prodotto
-	int k; // numero di centroidi di ogni sotto-quantizzatore
-	int kc; // numero di centroidi del quantizzatore coarse
-	int w; // numero di centroidi del quantizzatore coarse da selezionare per la ricerca non esaustiva
-	int nr; // dimensione del campione dei residui nel caso di ricerca non esaustiva
-	float eps; // 
-	int tmin; //
-	int tmax; //
-	int exaustive; // tipo di ricerca: (0=)non esaustiva o (1=)esaustiva
-	int symmetric; // tipo di distanza: (0=)asimmetrica ADC o (1=)simmetrica SDC
-	int silent;
-	int display;
-	// nns: matrice row major order di interi a 32 bit utilizzata per memorizzare gli ANN
-	// sulla riga i-esima si trovano gli ID (a partire da 0) degli ANN della query i-esima
-	//
-	int* ANN;
-	VECTOR vq;
-	int* pq;
-	int* query_pq;
-
-	MATRIX codebook; // per E. contiene quantizzatori prodotto. Per N.E. contiene quantizzatori grossolani
-	
-	MATRIX distanze_simmetriche;
-	int nDist;
-	MATRIX distanze_asimmetriche;
-	// ---------------------------------------
-	// Strutture ad-hoc ricerca non esaustiva
-
-	// Vettore contenente alla posizione i l'indice di qc(Y_i) in codebook
-	unsigned short * qc_indexes;
-
-	// Residual product quantizators in non exhaustive search
-	// matrix type: Row-major-order
-	MATRIX residual_codebook;
-
-	// Learning set nella ricerca non esastiva. Contiene i residui dei primi nr vettori
-	MATRIX residual_set;
-
-	// Lista di liste (secondo livello dell'inverted index)
-	struct entry* v; 
-} params;
-
-//Entry della s.d. multilivello
-struct entry{
-	int index;
-	VECTOR q;
-	//temporaneo
-	//Serve per gestire liste a dimensione sconosciuta. 
-	struct entry * next;
-};
-
-void* get_block(int size, int elements) { 
-	return _mm_malloc(elements*size,16); 
-}
-
-
-void free_block(void* p) { 
-	_mm_free(p);
-}
-
-
-MATRIX alloc_matrix(int rows, int cols) {
-	return (MATRIX) get_block(sizeof(float),rows*cols);
-}
-
-
-void dealloc_matrix(MATRIX mat) {
-	free_block(mat);
-}
 
 int calcolaIndice(int i, int j){
 	//funzione che calcola l'indice per la matrice delle distanze_simmetriche

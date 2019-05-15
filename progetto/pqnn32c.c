@@ -218,21 +218,21 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-int dist_eI(params* input,int punto1, int punto2, int start, int end){
+int dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
 	int ret=0;
 	for(i=start; i<end; i++){
-		ret += pow(input->ds[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
+		ret += pow(set[punto1*input->d+i]-input->ds[punto2*input->d+i], 2.0);
 	}
 	return ret;
 }
 
-int dist_e(params* input,int punto1, int punto2){
+int dist_e(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	float sum=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_eI(input, punto1, punto2, i*input->m, (i+1)*input->m), 2);
+		sum+=pow(dist_eI(input, set, punto1, punto2, i*input->m, (i+1)*input->m), 2);
 	}
 	return sum;
 }
@@ -248,7 +248,7 @@ int calcolaPQ(params* input, int x, int start, int end){
     int imin=-1;
     float temp;
     for(i=0; i<input->k; i++){
-        temp=dist_eI(input, x, i, start, end);
+        temp=dist_eI(input, input->ds, x, i, start, end);
         if(temp<min){ 
             min=temp;
             imin=i;
@@ -477,7 +477,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	float temp;
 	for(i=0; i<input->n; i++){
 		for(j=0; j<input->k; j++){
-			temp=dist_eI(input, i, j, start, end);
+			temp=dist_eI(input, input->ds, i, j, start, end);
 			if(temp<min[i]){ 
 				min[i]=temp;
 				input->pq[i*input->m+(start/input->m)]=j;
@@ -530,7 +530,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		float temp;
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->k; j++){
-				temp=dist_eI(input, i, j, start, end);
+				temp=dist_eI(input, input->ds, i, j, start, end);
 				if(temp<min[i]){ 
 					min[i]=temp;
 					input->pq[i*input->m+(start/input->m)]=j;
@@ -545,7 +545,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			fob2+=pow(dist_eI(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 	

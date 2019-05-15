@@ -107,6 +107,15 @@ typedef struct {
 	struct entry* v; 
 } params;
 
+//Entry della s.d. multilivello
+struct entry{
+	int index;
+	VECTOR q;
+	//temporaneo
+	//Serve per gestire liste a dimensione sconosciuta. 
+	struct entry * next;
+};
+
 /*
  * 
  *	Le funzioni sono state scritte assumento che le matrici siano memorizzate 

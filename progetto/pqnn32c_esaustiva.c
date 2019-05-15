@@ -63,6 +63,15 @@ typedef struct {
 	struct entry* v; 
 } params;
 
+//Entry della s.d. multilivello
+struct entry{
+	int index;
+	VECTOR q;
+	//temporaneo
+	//Serve per gestire liste a dimensione sconosciuta. 
+	struct entry * next;
+};
+
 int calcolaIndice(int i, int j){
 	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
 	return i*(i-1)/2+j;

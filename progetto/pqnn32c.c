@@ -741,9 +741,11 @@ void pqnn_index_esaustiva(params* input){
 void pqnn_search_esaustiva(params* input){
 	int i, j, c;
 	if(input->symmetric==1){
+		printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
 		if(input->query_pq==NULL) exit(-1);
 		c=input->d/input->m;
+		printf("break0.1\n");
 		for(i=0; i<input->nq; i++){
 			for(j=0; j<input->m; j++){
 				input->query_pq[i*input->m+j]=calcolaQueryPQ(input, i, j*c, (j+1)*c);

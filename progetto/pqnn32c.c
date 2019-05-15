@@ -703,7 +703,7 @@ void calcola_residui(params* input){
 }
 
 void pqnn_index_non_esaustiva(params* input){
-	int i, dstar;
+	int i, dStar;
 	float* tmp;
 	dStar=input->d/input->m;
 	printf("--1--\n");
@@ -712,13 +712,15 @@ void pqnn_index_non_esaustiva(params* input){
 	printf("--2--\n");
 	tmp = input->residual_set;
 	input->residual_set=input->qs;
-	kmeans_from(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
+	//kmeans_from(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
+	//mancano parametri
 	input->residual_set=tmp; //scambio di puntatori per calcolare i centroidi grossolani dal learning set
 	
 	calcola_residui(input);
 	//calcolo dei quantizzatori prodotto
 	for(i=0;i<input->m;i++){
-		kmeans_from(input, i*dStar, (i+1)*dStar, input->k);
+		//kmeans_from(input, i*dStar, (i+1)*dStar, input->k);
+		//mancano parametri
 	}
 	inizializzaSecLiv(input);
 }

@@ -750,9 +750,11 @@ void pqnn_search_esaustiva(params* input){
 			}
 		}
 	}
+	printf("break1\n");
 	for(i=0; i<input->nq; i++){
 		calcolaNN(input, i);
 	}
+	printf("break2\n");
 	_mm_free(input->codebook);
 	_mm_free(input->pq);
 	if(input->symmetric==1){

@@ -335,6 +335,39 @@ float dist(params* input, int* quantizer, int punto1, int punto2){
 	return sum;
 }
 
+int calcolaQueryPQ(params* input, int x, int start, int end){
+	// estremi start incluso ed end escluso
+    //
+    //	INPUT: 	Punto x di dimensione d.
+    //	OUTPUT: indice del centroide c più vicino ad x. 
+    //
+    int i;
+    float min=1.79E+308;
+    int imin=-1;
+    float temp;
+	//printf("breakpoint PQ\n");
+	// valore 2 messo temporaneamente, inpossibile calcolare la distanza simmetrica per calcolare il centroide
+	if(input->symmetric==2){
+		for(i=0; i<input->k; i++){
+			temp=distI(input, input->query_pq, x, i, start, end);
+			if(temp<min){ 
+				min=temp;
+				imin=i;
+			}	
+			//printf("breakpoint PQ %d\n", i);
+		}
+	}else{
+		for(i=0; i<input->k; i++){
+			temp=dist_asimmetricaI(input, input->qs, x, i, start, end);
+			if(temp<min){ 
+				min=temp;
+				imin=i;
+			}
+		}
+	}
+	return imin;
+}
+
 // ritorna indice del centroide c più vicino ad x.
 int PQ_non_esaustiva(params* input, int x, int start, int end, int n_centroidi){
 	// 	Estremi start incluso ed end escluso
@@ -448,11 +481,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	int i, j, k, t;
 	int count;
 	float fob1, fob2;
-	MATRIX codebook;
 	VECTOR min;
-
-	codebook = alloc_matrix(n_centroidi, input->n); // row-major-order?
-    if(codebook==NULL) exit(-1);
 	
 	//
 	// Inizializzazione del codebook
@@ -462,7 +491,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	for(i=0; i<n_centroidi; i++){
 		k=rand()%input->n;
 		for(j=start; j<end; j++){
-			codebook[i*input->d+j]=input->ds[k*input->d+j];
+			input->codebook[i*input->d+j]=input->ds[k*input->d+j];
 		}
 	}
     
@@ -477,7 +506,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	float temp;
 	for(i=0; i<input->n; i++){
 		for(j=0; j<input->k; j++){
-			temp=dist_eI(input, input->ds, i, j, start, end);
+			temp=dist_eI(input, i, j, start, end);
 			if(temp<min[i]){ 
 				min[i]=temp;
 				input->pq[i*input->m+(start/input->m)]=j;
@@ -491,7 +520,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		for(i=0; i<n_centroidi; i++){
 			count=0;
 			for(j=start; j<end; j++){
-				codebook[i*input->d+j]=0; // con calloc forse è più veloce. 
+				input->codebook[i*input->d+j]=0; // con calloc forse è più veloce. 
 			}
 			
 			//
@@ -502,7 +531,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 				if(input->pq[j*input->m+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					for(k=start; k<end; k++){
-						codebook[i*input->d+k]+=input->ds[j*input->d+k];
+						input->codebook[i*input->d+k]+=input->ds[j*input->d+k];
 					}
 				}
 			}
@@ -511,7 +540,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 				if(count!=0){ 
 					// Alcune partizioni potrebbero essere vuote
 					// Specie se ci sono degli outliers
-					codebook[i*input->d+j]=codebook[i*input->d+j]/count;
+					input->codebook[i*input->d+j]=input->codebook[i*input->d+j]/count;
 				}
 			}
 			
@@ -530,7 +559,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		float temp;
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->k; j++){
-				temp=dist_eI(input, input->ds, i, j, start, end);
+				temp=dist_eI(input, i, j, start, end);
 				if(temp<min[i]){ 
 					min[i]=temp;
 					input->pq[i*input->m+(start/input->m)]=j;
@@ -545,13 +574,11 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_eI(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 	
 	_mm_free(min);
-
-	input->codebook=codebook;
 }
 
 void creaMatricedistanze(params* input){
@@ -582,19 +609,80 @@ void creaMatricedistanze(params* input){
 	input->distanze_simmetriche=distanze_simmetriche;
 }
 
-void bubbleSort(float* arr, int* arr2, int n){ 
-   int i, j, temp; 
-   for (i = 0; i < n-1; i++)    
-       for (j = 0; j < n-i-1; j++)  
+void bubbleSort(VECTOR arr, int* arr2, int n, int nit){ 
+   int i, j, t1;
+   float t2; 
+   for (i = 0; i < nit; i++)
+       for (j = n-2; j > i-1; j--)  
            if (arr[j] > arr[j+1]){
-			   temp=arr[j];
+			   t2=arr[j];
 			   arr[j]=arr[j+1];
-			   arr[j+1]=temp;
-			   temp=arr2[j];
+			   arr[j+1]=t2;
+			   t1=arr2[j];
 			   arr2[j]=arr2[j+1];
-			   arr2[j+1]=temp;
+			   arr2[j+1]=t1;
 		   }
-} 
+}
+
+void merge(VECTOR arr, int* arr2, int i, int j, int k){
+	VECTOR a=(VECTOR) _mm_malloc(k-i+1 ,16);
+	int* b=(int*) _mm_malloc(k-i+1 ,16);
+	int c=0;
+	int i2=i;
+	int j1=j;
+	while(i<j && j1<k){
+		if(arr[i]<arr[j]){
+			a[c]=arr[i];
+			b[c]=arr2[i];
+			i++;
+		}else{
+			a[c]=arr[j1];
+			b[c]=arr2[j1];
+			j1++;
+		}
+		c++;
+	}
+	while(i<j){
+		a[c]=arr[i];
+		b[c]=arr2[i];
+		i++;
+		c++;
+	}
+	while(j1<k){
+		a[c]=arr[j1];
+		b[c]=arr2[j1];
+		j1++;
+		c++;
+	}
+	c=i2;
+	while(i2<k){
+		arr[i2]=a[i2-c];
+		arr2[i2]=b[i2-c];
+		i2++;
+	}
+	_mm_free(a);
+	_mm_free(b);
+}
+
+void mergesort(VECTOR arr, int* arr2, int i1, int i2){
+	double t1;
+	int t2;
+	if(i2-i1<2) return;
+	if(i2-i2==2){
+		if(arr[i1]<=arr[i2]) return;
+		t1=arr[i1];
+		arr[i1]=arr[i2];
+		arr[i2]=t1;
+		t2=arr2[i1];
+		arr2[i1]=arr2[i2];
+		arr2[i2]=t2;
+		return;
+	}
+	t2=(i2+i1)/2;
+	mergesort(arr, arr2, i1, t2);
+	mergesort(arr, arr2, t2, i2);
+	merge(arr, arr2, i1, t2, i2);
+}
 
 void calcolaNN(params* input, int query){
 	int i, j, k;
@@ -602,7 +690,7 @@ void calcolaNN(params* input, int query){
 	VECTOR m;
 	int* ind;
 
-	if(input->knn<1050){
+	if(input->knn<4500){
 		if(input->symmetric==0){
 			for(i=0; i<input->n; i++){
 				distanze[i]=dist_asimmetrica(input, input->qs, query, i);
@@ -629,7 +717,7 @@ void calcolaNN(params* input, int query){
 					}
 					input->ANN[query*input->knn+j]=i;
 					m[j]=distanze[i];
-					printf("%d %d", i, j);
+					//printf("%d %d", i, j);
 					break;
 				}
 			}
@@ -650,12 +738,14 @@ void calcolaNN(params* input, int query){
 			}
 		}
 		bubbleSort(distanze, ind, input->n, input->knn);
+		//mergesort(distanze, ind, 0, input->n);
 		for(i=0; i<input->knn; i++){
 			input->ANN[query*input->knn+i]=ind[i];
 		}
 		_mm_free(ind);
 	}
 	dealloc_matrix(distanze);
+}
 
 void inizializza_learning_set(params* input){
 	//TODO: 

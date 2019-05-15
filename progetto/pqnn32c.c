@@ -704,55 +704,77 @@ void calcola_residui(params* input){
 	
 }
 
+void pqnn_index_esaustiva(params* input){
+	int i, dStar;
+	dStar=input->d/input->m;
+	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16);
+	for(i=0; i<input->m; i++){
+		kmeans(input, i*dStar, (i+1)*dStar, input->k);
+	}
+	
+	//stampa dei centroidi 
+	if(input->display==1){
+		for(int i=0;i<input->k/20;i++){
+			for(int j=0;i<input->d;j++){
+				printf("%.2f ", input->codebook[i*input->d+j]);
+			}
+			printf("\n");
+		}
+	}
+	// controllare caso in cui d non sia multiplo di m
+	if(input->symmetric==1){
+		creaMatricedistanze(input);
+	}
+}
+
+void pqnn_index_non_esaustiva(params* input){
+	int i;
+	float* tmp;
+	printf("--1--\n");
+	inizializza_learning_set(input);//selezionati i primi nr del dataset
+	input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
+	printf("--2--\n");
+	tmp = input->residual_set;
+	input->residual_set=input->qs;
+	kmeans_from(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
+	input->residual_set=tmp; //scambio di puntatori per calcolare i centroidi grossolani dal learning set
+	
+	calcola_residui(input);
+	//calcolo dei quantizzatori prodotto
+	for(i=0;i<input->m;i++){
+		kmeans_from(input, i*dStar, (i+1)*dStar, input->k);
+	}
+	inizializzaSecLiv(input);
+}
+
+void pqnn_search_esaustiva(params* input){
+	int i, j;
+	input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
+	for(i=0; i<input->nq; i++){
+		for(j=0; j<input->m; j++){
+			input->query_pq[i*input->nq+j]=calcolaPQ(input, i, i*input->m, (i+1)*input->m);
+		}
+	}
+	input->ANN=(int*)_mm_malloc(input->nq*input->knn*sizeof(int),16);
+	for(i=0; i<input->nq; i++){
+		calcolaNN(input, i);
+	}
+}
+
+void pqnn_search_non_esaustiva(params* input){
+
+}
+
 /*
  *	pqnn_index
  * 	==========
  */
 void pqnn_index(params* input) {
-	int i, dStar;
-	float* tmp;
 	// TODO: Gestire liberazione della memoria.
-	dStar=input->d/input->m;
 	if(input->exaustive==1){
-		input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16);
-		for(i=0; i<input->m; i++){
-			kmeans(input, i*dStar, (i+1)*dStar, input->k);
-		}
-		
-		//stampa dei centroidi 
-		if(input->display==1){
-			for(int i=0;i<input->k/20;i++){
-				for(int j=0;i<input->d;j++){
-					printf("%.2f ", input->codebook[i*input->d+j]);
-				}
-				printf("\n");
-			}
-		}
-		// controllare caso in cui d non sia multiplo di m
-		if(input->symmetric==1){
-			creaMatricedistanze(input);
-		}
-	}
-	else{
-		//
-		// RICERCA NON ESAUSTIVA
-		//
-		printf("--1--\n");
-		inizializza_learning_set(input);//selezionati i primi nr del dataset
-		input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
-		printf("--2--\n");
-		tmp = input->residual_set;
-		input->residual_set=input->qs;
-		kmeans_from(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
-		input->residual_set=tmp; //scambio di puntatori per calcolare i centroidi grossolani dal learning set
-		
-		calcola_residui(input);
-		//calcolo dei quantizzatori prodotto
-		for(int i=0;i<input->m;i++){
-			kmeans_from(input, i*dStar, (i+1)*dStar, input->k);
-		}
-		inizializzaSecLiv(input);
-
+		pqnn_index_esaustiva(input);
+	}else{
+		pqnn_index_non_esaustiva(input);
 	}
     
     //pqnn32_index(input); // Chiamata funzione assembly
@@ -768,24 +790,11 @@ void pqnn_index(params* input) {
 void pqnn_search(params* input) {
 	int i, j;
 	if(input->exaustive==1){
-		//ricerca esaustiva
-		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
-		for(i=0; i<input->nq; i++){
-			for(j=0; j<input->m; j++){
-				input->query_pq[i*input->nq+j]=calcolaPQ(input, i, i*input->m, (i+1)*input->m);
-			}
-		}
-		input->ANN=(int*)_mm_malloc(input->nq*input->knn*sizeof(int),16);
-		for(i=0; i<input->nq; i++){
-			calcolaNN(input, i);
-		}
+		pqnn_search_esaustiva(input);
 	}else{
-		//ricerca non esaustiva
+		pqnn_search_non_esaustiva(input);
 	}
-    // -------------------------------------------------
-    // Codificare qui l'algoritmo di interrogazione
-    // -------------------------------------------------
-    
+
     //pqnn32_search(input); // Chiamata funzione assembly
 
 	// Restituisce il risultato come una matrice di nq * knn

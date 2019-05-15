@@ -6,7 +6,6 @@
 #include <xmmintrin.h>
 #include <limits.h>
 
-#include "pqnn32c.c"
 
 #define	MATRIX		float*
 #define	VECTOR		float*

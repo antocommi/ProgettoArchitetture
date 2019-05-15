@@ -506,7 +506,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	float temp;
 	for(i=0; i<input->n; i++){
 		for(j=0; j<input->k; j++){
-			temp=dist_eI(input, i, j, start, end);
+			temp=dist_eI(input, input->ds, i, j, start, end);
 			if(temp<min[i]){ 
 				min[i]=temp;
 				input->pq[i*input->m+(start/input->m)]=j;
@@ -559,7 +559,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		float temp;
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->k; j++){
-				temp=dist_eI(input, i, j, start, end);
+				temp=dist_eI(input, input->ds, i, j, start, end);
 				if(temp<min[i]){ 
 					min[i]=temp;
 					input->pq[i*input->m+(start/input->m)]=j;
@@ -574,7 +574,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			fob2+=pow(dist_eI(input, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
 		}
 	}
 	

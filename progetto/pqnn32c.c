@@ -728,7 +728,7 @@ void pqnn_index_esaustiva(params* input){
 	int i, dStar;
 	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
 	dStar=input->d/input->m;
-	input->codebook = alloc_matrix(n_centroidi, input->n); // row-major-order?
+	input->codebook = alloc_matrix(input->k, input->n); // row-major-order?
     if(input->codebook==NULL) exit(-1);
 	for(i=0; i<input->m; i++){
 		kmeans(input, i*dStar, (i+1)*dStar, input->k);

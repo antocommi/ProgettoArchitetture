@@ -928,11 +928,17 @@ void pqnn_index_esaustiva(params* input){
 	int d2=0;
 	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
 	dStar=input->d/input->m;
-	input->codebook = alloc_matrix(input->k, input->n); // row-major-order?
+	input->codebook = alloc_matrix(input->k, input->d); // row-major-order?
     if(input->codebook==NULL) exit(-1);
 	for(i=0; i<input->m; i++){
 		kmeans(input, d2, d2+dStar, input->k);
 		d2+=dStar;
+	}
+	for(i=0; i<input->k; i++){
+		for(int j=0; j<input>n; j++){
+			printf("%d ", input->codebook[i*input->d+k]);
+		}
+		printf("\n");
 	}
 	if(input->symmetric==1){
 		creaMatricedistanze(input);

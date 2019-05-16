@@ -210,6 +210,7 @@ void save_ANN(char* filename, int* ANN, int nq, int knn) {
 
 extern void pqnn32_index(params* input);
 extern int* pqnn32_search(params* input);
+//extern int calcolaIndice(int i, int j);
 
 //funzioni fatte da noi
 
@@ -225,7 +226,7 @@ int dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int en
 	float* ind=set+punto1*input->d+start;
 	float* ind2=input->ds+punto2*input->d+start;
 	for(i=start; i<end; i++){
-		ret += pow(*ind++ - *ind2++, 2.0);
+		ret+=pow(*ind++ - *ind2++, 2.0);
 	}
 	return ret;
 }

@@ -482,7 +482,8 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	int count;
 	float fob1, fob2;
 	VECTOR min;
-	float* ind;
+	float *ind, *ind2, *ci;
+	int m=input->m;
 	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
@@ -490,8 +491,10 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	
 	for(i=0; i<n_centroidi; i++){
 		k=rand()%input->n;
+		ind=input->codebook+i*input->d+start;
+		ind2=input->ds+k*input->d+start;
 		for(j=start; j<end; j++){
-			input->codebook[i*input->d+j]=input->ds[k*input->d+j];
+			*ind++=*ind2++;
 		}
 	}
     
@@ -502,8 +505,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	min=(VECTOR) alloc_matrix(input->n, 1);
 	ind=min;
 	for(i=0; i<input->n; i++){
-		*ind=1.79E+308;
-		ind++;
+		*ind++=1.79E+308;
 	}
 	float temp;
 	ind=min;
@@ -512,7 +514,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			temp=dist_eI(input, input->ds, i, j, start, end);
 			if(temp<min[i]){ 
 				*ind=temp;
-				input->pq[i*input->m+(start/input->m)]=j;
+				input->pq[i*m+(start/m)]=j;
 			}
 		}
 		ind++;
@@ -521,12 +523,12 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
+		ci=input->codebook+start;
 		for(i=0; i<n_centroidi; i++){
 			count=0;
-			ind=input->codebook+i*input->d+start;
+			ind=ci;
 			for(j=start; j<end; j++){
-				*ind=0; // con calloc forse è più veloce. 
-				ind++;
+				*ind++=0;
 			}
 			
 			//
@@ -534,16 +536,16 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			//
 			
 			for(j=0; j<input->n; j++){
-				if(input->pq[j*input->m+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+				if(input->pq[j*m+(start/m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
-					ind=input->codebook+i*input->d+start;
+					ind=ci;
 					for(k=start; k<end; k++){
 						*ind+=input->ds[j*input->d+k];
 						ind++;
 					}
 				}
 			}
-			ind=input->codebook+i*input->d+start;
+			ind=ci;
 			for(j=start; j<end; j++){
 				if(count!=0){ 
 					// Alcune partizioni potrebbero essere vuote
@@ -556,6 +558,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			//
 			// FINE: RICALCOLO NUOVI CENTROIDI
 			//
+			ci+=input->d;
 		}
 		
 //		for(i=0; i<input->n; i++){
@@ -563,8 +566,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 //		}
 		ind=min;
 		for(i=0; i<input->n; i++){
-			*ind=1.79E+308;
-			ind++;
+			*ind++=1.79E+308;
 		}
 		float temp;
 		ind=min;
@@ -573,7 +575,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 				temp=dist_eI(input, input->ds, i, j, start, end);
 				if(temp<*ind){ 
 					*ind=temp;
-					input->pq[i*input->m+(start/input->m)]=j;
+					input->pq[i*m+(start/m)]=j;
 				}
 			}
 			ind++;
@@ -586,7 +588,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
+			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*m+(start/m)], start, end), 2.0);
 		}
 	}
 	_mm_free(min);

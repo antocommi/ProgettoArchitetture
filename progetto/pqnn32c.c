@@ -610,18 +610,22 @@ void creaMatricedistanze(params* input){
 }
 
 void bubbleSort(VECTOR arr, int* arr2, int n, int nit){ 
-   int i, j, t1;
-   float t2; 
-   for (i = 0; i < nit; i++)
-       for (j = n-2; j > i-1; j--)  
-           if (arr[j] > arr[j+1]){
-			   t2=arr[j];
-			   arr[j]=arr[j+1];
-			   arr[j+1]=t2;
-			   t1=arr2[j];
-			   arr2[j]=arr2[j+1];
-			   arr2[j+1]=t1;
-		   }
+	int i, j, t1;
+	float t2;
+	int scambi=1; 
+	for (i = 0; i < nit && scambi==1; i++){
+		scambi=0;
+    	for (j = n-2; j > i-1; j--)  
+        	if (arr[j] > arr[j+1]){
+				t2=arr[j];
+				arr[j]=arr[j+1];
+				arr[j+1]=t2;
+				t1=arr2[j];
+				arr2[j]=arr2[j+1];
+				arr2[j+1]=t1;
+				scambi=1;
+			}
+	}
 }
 
 void merge(VECTOR arr, int* arr2, int i, int j, int k){
@@ -893,22 +897,22 @@ void pqnn_index_esaustiva(params* input){
 void pqnn_search_esaustiva(params* input){
 	int i, j, c;
 	if(input->symmetric==1){
-		printf("break0\n");
+		//printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
 		if(input->query_pq==NULL) exit(-1);
 		c=input->d/input->m;
-		printf("break0.1\n");
+		//printf("break0.1\n");
 		for(i=0; i<input->nq; i++){
 			for(j=0; j<input->m; j++){
 				input->query_pq[i*input->m+j]=calcolaQueryPQ(input, i, j*c, (j+1)*c);
 			}
 		}
 	}
-	printf("break1\n");
+	//printf("break1\n");
 	for(i=0; i<input->nq; i++){
 		calcolaNN(input, i);
 	}
-	printf("break2\n");
+	//printf("break2\n");
 	_mm_free(input->codebook);
 	_mm_free(input->pq);
 	if(input->symmetric==1){

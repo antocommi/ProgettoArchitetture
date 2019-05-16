@@ -711,7 +711,7 @@ void calcolaNN(params* input, int query){
 	float* ind=distanze;
 	int* ind2;
 	float* ind3;
-	printf("breakpoint NN 1\n");
+	//printf("breakpoint NN 1\n");
 	if(input->knn<4500){
 		if(input->symmetric==0){
 			for(i=0; i<input->n; i++){
@@ -722,33 +722,39 @@ void calcolaNN(params* input, int query){
 				*ind++=dist(input, input->query_pq, query, i);
 			}
 		}
-		printf("breakpoint NN 2\n");
+		//printf("breakpoint NN 2\n");
 
 		m=(VECTOR) _mm_malloc(input->knn*sizeof(float),16);
 		ind=m;
 		ind2=input->ANN+query*input->knn;
 		
-		printf("breakpoint NN 3\n");
+		//printf("breakpoint NN 3\n");
 		for(i=0; i<input->knn; i++){
 			*m++=1.79E+308;
 			*ind2++=-1;
 		}
 		
-		printf("breakpoint NN 4\n");
 		ind=m;
 		ind2=input->ANN+query*input->knn;
 		ind3=distanze;
+		printf("breakpoint NN 4\n");
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->knn; j++){
 				if(*ind3<*ind){
 					for(k=input->knn-1; k>j; k--){
 						if(m[k-1]!=-1){
+							printf("breakpoint 1.1\n");
 							input->ANN[query*input->knn+k]=input->ANN[query*input->knn+k-1];
+							printf("breakpoint 1.2\n");
 							m[k]=m[k-1];
+							printf("breakpoint 1.3\n");
 						}
 					}
+					printf("breakpoint 2.1\n");
 					*ind2=i;
+					printf("breakpoint 2.2\n");
 					*ind=*ind3;
+					printf("breakpoint 2.3\n");
 					//printf("%d %d", i, j);
 					break;
 				}

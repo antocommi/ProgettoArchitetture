@@ -730,7 +730,7 @@ void calcolaNN(params* input, int query){
 		
 		//printf("breakpoint NN 3\n");
 		for(i=0; i<input->knn; i++){
-			*m++=1.79E+308;
+			*ind++=1.79E+308;
 			*ind2++=-1;
 		}
 		

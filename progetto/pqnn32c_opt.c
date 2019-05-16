@@ -725,7 +725,7 @@ void calcolaNN(params* input, int query){
 
 		
 		for(i=0; i<input->n; i++){
-			printf("%f ", input->distanze[i]);
+			printf("%f ", distanze[i]);
 		}
 
 		//printf("breakpoint NN 2\n");

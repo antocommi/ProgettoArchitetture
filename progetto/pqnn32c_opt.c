@@ -736,31 +736,31 @@ void calcolaNN(params* input, int query){
 		
 		ind2=input->ANN+query*input->knn;
 		ind3=distanze;
-		printf("breakpoint NN 4\n");
+		//printf("breakpoint NN 4\n");
 		for(i=0; i<input->n; i++){
 			ind=m;
 			for(j=0; j<input->knn; j++){
-				printf("breakpoint 0.1\n");
+				//printf("breakpoint 0.1\n");
 				if(*ind3<*ind){
-					printf("breakpoint 0.2\n");
+					//printf("breakpoint 0.2\n");
 					for(k=input->knn-1; k>j; k--){
 						if(m[k-1]!=-1){
-							printf("breakpoint 1.1\n");
+							//printf("breakpoint 1.1\n");
 							input->ANN[query*input->knn+k]=input->ANN[query*input->knn+k-1];
-							printf("breakpoint 1.2\n");
+							//printf("breakpoint 1.2\n");
 							m[k]=m[k-1];
-							printf("breakpoint 1.3\n");
+							//printf("breakpoint 1.3\n");
 						}
 					}
-					printf("breakpoint 2.1\n");
+					//printf("breakpoint 2.1\n");
 					*ind2=i;
-					printf("breakpoint 2.2\n");
+					//printf("breakpoint 2.2\n");
 					*ind=*ind3;
-					printf("breakpoint 2.3\n");
+					//printf("breakpoint 2.3\n");
 					//printf("%d %d", i, j);
 					break;
 				}
-				printf("breakpoint 0.3\n");
+				//printf("breakpoint 0.3\n");
 				ind++;
 				ind2++;
 			}
@@ -790,7 +790,7 @@ void calcolaNN(params* input, int query){
 		_mm_free(di);
 	}
 	
-	printf("breakpoint NN 5\n");
+	//printf("breakpoint NN 5\n");
 	dealloc_matrix(distanze);
 }
 
@@ -957,11 +957,11 @@ void pqnn_search_esaustiva(params* input){
 			ipq+=input->m;
 		}
 	}
-	printf("break1\n");
+	//printf("break1\n");
 	for(i=0; i<input->nq; i++){
 		calcolaNN(input, i);
 	}
-	printf("break2\n");
+	//printf("break2\n");
 	_mm_free(input->codebook);
 	_mm_free(input->pq);
 	if(input->symmetric==1){

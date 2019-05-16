@@ -346,7 +346,7 @@ float dist(params* input, int* quantizer, int punto1, int punto2){
 	int par=0;
 	for(i=0; i<input->m; i++){
 		sum+=pow(distI(input, quantizer, punto1, c2, par, par+input->m), 2);
-		par+=input->m
+		par+=input->m;
 	}
 	return sum;
 }

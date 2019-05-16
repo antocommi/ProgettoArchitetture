@@ -724,9 +724,9 @@ void calcolaNN(params* input, int query){
 		}
 
 		
-		for(i=0; i<input->n; i++){
-			printf("%f ", distanze[i]);
-		}
+	//	for(i=0; i<input->n; i++){
+	//		printf("%f ", distanze[i]);
+	//	}
 
 		//printf("breakpoint NN 2\n");
 
@@ -740,11 +740,11 @@ void calcolaNN(params* input, int query){
 			*ind2++=-1;
 		}
 		
-		ind2=input->ANN+query*input->knn;
 		ind3=distanze;
 		//printf("breakpoint NN 4\n");
 		for(i=0; i<input->n; i++){
 			ind=m;
+			ind2=input->ANN+query*input->knn;
 			for(j=0; j<input->knn; j++){
 				//printf("breakpoint 0.1\n");
 				if(*ind3<*ind){

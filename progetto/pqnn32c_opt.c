@@ -734,11 +734,11 @@ void calcolaNN(params* input, int query){
 			*ind2++=-1;
 		}
 		
-		ind=m;
 		ind2=input->ANN+query*input->knn;
 		ind3=distanze;
 		printf("breakpoint NN 4\n");
 		for(i=0; i<input->n; i++){
+			ind=m;
 			for(j=0; j<input->knn; j++){
 				printf("breakpoint 0.1\n");
 				if(*ind3<*ind){

@@ -711,6 +711,7 @@ void calcolaNN(params* input, int query){
 	float* ind=distanze;
 	int* ind2;
 	float* ind3;
+	printf("breakpoint NN 1\n");
 	if(input->knn<4500){
 		if(input->symmetric==0){
 			for(i=0; i<input->n; i++){
@@ -721,14 +722,19 @@ void calcolaNN(params* input, int query){
 				*ind++=dist(input, input->query_pq, query, i);
 			}
 		}
+		printf("breakpoint NN 2\n");
 
 		m=(VECTOR) _mm_malloc(input->knn*sizeof(float),16);
 		ind=m;
 		ind2=input->ANN+query*input->knn;
+		
+		printf("breakpoint NN 3\n");
 		for(i=0; i<input->knn; i++){
 			*m++=1.79E+308;
 			*ind2++=-1;
 		}
+		
+		printf("breakpoint NN 4\n");
 		ind=m;
 		ind2=input->ANN+query*input->knn;
 		ind3=distanze;
@@ -774,6 +780,8 @@ void calcolaNN(params* input, int query){
 		}
 		_mm_free(di);
 	}
+	
+	printf("breakpoint NN 5\n");
 	dealloc_matrix(distanze);
 }
 
@@ -926,11 +934,11 @@ void pqnn_search_esaustiva(params* input){
 	int i, j, c;
 	int *ipq, *ind;
 	if(input->symmetric==1){
-		printf("break0\n");
+		//printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
 		if(input->query_pq==NULL) exit(-1);
 		c=input->d/input->m;
-		printf("break0.1\n");
+		//printf("break0.1\n");
 		ipq=input->query_pq;
 		for(i=0; i<input->nq; i++){
 			ind=ipq;

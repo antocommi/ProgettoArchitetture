@@ -740,7 +740,9 @@ void calcolaNN(params* input, int query){
 		printf("breakpoint NN 4\n");
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->knn; j++){
+				printf("breakpoint 0.1\n");
 				if(*ind3<*ind){
+					printf("breakpoint 0.2\n");
 					for(k=input->knn-1; k>j; k--){
 						if(m[k-1]!=-1){
 							printf("breakpoint 1.1\n");
@@ -758,6 +760,7 @@ void calcolaNN(params* input, int query){
 					//printf("%d %d", i, j);
 					break;
 				}
+				printf("breakpoint 0.3\n");
 				ind++;
 				ind2++;
 			}

@@ -279,7 +279,7 @@ float dist_simmetrica(params* input, int centroide1, int centroide2){
 	int par=0;
 	for(i=0; i<input->m; i++){
 		sum+=pow(dist_simmetricaI(input, centroide1, centroide2, par, par+input->m), 2);
-		par+=input->m
+		par+=input->m;
 	}
 	return sum;
 }
@@ -343,7 +343,7 @@ float dist(params* input, int* quantizer, int punto1, int punto2){
 	int i;
 	float sum=0;
 	int c2=input->pq[punto2];
-	int par=0
+	int par=0;
 	for(i=0; i<input->m; i++){
 		sum+=pow(distI(input, quantizer, punto1, c2, par, par+input->m), 2);
 		par+=input->m

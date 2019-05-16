@@ -935,7 +935,7 @@ void pqnn_index_esaustiva(params* input){
 		d2+=dStar;
 	}
 	for(i=0; i<input->k; i++){
-		for(int j=0; j<input>n; j++){
+		for(int j=0; j<input->n; j++){
 			printf("%f ", input->codebook[i*input->d+j]);
 		}
 		printf("\n");

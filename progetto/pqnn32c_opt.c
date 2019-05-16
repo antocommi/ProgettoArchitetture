@@ -926,11 +926,11 @@ void pqnn_search_esaustiva(params* input){
 	int i, j, c;
 	int *ipq, *ind;
 	if(input->symmetric==1){
-		//printf("break0\n");
+		printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
 		if(input->query_pq==NULL) exit(-1);
 		c=input->d/input->m;
-		//printf("break0.1\n");
+		printf("break0.1\n");
 		ipq=input->query_pq;
 		for(i=0; i<input->nq; i++){
 			ind=ipq;
@@ -940,11 +940,11 @@ void pqnn_search_esaustiva(params* input){
 			ipq+=input->m;
 		}
 	}
-	//printf("break1\n");
+	printf("break1\n");
 	for(i=0; i<input->nq; i++){
 		calcolaNN(input, i);
 	}
-	//printf("break2\n");
+	printf("break2\n");
 	_mm_free(input->codebook);
 	_mm_free(input->pq);
 	if(input->symmetric==1){

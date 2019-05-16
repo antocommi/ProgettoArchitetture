@@ -722,6 +722,12 @@ void calcolaNN(params* input, int query){
 				*ind++=dist(input, input->query_pq, query, i);
 			}
 		}
+
+		
+		for(i=0; i<input->n; i++){
+			printf("%f ", input->distanze[i]);
+		}
+
 		//printf("breakpoint NN 2\n");
 
 		m=(VECTOR) _mm_malloc(input->knn*sizeof(float),16);
@@ -934,12 +940,14 @@ void pqnn_index_esaustiva(params* input){
 		kmeans(input, d2, d2+dStar, input->k);
 		d2+=dStar;
 	}
-	for(i=0; i<input->k; i++){
-		for(int j=0; j<input->n; j++){
-			printf("%f ", input->codebook[i*input->d+j]);
-		}
-		printf("\n");
-	}
+
+//	for(i=0; i<input->k; i++){
+//		for(int j=0; j<input->n; j++){
+//			printf("%f ", input->codebook[i*input->d+j]);
+//		}
+//		printf("\n");
+//	}
+
 	if(input->symmetric==1){
 		creaMatricedistanze(input);
 	}

@@ -17,7 +17,7 @@ calcolaIndice:
 		push ebx
 		push esi
 		push edi
-		
+
 		mov eax, [ebp+i]
 		mov ebx, [ebp+j]
 		mov ecx, eax
@@ -25,8 +25,7 @@ calcolaIndice:
 		imul eax, ecx
 		shr eax, 1
 		add eax, ebx
-		push eax
-		
+
 		pop	edi
 		pop	esi
 		pop	ebx

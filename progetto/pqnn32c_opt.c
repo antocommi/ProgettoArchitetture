@@ -210,28 +210,30 @@ void save_ANN(char* filename, int* ANN, int nq, int knn) {
 
 extern void pqnn32_index(params* input);
 extern int* pqnn32_search(params* input);
-//extern int calcolaIndice(int i, int j);
+
+extern int calcolaIndice(int i, int j);
+extern float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end);
 
 //funzioni fatte da noi
 
-int calcolaIndice(int i, int j){
-	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
-	return i*(i-1)/2+j;
-}
+//int calcolaIndice(int i, int j){
+//	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
+//	return i*(i-1)/2+j;
+//}
 
-int dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
-	// estremi start incluso ed end escluso
-	int i;
-	int ret=0;
-	float* ind=set+punto1*input->d+start;
-	float* ind2=input->ds+punto2*input->d+start;
-	for(i=start; i<end; i++){
-		ret+=pow(*ind++ - *ind2++, 2.0);
-	}
-	return ret;
-}
+//float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
+//	// estremi start incluso ed end escluso
+//	int i;
+//	float ret=0;
+//	float* ind=set+punto1*input->d+start;
+//	float* ind2=input->ds+punto2*input->d+start;
+//	for(i=start; i<end; i++){
+//		ret+=pow(*ind++ - *ind2++, 2.0);
+//	}
+//	return ret;
+//}
 
-int dist_e(params* input, MATRIX set, int punto1, int punto2){
+float dist_e(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	float sum=0;
 	int par=0;

@@ -155,7 +155,7 @@ void stampa_matrice_flt(float* M, int rows, int col){
 		for(j=0;j<col;j++){
 			printf(" %.2f",M[i*col+j]);
 		}
-		printf("------\n");
+		printf("\n---%d---\n",i);
 	}
 }
 
@@ -435,11 +435,12 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	int i, j, k, t, c, imin;
 	int count;
 	float fob1, fob2;
+	int* index;
 	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
 	//
-	printf("\t --y--\n");
+	printf("\t --y--start=[%d]&end=[%d]\n",start,end);
     for(i=0; i<data->n_centroidi; i++){
 		k = rand()%input->nr;
 		for(j=start; j<end; j++){
@@ -447,11 +448,14 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		}
     }
 	// Assegnazione dei vettori ai centroidi casuali individuati
+	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
     for(i=0; i<data->index_rows; i++){
-		for(k=0;k<data->index_colums;k++){
-			data->index[i*data->index_colums+start/(data->index_colums)] = PQ_non_esaustiva(input, i, start, end, data);
-		}
+		if(start==16)
+			printf("%d\n",PQ_non_esaustiva(input, i, start, end, data));
+		data->index[i*data->index_colums+start/(data->index_colums)] = PQ_non_esaustiva(input, i, start, end, data);
     }
+	printf("----------------\n");
+	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
@@ -482,9 +486,12 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		}
 		for(i=0; i<input->nr; i++){
 			// printf("prima: %d \n", data->index[i*data->index_colums+start]);
+			if(start==16)
+			printf("%d\n",PQ_non_esaustiva(input, i, start, end, data));
 			data->index[i*data->index_colums+start/(data->index_colums)]=PQ_non_esaustiva(input, i, start, end, data);
 			// printf("dopo: %d \n", data->index[i*data->index_colums+start]);
 		}
+		printf("----------------\n");
 		fob1=fob2;
 		fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
@@ -497,110 +504,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 }
 
 void kmeans(params* input, int start, int end, int n_centroidi){
-	/*
-	// estremi start incluso ed end escluso
-	int i, j, k, t;
-	int count;
-	float fob1, fob2;
-	VECTOR min;
-	
-	//
-	// Inizializzazione del codebook
-	//		-Scelta dei k vettori casuali
-	//
-	
-	for(i=0; i<n_centroidi; i++){
-		k=rand()%input->n;
-		for(j=start; j<end; j++){
-			input->codebook[i*input->d+j]=input->ds[k*input->d+j];
-		}
-	}
-    
-//	for(i=0; i<input->n; i++){
-//		input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
-//	}
-	//--------------------------------------------------------
-	min= (VECTOR) alloc_matrix(input->n, 1);
-	for(i=0; i<input->n; i++){
-		min[i]=1.79E+308; //adesso sono float non double
-	}
-	float dist;
-	for(i=0; i<input->n; i++){
-		for(j=0; j<input->k; j++){
-			dist=dist_eI(input, input->ds, i, j, start, end);
-			if(dist<min[i]){ 
-				min[i]=dist;
-				input->pq[i*input->m+(start/input->m)]=j;
-			}
-		}
-	}
-	//--------------------------------------------------------
-	fob1=0; //Valori della funzione obiettivo
-	fob2=0;
-	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
-		for(i=0; i<n_centroidi; i++){
-			count=0;
-			for(j=start; j<end; j++){
-				input->codebook[i*input->d+j]=0; // con calloc forse è più veloce. 
-			}
-			
-			//
-			// INIZIO: RICALCOLO NUOVI CENTROIDI
-			//
-			
-			for(j=0; j<input->n; j++){
-				if(input->pq[j*input->m+(start/input->m)]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
-					count++;
-					for(k=start; k<end; k++){
-						input->codebook[i*input->d+k]+=input->ds[j*input->d+k];
-					}
-				}
-			}
-			
-			for(j=start; j<end; j++){
-				if(count!=0){ 
-					// Alcune partizioni potrebbero essere vuote
-					// Specie se ci sono degli outliers
-					input->codebook[i*input->d+j]=input->codebook[i*input->d+j]/count;
-				}
-			}
-			
-			//
-			// FINE: RICALCOLO NUOVI CENTROIDI
-			//
-		}
-		
-//		for(i=0; i<input->n; i++){
-//			input->pq[i*input->m+(start/input->m)]=calcolaPQ(input, i, start, end);
-//		}
 
-		for(i=0; i<input->n; i++){
-			min[i]=1.79E+308;
-		}
-		float dist;
-		for(i=0; i<input->n; i++){
-			for(j=0; j<input->k; j++){
-				dist=dist_eI(input, input->ds, i, j, start, end);
-				if(dist<min[i]){ 
-					min[i]=dist;
-					input->pq[i*input->m+(start/input->m)]=j;
-				}
-			}
-		}
-
-//-----------------------------------
-		
-		fob1=fob2;
-		fob2=0;
-		
-		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
-		for(i=0; i<input->n; i++){
-			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*input->m+(start/input->m)], start, end), 2.0);
-		}
-	}
-	
-	_mm_free(min);
-	* */
 }
 
 void creaMatricedistanze(params* input){
@@ -820,18 +724,12 @@ void inizializzaSecLiv(params* input){
 	if(input->v==NULL) exit(-1);
 
 	for(y=0;y<input->nr;y++){
-		new = (struct entry*) _mm_malloc(sizeof(struct entry),16);
+		new = (struct entry*) malloc(sizeof(struct entry));
 		if(new==NULL) exit(-1);
-		printf("a\n");
 		qc_i = input->qc_indexes[y];
-		printf("b\n");
-		printf("\n----c------\n");
 		new->index=y;
-		printf("\n----d\n");
 		new->q = qp_of_r(input, y);
-		printf("\n----e\n");
 		add(new,qc_i,input);
-		printf("f\n");
 	}
 }
 
@@ -873,10 +771,9 @@ void compute_residual(params* input, float* res, int qc_i, int y){
 void calcola_residui(params* input){
 	int qc_i; 
 	float* ry; // puntatore al residuo corrente nel residual_codebook
-	//ry = _mm_malloc(input->d*sizeof(float),16);
 	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
 		qc_i = qc_index(input,y); // Calcola il suo quantizzatore grossolano qc(y)
-		ry = &input->residual_set[y*input->nr];
+		ry = &(input->residual_set[y*input->d]);
 		compute_residual(input,ry,qc_i,y); // calcolo del residuo r(y) = y - qc(y)
 	}
 }
@@ -901,7 +798,7 @@ void pqnn_index_non_esaustiva(params* input){
 	if(input->qc==NULL) exit(-1);
 
 	//inizializza vettore
-	input->qc_indexes = (int*)_mm_malloc(sizeof(int)*input->nr,16);
+	input->qc_indexes = (int*) _mm_malloc(sizeof(int)*input->nr,16);
 	if(input->qc_indexes==NULL) exit(-1);
 
 	input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
@@ -916,10 +813,16 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_colums=1;
 	data->index_rows = input->nr;
 	data->n_centroidi = input->kc;
+	
+	// printf("\n p:%p, val= %d\n",&(data->index[0]),data->index[0]);
+	
 	printf("--3--\n");	
 	kmeans_from(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
+	
 	printf("--sono fuori dal kmeans #1 --\n");
+	
 	calcola_residui(input);
+
 	printf("--eseguito calcola_residui --\n");
 	// Settagio parametri k-means
 	data->source = input->residual_set;
@@ -933,6 +836,23 @@ void pqnn_index_non_esaustiva(params* input){
 	for(i=0;i<input->m;i++){
 		kmeans_from(input, data, i*dStar, (i+1)*dStar);
 	}
+
+	// for(i=0;i<input->k;i++){
+	// 	for(int j=1;j<input->m;j+=2){
+	// 		for(int k=0;k<dStar/4;k++){
+	// 			printf(" %+3.2f ",input->residual_codebook[i*input->d+j*dStar+k]);
+	// 		}
+	// 		printf(" # ");
+	// 	}
+	// 	printf("\n");
+	// }
+
+	// for(i=0;i<input->nr;i++){
+	// 	for(int j=0;j<input->m;j++){
+	// 		printf("%2d ",input->pq[i*input->m+j]);
+	// 	}
+	// 	printf("\n");
+	// }
 	printf("Inizio: \"inizializzaSecLiv\" ");
    	inizializzaSecLiv(input);
 	printf("Fine: \"inizializzaSecLiv\" ");

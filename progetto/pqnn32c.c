@@ -722,7 +722,7 @@ void inizializzaSecLiv(params* input){
 	printf("\nxxxxx\n");
 	input->v = malloc(sizeof(struct entry)*input->kc);
 	if(input->v==NULL) exit(-1);
-	printf("\nbbbbb\n");
+	printf("\nbbbbb \n");
 	res = malloc(sizeof(struct entry)*input->nr);
 	if(res==NULL) exit(-1);
 	printf("\naaaaa\n");

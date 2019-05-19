@@ -718,18 +718,19 @@ void add (struct entry * new, int i, params* input){
 // 
 void inizializzaSecLiv(params* input){
 	int qc_i, y;
-	struct entry* new;
-	
-	input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
+	struct entry* res;
+	printf("\nxxxxx\n");
+	input->v = malloc(sizeof(struct entry)*input->kc);
 	if(input->v==NULL) exit(-1);
-
+	printf("\nbbbbb\n");
+	res = malloc(sizeof(struct entry)*input->nr);
+	if(res==NULL) exit(-1);
+	printf("\naaaaa\n");
 	for(y=0;y<input->nr;y++){
-		new = (struct entry*) malloc(sizeof(struct entry));
-		if(new==NULL) exit(-1);
 		qc_i = input->qc_indexes[y];
-		new->index=y;
-		new->q = qp_of_r(input, y);
-		add(new,qc_i,input);
+		res[y].index=y;
+		res[y].q = qp_of_r(input, y);
+		add(&res[y],qc_i,input);
 	}
 }
 

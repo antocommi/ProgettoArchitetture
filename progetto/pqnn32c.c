@@ -809,7 +809,7 @@ void pqnn_index_non_esaustiva(params* input){
 	for(i=0;i<input->m;i++){
 		kmeans_from(input, data, i*dStar, (i+1)*dStar);
 	}
-
+	inizializzaSecLiv(input);
 	// for(i=0;i<input->k;i++){
 	// 	for(int j=1;j<input->m;j+=2){
 	// 		for(int k=0;k<dStar/4;k++){
@@ -826,7 +826,8 @@ void pqnn_index_non_esaustiva(params* input){
 	// 	}
 	// 	printf("\n");
 	// }
-   	inizializzaSecLiv(input);
+   	
+	
 	
 }
 

@@ -1,3 +1,8 @@
-nasm -f elf32 pqnn32_prova.nasm
-gcc -O0 -m32 -msse calcInd.o pqnn32c_opt.c -lm -o a_opt.out
+cd nasm32
+nasm -f elf32 calcolaIndice.nasm
+nasm -f elf32 dist_eI.nasm
+nasm -f elf32 dist_simmetricaI.nasm
+cd ..
+#gcc -O0 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/dist_eI.o ./nasm32/dist_simmetricaI.o pqnn32c_opt_nasm.c -lm -o a_opt.out
+gcc -O0 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/dist_simmetricaI.o pqnn32c_opt_nasm.c -lm -o a_opt.out
 ./a_opt.out ./prova/prova $1 $2 $3

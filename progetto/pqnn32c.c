@@ -450,11 +450,8 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// Assegnazione dei vettori ai centroidi casuali individuati
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
     for(i=0; i<data->index_rows; i++){
-		if(start==16)
-			printf("%d\n",PQ_non_esaustiva(input, i, start, end, data));
 		data->index[i*data->index_colums+start/(data->index_colums)] = PQ_non_esaustiva(input, i, start, end, data);
     }
-	printf("----------------\n");
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
@@ -486,12 +483,9 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		}
 		for(i=0; i<input->nr; i++){
 			// printf("prima: %d \n", data->index[i*data->index_colums+start]);
-			if(start==16)
-			printf("%d\n",PQ_non_esaustiva(input, i, start, end, data));
 			data->index[i*data->index_colums+start/(data->index_colums)]=PQ_non_esaustiva(input, i, start, end, data);
 			// printf("dopo: %d \n", data->index[i*data->index_colums+start]);
 		}
-		printf("----------------\n");
 		fob1=fob2;
 		fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
@@ -500,7 +494,6 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		}
 		// printf("delta=%.2f - %.2f - %.2f \n",fob2-fob1, fob2, fob1 );
 	}
-	printf("\t --x--\n");
 }
 
 void kmeans(params* input, int start, int end, int n_centroidi){
@@ -685,14 +678,12 @@ VECTOR qp_of_r(params* input, int r){
 	float* res;
 	dStar = input->d/input->m;
 	res = _mm_malloc(sizeof(float)*input->d, 16);
+	if(res==NULL) exit(-1);
 	for(int i=0;i<input->m;i++){
-		printf("\t1\n");
-		qp_index = input->pq[r*input->d+i];
-		printf("\t2\n");
+		qp_index = input->pq[r*input->m+i];
 		for(int j=0;j<dStar;j++){
 			res[i*input->m+j] = input->residual_codebook[qp_index*input->d+i*dStar+j];
 		}
-		printf("\t3\n");
 	}
 	return res;
 }
@@ -701,16 +692,13 @@ VECTOR qp_of_r(params* input, int r){
 void add (struct entry * new, int i, params* input){
 	struct entry* vett;
 	vett=input->v;
-	printf("\t1\n");
 	if(vett[i].next== NULL){
 		vett[i].next= new;
 		new->next=NULL;
-		printf("\t2\n");
 	}
 	else{
 		new->next = vett[i].next;
 		vett[i].next = new;
-		printf("\t2\n");
 	}
 }
 
@@ -719,18 +707,15 @@ void add (struct entry * new, int i, params* input){
 void inizializzaSecLiv(params* input){
 	int qc_i, y;
 	struct entry* res;
-	printf("\nxxxxx\n");
 	input->v = malloc(sizeof(struct entry)*input->kc);
 	if(input->v==NULL) exit(-1);
-	printf("\nbbbbb \n");
-	res = malloc(sizeof(struct entry)*input->nr);
-	if(res==NULL) exit(-1);
-	printf("\naaaaa\n");
 	for(y=0;y<input->nr;y++){
+		res = malloc(sizeof(struct entry));
+		if(res==NULL) exit(-1);
 		qc_i = input->qc_indexes[y];
-		res[y].index=y;
-		res[y].q = qp_of_r(input, y);
-		add(&res[y],qc_i,input);
+		res->index=y;
+		res->q = qp_of_r(input, y);
+		add(&res,qc_i,input);
 	}
 }
 
@@ -804,9 +789,6 @@ void pqnn_index_non_esaustiva(params* input){
 
 	input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
 	if(input->pq==NULL) exit(-1);
-
-
-	printf("--2--\n");
 	// Settagio parametri k-means
 	data->source = input->ds;
 	data->dest = input->qc;
@@ -814,17 +796,8 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_colums=1;
 	data->index_rows = input->nr;
 	data->n_centroidi = input->kc;
-	
-	// printf("\n p:%p, val= %d\n",&(data->index[0]),data->index[0]);
-	
-	printf("--3--\n");	
 	kmeans_from(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
-	
-	printf("--sono fuori dal kmeans #1 --\n");
-	
 	calcola_residui(input);
-
-	printf("--eseguito calcola_residui --\n");
 	// Settagio parametri k-means
 	data->source = input->residual_set;
 	data->dest = input->residual_codebook;
@@ -832,7 +805,6 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_colums=input->m;
 	data->index_rows = input->nr;
 	data->n_centroidi = input->k;
-	printf("struct data impostata m=%d \n", input->m);
 	// calcolo dei quantizzatori prodotto
 	for(i=0;i<input->m;i++){
 		kmeans_from(input, data, i*dStar, (i+1)*dStar);
@@ -847,16 +819,14 @@ void pqnn_index_non_esaustiva(params* input){
 	// 	}
 	// 	printf("\n");
 	// }
-
+	//	STAMPA DI PQ - MATRICE DEGLI INDICI
 	// for(i=0;i<input->nr;i++){
 	// 	for(int j=0;j<input->m;j++){
 	// 		printf("%2d ",input->pq[i*input->m+j]);
 	// 	}
 	// 	printf("\n");
 	// }
-	printf("Inizio: \"inizializzaSecLiv\" ");
    	inizializzaSecLiv(input);
-	printf("Fine: \"inizializzaSecLiv\" ");
 	
 }
 

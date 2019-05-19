@@ -92,7 +92,7 @@ typedef struct {
 	// Strutture ad-hoc ricerca non esaustiva
 
 	// Vettore contenente alla posizione i l'indice di qc(Y_i) in codebook
-	unsigned short * qc_indexes;
+	int * qc_indexes;
 
 	// Coarse q. dim: input.d x input.kc
 	MATRIX qc;
@@ -149,6 +149,15 @@ struct kmeans_data{
  * 
  */
 
+void stampa_matrice_flt(float* M, int rows, int col){
+	int i,j;
+	for(i=0;i<rows;i++){
+		for(j=0;j<col;j++){
+			printf(" %.2f",M[i*col+j]);
+		}
+		printf("------\n");
+	}
+}
 
 void* get_block(int size, int elements) { 
 	return _mm_malloc(elements*size,16); 
@@ -247,17 +256,6 @@ float dist_eI(params* input, struct kmeans_data* data, int punto, int centroide,
 	for(i=start; i<end; i++){
 		ret += pow( data->source[punto*input->d+i]-data->dest[centroide*input->d+i], 2.0);
 	}
-	// if(ret == 0){
-	// 	printf("%d - %d \n", punto, centroide);
-	// 	for(i=0;i<input->d/6;i++){
-	// 		printf(" %.2f " , data->source[punto*input->d+i]);
-	// 	}
-	// 	printf("\n");
-	// 	for(i=0;i<input->d/6;i++){
-	// 		printf(" %.2f " , data->dest[centroide*input->d+i]);
-	// 	}
-	// 	printf("\n");
-	// }
 	return ret;
 }
 
@@ -441,6 +439,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
 	//
+	printf("\t --y--\n");
     for(i=0; i<data->n_centroidi; i++){
 		k = rand()%input->nr;
 		for(j=start; j<end; j++){
@@ -453,11 +452,6 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 			data->index[i*data->index_colums+start/(data->index_colums)] = PQ_non_esaustiva(input, i, start, end, data);
 		}
     }
-	printf("vettore c=0:");
-	for(i=0;i<input->d/3;i++){
-		printf("%.2f ", data->dest[i]);
-	}
-	printf("\n");
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
@@ -499,7 +493,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		}
 		// printf("delta=%.2f - %.2f - %.2f \n",fob2-fob1, fob2, fob1 );
 	}
-	// printf("# di iterazioni:%d\n",t);
+	printf("\t --x--\n");
 }
 
 void kmeans(params* input, int start, int end, int n_centroidi){
@@ -779,10 +773,7 @@ void calcolaNN(params* input, int query){
 	dealloc_matrix(distanze);
 }
 
-void inizializza_learning_set(params* input){
-	
 
-}
 
 // Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
 VECTOR qp_of_r(params* input, int r){
@@ -791,10 +782,13 @@ VECTOR qp_of_r(params* input, int r){
 	dStar = input->d/input->m;
 	res = _mm_malloc(sizeof(float)*input->d, 16);
 	for(int i=0;i<input->m;i++){
+		printf("\t1\n");
 		qp_index = input->pq[r*input->d+i];
+		printf("\t2\n");
 		for(int j=0;j<dStar;j++){
 			res[i*input->m+j] = input->residual_codebook[qp_index*input->d+i*dStar+j];
 		}
+		printf("\t3\n");
 	}
 	return res;
 }
@@ -803,30 +797,41 @@ VECTOR qp_of_r(params* input, int r){
 void add (struct entry * new, int i, params* input){
 	struct entry* vett;
 	vett=input->v;
+	printf("\t1\n");
 	if(vett[i].next== NULL){
 		vett[i].next= new;
 		new->next=NULL;
+		printf("\t2\n");
 	}
 	else{
 		new->next = vett[i].next;
 		vett[i].next = new;
+		printf("\t2\n");
 	}
 }
 
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
 void inizializzaSecLiv(params* input){
-	int qc_i;
+	int qc_i, y;
 	struct entry* new;
+	
 	input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
-	if(input->v==NULL) return;
-	for(int y= 0;y<input->nr;y++){
-		qc_i = input->qc_indexes[y];
-		new = _mm_malloc(sizeof(struct entry),16);
+	if(input->v==NULL) exit(-1);
+
+	for(y=0;y<input->nr;y++){
+		new = (struct entry*) _mm_malloc(sizeof(struct entry),16);
 		if(new==NULL) exit(-1);
+		printf("a\n");
+		qc_i = input->qc_indexes[y];
+		printf("b\n");
+		printf("\n----c------\n");
 		new->index=y;
+		printf("\n----d\n");
 		new->q = qp_of_r(input, y);
+		printf("\n----e\n");
 		add(new,qc_i,input);
+		printf("f\n");
 	}
 }
 
@@ -858,8 +863,10 @@ void compute_residual(params* input, float* res, int qc_i, int y){
 	//
 	// -----------------------------------------
 	// ritorna un puntatore al residuo r(y)
-	for(int i=0; i<input->d;i++)
+	int i;
+	for(i=0; i<input->d;i++){
 		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
+	}
 }
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
@@ -880,24 +887,27 @@ void pqnn_index_non_esaustiva(params* input){
 	struct kmeans_data* data;
 
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
-	dStar=input->d/input->m;
+	dStar = input->d/input->m;
 
 	//TODO: 
 	//AL momento sceglie i primi nr come elementi del learning set. 
-	input->residual_set = _mm_malloc(sizeof(float)*input->nr*input->d, 16);
+	input->residual_set = (float*) _mm_malloc(sizeof(float)*input->nr*input->d, 16);
 	if(input->residual_set==NULL) exit(-1);
 	
-	input->residual_codebook = _mm_malloc(sizeof(float)*input->k*input->d, 16);
+	input->residual_codebook = (float*) _mm_malloc(sizeof(float)*input->k*input->d, 16);
 	if(input->residual_codebook==NULL) exit(-1);
 
-	input->qc = _mm_malloc(sizeof(float)*input->kc*input->d, 16);
+	input->qc = (float*) _mm_malloc(sizeof(float)*input->kc*input->d, 16);
 	if(input->qc==NULL) exit(-1);
 
 	//inizializza vettore
-	input->qc_indexes = _mm_malloc(sizeof(int)*input->nr,16);
+	input->qc_indexes = (int*)_mm_malloc(sizeof(int)*input->nr,16);
 	if(input->qc_indexes==NULL) exit(-1);
 
 	input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
+	if(input->pq==NULL) exit(-1);
+
+
 	printf("--2--\n");
 	// Settagio parametri k-means
 	data->source = input->ds;
@@ -907,10 +917,10 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_rows = input->nr;
 	data->n_centroidi = input->kc;
 	printf("--3--\n");	
-	kmeans_from(input, data, 0, input->d);//calcolo dei q. grossolani memorizzati messi in codebook
-	printf("--4--\n");
+	kmeans_from(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
+	printf("--sono fuori dal kmeans #1 --\n");
 	calcola_residui(input);
-
+	printf("--eseguito calcola_residui --\n");
 	// Settagio parametri k-means
 	data->source = input->residual_set;
 	data->dest = input->residual_codebook;
@@ -918,13 +928,15 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_colums=input->m;
 	data->index_rows = input->nr;
 	data->n_centroidi = input->k;
-
+	printf("struct data impostata m=%d \n", input->m);
 	// calcolo dei quantizzatori prodotto
 	for(i=0;i<input->m;i++){
 		kmeans_from(input, data, i*dStar, (i+1)*dStar);
 	}
+	printf("Inizio: \"inizializzaSecLiv\" ");
    	inizializzaSecLiv(input);
-	printf("fine");
+	printf("Fine: \"inizializzaSecLiv\" ");
+	
 }
 
 void pqnn_search_non_esaustiva(params* input){

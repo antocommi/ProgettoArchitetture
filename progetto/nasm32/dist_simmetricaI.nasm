@@ -16,6 +16,7 @@ in_d equ 28
 in_codebook equ 120
 ;controllare indicizzazione codebook
 dist_simmetricaI:
+		prints 1
 		push ebp
 		mov	ebp, esp
 		push ebx
@@ -28,11 +29,10 @@ dist_simmetricaI:
 		mov ecx, [ebp+input+in_d]			;ind=input->d
 		mov edx, ecx				;ind2=input->d
 		imul ecx, [ebp+centroide1]	;ind=input->d*centroide1
-		mov edi, [ebp+input+in_codeboook];codebook
-		add ecx, [edi]				;ind=input->d*centroide1+codebook
+		add ecx, [ebp+input+in_codebook];ind=input->d*centroide1+codebook
 		add ecx, ebx				;ind=input->d*centroide1+codebook+start
 		imul edx, [ebp+centroide2]	;ind2=input->d*centroide2
-		add edx, [edi]				;ind2=input->d*centroide2+codebook
+		add edx, [ebp+input+in_codebook];ind2=input->d*centroide2+codebook
 		add edx, ebx				;ind2=input->d*centroide2+codebook+start
 		xorps xmm1, xmm1
 cicloQ:	cmp esi, ebx				;i < end-start

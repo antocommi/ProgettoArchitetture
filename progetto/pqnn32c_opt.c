@@ -407,7 +407,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	VECTOR min;
 	float *ind, *ind2, *ci;
 	int m=input->m;
-	int ipart=start(input->d/input->m);
+	int ipart=start*(input->d/input->m);
 	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
@@ -420,7 +420,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		for(j=start; j<end; j++){
 			*ind++=*ind2++;
 		}
-		ind+=input->d;
+		ind+=input->d-(input->d/input->m);
 	}
     
 //	for(i=0; i<input->n; i++){

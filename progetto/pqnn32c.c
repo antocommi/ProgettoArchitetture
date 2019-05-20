@@ -435,7 +435,10 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	int i, j, k, t, c, imin;
 	int count;
 	float fob1, fob2;
-	int* index;
+	int* index, dStar;
+
+	dStar = input->d/input->m;
+
 	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
@@ -450,7 +453,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// Assegnazione dei vettori ai centroidi casuali individuati
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
     for(i=0; i<data->index_rows; i++){
-		data->index[i*data->index_colums+start/(data->index_colums)] = PQ_non_esaustiva(input, i, start, end, data);
+		data->index[i*data->index_colums+start/dStar] = PQ_non_esaustiva(input, i, start, end, data);
     }
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
 	fob1=0; //Valori della funzione obiettivo
@@ -463,7 +466,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
 			for(j=0; j<input->nr; j++){
-				if(data->index[j*data->index_colums+start]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+				if(data->index[j*data->index_colums+start/dStar]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					for(k=start; k<end; k++){
 						data->dest[i*input->d+k] += data->source[j*input->d+k];
@@ -490,7 +493,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->nr; i++){
-			fob2+=pow(dist_eI(input, data, i, data->index[i*data->index_colums+start/(data->index_colums)], start, end), 2.0);
+			fob2+=pow(dist_eI(input, data, i, data->index[i*data->index_colums+start/dStar], start, end), 2.0);
 		}
 		// printf("delta=%.2f - %.2f - %.2f \n",fob2-fob1, fob2, fob1 );
 	}
@@ -789,6 +792,7 @@ void pqnn_index_non_esaustiva(params* input){
 
 	input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
 	if(input->pq==NULL) exit(-1);
+	
 	// Settagio parametri k-means
 	data->source = input->ds;
 	data->dest = input->qc;
@@ -798,6 +802,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->n_centroidi = input->kc;
 	kmeans_from(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
 	calcola_residui(input);
+	
 	// Settagio parametri k-means
 	data->source = input->residual_set;
 	data->dest = input->residual_codebook;
@@ -805,10 +810,12 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_colums=input->m;
 	data->index_rows = input->nr;
 	data->n_centroidi = input->k;
+	
 	// calcolo dei quantizzatori prodotto
 	for(i=0;i<input->m;i++){
 		kmeans_from(input, data, i*dStar, (i+1)*dStar);
 	}
+
 	inizializzaSecLiv(input);
 	// for(i=0;i<input->k;i++){
 	// 	for(int j=1;j<input->m;j+=2){
@@ -820,12 +827,12 @@ void pqnn_index_non_esaustiva(params* input){
 	// 	printf("\n");
 	// }
 	//	STAMPA DI PQ - MATRICE DEGLI INDICI
-	// for(i=0;i<input->nr;i++){
-	// 	for(int j=0;j<input->m;j++){
-	// 		printf("%2d ",input->pq[i*input->m+j]);
-	// 	}
-	// 	printf("\n");
-	// }
+	for(i=0;i<input->nr;i++){
+		for(int j=0;j<input->m;j++){
+			printf("%2d ",input->pq[i*input->m+j]);
+		}
+		printf("\n");
+	}
    	
 	
 	

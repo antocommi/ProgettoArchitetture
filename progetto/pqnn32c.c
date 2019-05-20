@@ -454,7 +454,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
     for(i=0; i<data->index_rows; i++){
 		data->index[i*data->index_colums+start/dStar] = PQ_non_esaustiva(input, i, start, end, data);
-    }
+    } 
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;

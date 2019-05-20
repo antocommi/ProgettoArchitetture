@@ -135,6 +135,24 @@ struct kmeans_data{
 	int n_centroidi;
 };
 
+struct Heap{
+    int *arr;
+    int count;
+    int capacity;
+    int heap_type; // for min heap , 1 for max heap
+};
+
+typedef struct Heap Heap;
+
+// Metodi su heap 
+Heap *CreateHeap(int capacity,int heap_type);
+
+void insert(Heap *h, int key);
+
+void print_heap(Heap *h);
+
+
+
 /*
  * 
  *	Le funzioni sono state scritte assumento che le matrici siano memorizzate 
@@ -148,6 +166,57 @@ struct kmeans_data{
  * 	L'assunzione corrente è che le matrici siano in row-major order.
  * 
  */
+
+Heap *CreateHeap(int capacity,int heap_type){
+    Heap *h = (Heap * ) malloc(sizeof(Heap)); //one is number of heap
+
+    //check if memory allocation is fails
+    if(h == NULL){
+        printf("Memory Error!");
+        return;
+    }
+    h->heap_type = heap_type;
+    h->count=0;
+    h->capacity = capacity;
+    h->arr = (int *) malloc(capacity*sizeof(int)); //size in bytes
+
+    //check if allocation succeed
+    if ( h->arr == NULL){
+        printf("Memory Error!");
+        return;
+    }
+    return h;
+}
+
+void insert(Heap *h, int key){
+    if( h->count < h->capacity){
+        h->arr[h->count] = key;
+        heapify_bottom_top(h, h->count);
+        h->count++;
+    }
+}
+
+void print_heap(Heap *h){
+    int i;
+    printf("____________Print Heap_____________\n");
+    for(i=0;i< h->count;i++){
+        printf("-> %d ",h->arr[i]);
+    }
+    printf("->__/\\__\n");
+}
+
+void heapify_bottom_top(Heap *h,int index){
+    int temp;
+    int parent_node = (index-1)/2;
+
+    if(h->arr[parent_node] > h->arr[index]){
+        //swap and recursive call
+        temp = h->arr[parent_node];
+        h->arr[parent_node] = h->arr[index];
+        h->arr[index] = temp;
+        heapify_bottom_top(h,parent_node);
+    }
+}
 
 void stampa_matrice_flt(float* M, int rows, int col){
 	int i,j;
@@ -500,7 +569,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 }
 
 void kmeans(params* input, int start, int end, int n_centroidi){
-
+	
 }
 
 void creaMatricedistanze(params* input){
@@ -817,24 +886,7 @@ void pqnn_index_non_esaustiva(params* input){
 	}
 
 	inizializzaSecLiv(input);
-	// for(i=0;i<input->k;i++){
-	// 	for(int j=1;j<input->m;j+=2){
-	// 		for(int k=0;k<dStar/4;k++){
-	// 			printf(" %+3.2f ",input->residual_codebook[i*input->d+j*dStar+k]);
-	// 		}
-	// 		printf(" # ");
-	// 	}
-	// 	printf("\n");
-	// }
-	//	STAMPA DI PQ - MATRICE DEGLI INDICI
-	for(i=0;i<input->nr;i++){
-		for(int j=0;j<input->m;j++){
-			printf("%2d ",input->pq[i*input->m+j]);
-		}
-		printf("\n");
-	}
-   	
-	
+	_mm_free(data);
 	
 }
 
@@ -896,6 +948,7 @@ void pqnn_index(params* input) {
 		//pqnn_index_esaustiva(input);
 	}else{
 		pqnn_index_non_esaustiva(input);
+		pqnn_search_non_esaustiva(input);
 	}
     
     //pqnn32_index(input); // Chiamata funzione assembly

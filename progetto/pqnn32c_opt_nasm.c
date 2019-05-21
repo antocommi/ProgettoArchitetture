@@ -504,7 +504,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			ind++;
 		}
 		//printf("breakpoint kmeans 4\n");
-
+		printf("%f\n", input->codebook[start]);
 //-----------------------------------
 		
 		fob1=fob2;
@@ -515,6 +515,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			dist_eI(input, input->ds, i, input->pq[i*m+ipart], start, end, temp);
 			fob2+=pow(*temp, 2.0);
 		}
+		//printf("%f %f\n", fob1, fob2);
 		//printf("after dist\n");
 	}
 	printf("%d\n", t);

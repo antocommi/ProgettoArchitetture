@@ -212,7 +212,7 @@ extern void pqnn32_index(params* input);
 extern int* pqnn32_search(params* input);
 
 extern int calcolaIndice(int i, int j);
-extern float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end);
+extern float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r);
 //extern float dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end);
 
 //funzioni fatte da noi
@@ -222,7 +222,7 @@ extern float dist_eI(params* input, MATRIX set, int punto1, int punto2, int star
 //	return i*(i-1)/2+j;
 //}
 
-//float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
+//void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r){
 //	// estremi start incluso ed end escluso
 //	int i;
 //	float ret=0;
@@ -231,20 +231,8 @@ extern float dist_eI(params* input, MATRIX set, int punto1, int punto2, int star
 //	for(i=start; i<end; i++){
 //		ret+=pow(*ind++ - *ind2++, 2.0);
 //	}
-//	return ret;
+//	*r=ret;
 //}
-
-float dist_e(params* input, MATRIX set, int punto1, int punto2){
-	//funzione non usata
-	int i;
-	float sum=0;
-	int par=0;
-	for(i=0; i<input->m; i++){
-		sum+=pow(dist_eI(input, set, punto1, punto2, par, par+input->m), 2);
-		par+=input->m;
-	}
-	return sum;
-}
 
 int calcolaPQ(params* input, int x, int start, int end){
 	// estremi start incluso ed end escluso
@@ -255,14 +243,15 @@ int calcolaPQ(params* input, int x, int start, int end){
     int i;
     float min=1.79E+308;
     int imin=-1;
-    float temp;
+    float* temp=_mm_malloc(sizeof(float), 16);
     for(i=0; i<input->k; i++){
-        temp=dist_eI(input, input->ds, x, i, start, end);
-        if(temp<min){ 
-            min=temp;
+        dist_eI(input, input->ds, x, i, start, end, temp);
+        if(*temp<min){ 
+            min=*temp;
             imin=i;
         }
     }
+	_mm_free(temp);
     return imin;
 }
 
@@ -387,15 +376,15 @@ int PQ_non_esaustiva(params* input, int x, int start, int end, int n_centroidi){
     int i;
     float min=1.79E+308;
     int imin=-1;
-    float temp;
+    float* temp=_mm_malloc(sizeof(float), 16);
     for(i=0; i<n_centroidi; i++){
-        temp=dist_eI(input, input->ds, x, i, start, end);
-        if(temp<min){ 
-            min=temp;
+        dist_eI(input, input->ds, x, i, start, end, temp);
+        if(*temp<min){ 
+            min=*temp;
             imin=i;
         }
     }
-	
+	_mm_free(temp);
     return imin;
 }
 
@@ -436,22 +425,22 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	for(i=0; i<input->n; i++){
 		*ind++=1.79E+308;
 	}
-	float temp;
+	float* temp=_mm_malloc(sizeof(float), 16);
 	ind=min;
-	printf("before for\n");
+	//printf("before for\n");
 	for(i=0; i<input->n; i++){
 		for(j=0; j<input->k; j++){
-			printf("%d %d\n", i, j);
-			temp=dist_eI(input, input->ds, i, j, start, end);
-			if(temp<min[i]){ 
-				*ind=temp;
+			//printf("%d %d\n", i, j);
+			dist_eI(input, input->ds, i, j, start, end, temp);
+			if(*temp<min[i]){ 
+				*ind=*temp;
 				input->pq[i*m+ipart]=j;
 			}
-			printf("%d %d\n", i, j);
+			//printf("%d %d\n", i, j);
 		}
 		ind++;
 	}
-	printf("after for\n");
+	//printf("after for\n");
 	//--------------------------------------------------------
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
@@ -460,6 +449,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		for(i=0; i<n_centroidi; i++){
 			count=0;
 			ind=ci;
+			//printf("breakpoint kmeans 0\n");
 			for(j=start; j<end; j++){
 				*ind++=0;
 			}
@@ -467,7 +457,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
-			
+			//printf("breakpoint kmeans 1\n");
 			for(j=0; j<input->n; j++){
 				if(input->pq[j*m+ipart]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
@@ -478,6 +468,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 					}
 				}
 			}
+			//printf("breakpoint kmeans 2\n");
 			ind=ci;
 			for(j=start; j<end; j++){
 				if(count!=0){ 
@@ -493,7 +484,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			//
 			ci+=input->d;
 		}
-		
+		//printf("breakpoint kmeans 3\n");
 //		for(i=0; i<input->n; i++){
 //			input->pq[i*input->m+(start/(input->d/input->m))]=calcolaPQ(input, i, start, end);
 //		}
@@ -501,30 +492,37 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		for(i=0; i<input->n; i++){
 			*ind++=1.79E+308;
 		}
-		float temp;
 		ind=min;
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->k; j++){
-				temp=dist_eI(input, input->ds, i, j, start, end);
-				if(temp<*ind){ 
-					*ind=temp;
+				dist_eI(input, input->ds, i, j, start, end, temp);
+				if(*temp<*ind){ 
+					*ind=*temp;
 					input->pq[i*m+ipart]=j;
 				}
 			}
 			ind++;
 		}
+		//printf("breakpoint kmeans 4\n");
 
 //-----------------------------------
 		
 		fob1=fob2;
 		fob2=0;
-		
+		//printf("brefore dist\n");
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			fob2+=pow(dist_eI(input, input->ds, i, input->pq[i*m+ipart], start, end), 2.0);
+			dist_eI(input, input->ds, i, input->pq[i*m+ipart], start, end, temp);
+			fob2+=pow(*temp, 2.0);
 		}
+		//printf("after dist\n");
 	}
+	printf("%d\n", t);
+	//printf("breakpoint kmeans end\n");
+	_mm_free(temp);
+	//printf("breakpoint kmeans end1\n");
 	_mm_free(min);
+	//printf("breakpoint kmeans end2\n");
 }
 
 void creaMatricedistanze(params* input){
@@ -545,8 +543,10 @@ void creaMatricedistanze(params* input){
 	for(i=1; i<input->k; i++){
 		for(j=0; j<i; j++){
 			for(k=0; k<input->m; k++){
+				//printf("prima dist\n");
 				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
 				// verificare se qui va usata la distanza simmetrica o no
+				//printf("dopo dist\n");
 			}
 		}
 	}
@@ -865,12 +865,12 @@ void pqnn_index_esaustiva(params* input){
 	dStar=input->d/input->m;
 	input->codebook = alloc_matrix(input->k, input->d); // row-major-order?
 	if(input->codebook==NULL) exit(-1);
-	printf("before kmeans\n");
+	//printf("before kmeans\n");
 	for(i=0; i<input->m; i++){
 		kmeans(input, d2, d2+dStar, input->k);
 		d2+=dStar;
 	}
-	printf("after kmeans\n");
+	//printf("after kmeans\n");
 //	printf("quantizzatori\n");
 //	for(i=0; i<input->n; i++){
 //		for(int j=0; j<input->m; j++){

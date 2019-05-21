@@ -6,15 +6,16 @@ section .text
 
 global dist_eI
 
-end equ 8
-startt equ 12
-punto2 equ 16
-punto1 equ 20
-set equ 24
-input equ 28
+r equ 32
+end equ 28
+startt equ 24
+punto2 equ 20
+punto1 equ 16
+set equ 12
+input equ 8
 
-in_d equ 28
-in_ds equ 8
+in_d equ 16
+in_ds equ 4
 
 dist_eI:
 		push ebp
@@ -24,17 +25,13 @@ dist_eI:
 		push edi	;inizio
 		mov ebx, [ebp+end]			;end
 		mov edi, [ebp+input]		;input
-
 		mov ecx, [edi+in_d]			;ind=input->d
-
 		mov edx, ecx				;ind2=input->d
 		imul ecx, [ebp+punto1]		;ind=input->d*punto1
 		add ecx, [ebp+set]			;ind=input->d*punto1+set
 		add ecx, [ebp+startt]		;ind=input->d*punto1+set+start
 		imul edx, [ebp+punto2]		;ind2=input->d*punto2
-
 		add edx, [edi+in_ds]		;ind2=input->d*punto2+input->ds
-
 		add edx, [ebp+startt]		;ind2=input->d*punto2+input->ds+start
 		sub ebx, [ebp+startt]		;end-start
 		sub ebx, 4					;end ciclo quoziente
@@ -59,7 +56,9 @@ cicloR:	cmp esi, ebx
 		addss xmm0, xmm1
 		inc esi
 		jmp cicloR
-endloop:pop	edi		;fine
+endloop:mov eax, [ebp+r];
+		movss [eax], xmm0
+		pop	edi		;fine
 		pop	esi
 		pop	ebx
 		mov	esp, ebp

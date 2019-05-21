@@ -6,14 +6,14 @@ section .text
 
 global dist_simmetricaI
 
-end equ 8
-startt equ 12
+end equ 24
+startt equ 20
 centroide2 equ 16
-centroide1 equ 20
-input equ 24
+centroide1 equ 12
+input equ 8
 
-in_d equ 28
-in_codebook equ 120
+in_d equ 16
+in_codebook equ 92
 ;controllare indicizzazione codebook
 dist_simmetricaI:
 		prints 1
@@ -26,13 +26,14 @@ dist_simmetricaI:
 		mov ebx, [ebp+end]			;end
 		sub ebx, [ebp+startt]		;end-start
 		sub ebx, 4					;end ciclo quoziente
-		mov ecx, [ebp+input+in_d]			;ind=input->d
+		mov edi, [ebp+input]		;input
+		mov ecx, [edi+in_d]			;ind=input->d
 		mov edx, ecx				;ind2=input->d
 		imul ecx, [ebp+centroide1]	;ind=input->d*centroide1
-		add ecx, [ebp+input+in_codebook];ind=input->d*centroide1+codebook
+		add ecx, [edi+in_codebook]	;ind=input->d*centroide1+codebook
 		add ecx, ebx				;ind=input->d*centroide1+codebook+start
 		imul edx, [ebp+centroide2]	;ind2=input->d*centroide2
-		add edx, [ebp+input+in_codebook];ind2=input->d*centroide2+codebook
+		add edx, [edi+in_codebook]	;ind2=input->d*centroide2+codebook
 		add edx, ebx				;ind2=input->d*centroide2+codebook+start
 		xorps xmm1, xmm1
 cicloQ:	cmp esi, ebx				;i < end-start

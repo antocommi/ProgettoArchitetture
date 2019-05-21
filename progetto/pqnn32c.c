@@ -135,23 +135,15 @@ struct kmeans_data{
 	int n_centroidi;
 };
 
-struct Heap{
-    int *arr;
-    int count;
-    int capacity;
-    int heap_type; // for min heap , 1 for max heap
-};
-
-typedef struct Heap Heap;
-
-// Metodi su heap 
-Heap *CreateHeap(int capacity,int heap_type);
-
-void insert(Heap *h, int key);
-
-void print_heap(Heap *h);
-
-
+void stampa_matrice_flt(float* M, int rows, int col){
+	int i,j;
+	for(i=0;i<rows;i++){
+		for(j=0;j<col;j++){
+			printf(" %.2f",M[i*col+j]);
+		}
+		printf("\n---%d---\n",i);
+	}
+}
 
 /*
  * 
@@ -166,67 +158,6 @@ void print_heap(Heap *h);
  * 	L'assunzione corrente è che le matrici siano in row-major order.
  * 
  */
-
-Heap *CreateHeap(int capacity,int heap_type){
-    Heap *h = (Heap * ) malloc(sizeof(Heap)); //one is number of heap
-
-    //check if memory allocation is fails
-    if(h == NULL){
-        printf("Memory Error!");
-        return;
-    }
-    h->heap_type = heap_type;
-    h->count=0;
-    h->capacity = capacity;
-    h->arr = (int *) malloc(capacity*sizeof(int)); //size in bytes
-
-    //check if allocation succeed
-    if ( h->arr == NULL){
-        printf("Memory Error!");
-        return;
-    }
-    return h;
-}
-
-void insert(Heap *h, int key){
-    if( h->count < h->capacity){
-        h->arr[h->count] = key;
-        heapify_bottom_top(h, h->count);
-        h->count++;
-    }
-}
-
-void print_heap(Heap *h){
-    int i;
-    printf("____________Print Heap_____________\n");
-    for(i=0;i< h->count;i++){
-        printf("-> %d ",h->arr[i]);
-    }
-    printf("->__/\\__\n");
-}
-
-void heapify_bottom_top(Heap *h,int index){
-    int temp;
-    int parent_node = (index-1)/2;
-
-    if(h->arr[parent_node] > h->arr[index]){
-        //swap and recursive call
-        temp = h->arr[parent_node];
-        h->arr[parent_node] = h->arr[index];
-        h->arr[index] = temp;
-        heapify_bottom_top(h,parent_node);
-    }
-}
-
-void stampa_matrice_flt(float* M, int rows, int col){
-	int i,j;
-	for(i=0;i<rows;i++){
-		for(j=0;j<col;j++){
-			printf(" %.2f",M[i*col+j]);
-		}
-		printf("\n---%d---\n",i);
-	}
-}
 
 void* get_block(int size, int elements) { 
 	return _mm_malloc(elements*size,16); 

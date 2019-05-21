@@ -135,7 +135,6 @@ struct kmeans_data{
 	int n_centroidi;
 };
 
-
 void stampa_matrice_flt(float* M, int rows, int col){
 	int i,j;
 	for(i=0;i<rows;i++){

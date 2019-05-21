@@ -56,7 +56,7 @@ cicloR:	cmp esi, ebx
 		addss xmm0, xmm1
 		inc esi
 		jmp cicloR
-endloop:mov eax, [ebp+r];
+endloop:mov eax, [ebp+r]
 		movss [eax], xmm0
 		pop	edi		;fine
 		pop	esi

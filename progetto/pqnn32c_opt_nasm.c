@@ -46,6 +46,7 @@
 #include <time.h>
 #include <xmmintrin.h>
 #include <limits.h>
+#include <stddef.h>
 
 #define	MATRIX		float*
 #define	VECTOR		float*
@@ -208,20 +209,19 @@ void save_ANN(char* filename, int* ANN, int nq, int knn) {
 }
 
 
-extern void pqnn32_index(params* input);
-extern int* pqnn32_search(params* input);
+//extern void pqnn32_index(params* input);
+//extern int* pqnn32_search(params* input);
 
-extern int calcolaIndice(int i, int j);
-extern float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r);
-//extern float dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end);
 
 //funzioni fatte da noi
 
+extern int calcolaIndice(int i, int j);
 //int calcolaIndice(int i, int j){
 //	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
 //	return i*(i-1)/2+j;
 //}
 
+extern void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r);
 //void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r){
 //	// estremi start incluso ed end escluso
 //	int i;
@@ -254,24 +254,27 @@ int calcolaPQ(params* input, int x, int start, int end){
     return imin;
 }
 
-float dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end){
-	// estremi start incluso ed end escluso
-	int i;
-	float ret=0;
-	float* ind=input->codebook+centroide1*input->d+start;
-	float* ind2=input->codebook+centroide2*input->d+start;
-	for(i=start; i<end; i++){
-		ret+=pow(*ind++ - *ind2++, 2);
-	}
-	return ret;
-}
+extern void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end, float* r);
+//void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end, float* r){
+//	// estremi start incluso ed end escluso
+//	int i;
+//	float ret=0;
+//	float* ind=input->codebook+centroide1*input->d+start;
+//	float* ind2=input->codebook+centroide2*input->d+start;
+//	for(i=start; i<end; i++){
+//		ret+=pow(*ind++ - *ind2++, 2);
+//	}
+//	*r=ret;
+//}
 
 float dist_simmetrica(params* input, int centroide1, int centroide2){
 	int i;
 	float sum=0;
 	int par=0;
+	float temp;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_simmetricaI(input, centroide1, centroide2, par, par+input->m), 2);
+		dist_simmetricaI(input, centroide1, centroide2, par, par+input->m, &temp);
+		sum+=pow(temp, 2);
 		par+=input->m;
 	}
 	return sum;
@@ -386,6 +389,13 @@ int PQ_non_esaustiva(params* input, int x, int start, int end, int n_centroidi){
     return imin;
 }
 
+float absf(float f){
+	if(f>0){
+		return f;
+	}
+	return -f;
+}
+
 void kmeans(params* input, int start, int end, int n_centroidi){
 	// estremi start incluso ed end escluso
 	int i, j, k, t;
@@ -393,6 +403,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	float fob1, fob2;
 	VECTOR min;
 	float *ind, *ind2, *ci;
+	int* ind3;
 	int m=input->m;
 	int ipart=start/(input->d/input->m);
 	//printf("kmeans 1\n");
@@ -432,7 +443,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	for(i=0; i<input->n; i++){
 		for(j=0; j<input->k; j++){
 			//printf("%d %d\n", i, j);
-			dist_eI(input, input->ds, i, j, start, end, &temp);
+			dist_eI(input, input->codebook, j, i, start, end, &temp);
 			if(temp<min[i]){ 
 				*ind=temp;
 				input->pq[i*m+ipart]=j;
@@ -445,7 +456,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	//--------------------------------------------------------
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
-	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
+	for(t=0; t<input->tmin || (t<input->tmax && absf(fob2-fob1) > input->eps); t++){
 		ci=input->codebook+start;
 		for(i=0; i<n_centroidi; i++){
 			count=0;
@@ -460,9 +471,9 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
 			//printf("breakpoint kmeans 1\n");
-			ind2=input->pq+ipart;
+			ind3=input->pq+ipart;
 			for(j=0; j<input->n; j++){
-				if(*ind2==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+				if(*ind3==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					ind=ci;
 					for(k=start; k<end; k++){
@@ -470,8 +481,9 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 						ind++;
 					}
 				}
-				ind2+=m;
+				ind3+=m;
 			}
+			//printf("%f\n", *ci);
 			//printf("breakpoint kmeans 2\n");
 			ind=ci;
 			for(j=start; j<end; j++){
@@ -492,6 +504,10 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 //		for(i=0; i<input->n; i++){
 //			input->pq[i*input->m+(start/(input->d/input->m))]=calcolaPQ(input, i, start, end);
 //		}
+	//	printf("start print\n");
+	//	for(i=start; i<end; i++){
+	//		printf("%f\n", input->codebook[i]);
+	//	}
 		ind=min;
 		for(i=0; i<input->n; i++){
 			*ind++=1.79E+308;
@@ -499,7 +515,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		ind=min;
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->k; j++){
-				dist_eI(input, input->ds, i, j, start, end, &temp);
+				dist_eI(input, input->codebook, j, i, start, end, &temp);
 				if(temp<*ind){ 
 					*ind=temp;
 					input->pq[i*m+ipart]=j;
@@ -510,15 +526,24 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		//printf("breakpoint kmeans 4\n");
 		//printf("%f\n", input->codebook[start]);
 //-----------------------------------
-		
+		//printf("inizio\n");
+		//printf("fob1: %f fob2: %f\n", fob1, fob2);
 		fob1=fob2;
+		//printf("fob1: %f fob2: %f\n", fob1, fob2);
 		fob2=0;
+		//printf("fob1: %f fob2: %f\n", fob1, fob2);
+		//printf("inizio\n");
 		//printf("brefore dist\n");
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			dist_eI(input, input->ds, i, input->pq[i*m+ipart], start, end, &temp);
+			dist_eI(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
+			//printf("%f\n", temp);
 			fob2+=pow(temp, 2.0);
+			//printf("%f\n", fob2);
 		}
+		//printf("%f\n", temp);
+		//printf("a\n");
+		//printf("%f %f %f\n", fob1, fob2, fob2-fob1);
 		//printf("%f %f\n", fob1, fob2);
 		//printf("after dist\n");
 	}
@@ -530,14 +555,17 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 
 void creaMatricedistanze(params* input){
 	int i, j, k;
+	float temp;
 	input->nDist=input->k*(input->k+1)/2;
 	input->distanze_simmetriche = alloc_matrix(input->m, input->nDist);
 	if(input->distanze_simmetriche==NULL) exit(-1);
+	printf("crea matrice\n");
 	//row major order---------------------------------------------------------
 //	for(k=0; k<input->m; k++){
 //		for(i=1; i<input->k; i++){
 //			for(j=0; j<i; j++){
-//				input->distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
+//				dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m, &temp);
+//				input->distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)]=temp; 
 //				// verificare se qui va usata la distanza simmetrica o no
 //			}
 //		}
@@ -547,9 +575,12 @@ void creaMatricedistanze(params* input){
 		for(j=0; j<i; j++){
 			for(k=0; k<input->m; k++){
 				//printf("prima dist\n");
-				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
-				// verificare se qui va usata la distanza simmetrica o no
+				dist_simmetricaI(input, i, j, k*(input->d/input->m), (k+1)*(input->d/input->m), &temp);
 				//printf("dopo dist\n");
+				//printf("%f\n", temp);
+				//printf("porca troia\n");
+				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
+				// verificare se qui va usata la distanza simmetrica o no
 			}
 		}
 	}
@@ -932,7 +963,6 @@ void pqnn_search_esaustiva(params* input){
  * 	==========
  */
 void pqnn_index(params* input) {
-	printf("start index\n");
 	// TODO: Gestire liberazione della memoria.
 	if(input->exaustive==1){
 		pqnn_index_esaustiva(input);

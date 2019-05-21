@@ -6,6 +6,7 @@ section .text
 
 global dist_simmetricaI
 
+r equ 28
 end equ 24
 startt equ 20
 centroide2 equ 16
@@ -14,9 +15,8 @@ input equ 8
 
 in_d equ 16
 in_codebook equ 92
-;controllare indicizzazione codebook
+
 dist_simmetricaI:
-		prints 1
 		push ebp
 		mov	ebp, esp
 		push ebx
@@ -31,11 +31,12 @@ dist_simmetricaI:
 		mov edx, ecx				;ind2=input->d
 		imul ecx, [ebp+centroide1]	;ind=input->d*centroide1
 		add ecx, [edi+in_codebook]	;ind=input->d*centroide1+codebook
-		add ecx, ebx				;ind=input->d*centroide1+codebook+start
+		add ecx, [ebp+startt]		;ind=input->d*centroide1+codebook+start
 		imul edx, [ebp+centroide2]	;ind2=input->d*centroide2
 		add edx, [edi+in_codebook]	;ind2=input->d*centroide2+codebook
-		add edx, ebx				;ind2=input->d*centroide2+codebook+start
+		add edx, [ebp+startt]		;ind2=input->d*centroide2+codebook+start
 		xorps xmm1, xmm1
+
 cicloQ:	cmp esi, ebx				;i < end-start
 		jge somme
 		movaps xmm0, [ecx+4*esi]
@@ -55,7 +56,9 @@ cicloR:	cmp esi, ebx
 		addss xmm1, xmm0
 		inc esi
 		jmp cicloR
-endloop:pop	edi		;fine
+endloop:mov eax, [ebp+r]
+		movss [eax], xmm0
+fin:	pop	edi		;fine
 		pop	esi
 		pop	ebx
 		mov	esp, ebp

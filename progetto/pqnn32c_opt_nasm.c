@@ -211,28 +211,28 @@ void save_ANN(char* filename, int* ANN, int nq, int knn) {
 extern void pqnn32_index(params* input);
 extern int* pqnn32_search(params* input);
 
-//extern int calcolaIndice(int i, int j);
-//extern float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end);
+extern int calcolaIndice(int i, int j);
+extern float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end);
 //extern float dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end);
 
 //funzioni fatte da noi
 
-int calcolaIndice(int i, int j){
-	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
-	return i*(i-1)/2+j;
-}
+//int calcolaIndice(int i, int j){
+//	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
+//	return i*(i-1)/2+j;
+//}
 
-float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
-	// estremi start incluso ed end escluso
-	int i;
-	float ret=0;
-	float* ind=set+punto1*input->d+start;
-	float* ind2=input->ds+punto2*input->d+start;
-	for(i=start; i<end; i++){
-		ret+=pow(*ind++ - *ind2++, 2.0);
-	}
-	return ret;
-}
+//float dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end){
+//	// estremi start incluso ed end escluso
+//	int i;
+//	float ret=0;
+//	float* ind=set+punto1*input->d+start;
+//	float* ind2=input->ds+punto2*input->d+start;
+//	for(i=start; i<end; i++){
+//		ret+=pow(*ind++ - *ind2++, 2.0);
+//	}
+//	return ret;
+//}
 
 float dist_e(params* input, MATRIX set, int punto1, int punto2){
 	//funzione non usata
@@ -329,11 +329,11 @@ float distI(params* input, int* quantizer, int punto1, int centroide2, int start
 		return 0;
 	}else{
 		//row major order-------------------------------------------
-//		if(c1<centroide2){
-//			return input->distanze_simmetriche[(input->nDist*start/(input->d/input->m))+calcolaIndice(centroide2, c1)];
-//		}else{
-//			return input->distanze_simmetriche[(input->nDist*start/(input->d/input->m))+calcolaIndice(c1, centroide2)];
-//		}
+	//	if(c1<centroide2){
+	//		return input->distanze_simmetriche[(input->nDist*start/(input->d/input->m))+calcolaIndice(centroide2, c1)];
+	//	}else{
+	//		return input->distanze_simmetriche[(input->nDist*start/(input->d/input->m))+calcolaIndice(c1, centroide2)];
+	//	}
 		//column major order-------------------------------------------
 		if(c1<centroide2){
 			return input->distanze_simmetriche[start/(input->d/input->m)+calcolaIndice(centroide2, c1)*input->m];
@@ -407,7 +407,8 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	VECTOR min;
 	float *ind, *ind2, *ci;
 	int m=input->m;
-	int ipart=start*(input->d/input->m);
+	int ipart=start/(input->d/input->m);
+	//printf("kmeans 1\n");
 	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
@@ -418,10 +419,13 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		k=rand()%input->n;
 		ind2=input->ds+k*input->d+start;
 		for(j=start; j<end; j++){
+			//printf("%d %d\n", i, j);
 			*ind++=*ind2++;
+			//printf("%d %d\n", i, j);
 		}
 		ind+=input->d-(input->d/input->m);
 	}
+	//printf("kmeans 2\n");
     
 //	for(i=0; i<input->n; i++){
 //		input->pq[i*input->m+(start/(input->d/input->m))]=calcolaPQ(input, i, start, end);
@@ -434,16 +438,20 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	}
 	float temp;
 	ind=min;
+	printf("before for\n");
 	for(i=0; i<input->n; i++){
 		for(j=0; j<input->k; j++){
+			printf("%d %d\n", i, j);
 			temp=dist_eI(input, input->ds, i, j, start, end);
 			if(temp<min[i]){ 
 				*ind=temp;
 				input->pq[i*m+ipart]=j;
 			}
+			printf("%d %d\n", i, j);
 		}
 		ind++;
 	}
+	printf("after for\n");
 	//--------------------------------------------------------
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
@@ -856,12 +864,21 @@ void pqnn_index_esaustiva(params* input){
 	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
 	dStar=input->d/input->m;
 	input->codebook = alloc_matrix(input->k, input->d); // row-major-order?
-    if(input->codebook==NULL) exit(-1);
+	if(input->codebook==NULL) exit(-1);
+	printf("before kmeans\n");
 	for(i=0; i<input->m; i++){
 		kmeans(input, d2, d2+dStar, input->k);
 		d2+=dStar;
 	}
-
+	printf("after kmeans\n");
+//	printf("quantizzatori\n");
+//	for(i=0; i<input->n; i++){
+//		for(int j=0; j<input->m; j++){
+//			printf("%d ", input->pq[i*input->m+j]);
+//		}
+//		printf("\n");
+//	}
+//	printf("codebook\n");
 //	for(i=0; i<input->k; i++){
 //		for(int j=0; j<input->n; j++){
 //			printf("%f ", input->codebook[i*input->d+j]);
@@ -912,7 +929,7 @@ void pqnn_search_esaustiva(params* input){
  * 	==========
  */
 void pqnn_index(params* input) {
-	//printf("breakpoint\n");
+	printf("start index\n");
 	// TODO: Gestire liberazione della memoria.
 	if(input->exaustive==1){
 		pqnn_index_esaustiva(input);
@@ -949,7 +966,6 @@ void pqnn_search(params* input) {
 
 
 int main(int argc, char** argv) {
-	
 	char fname[256];
 	int i, j;
 	
@@ -1136,7 +1152,6 @@ int main(int argc, char** argv) {
 	//
 	// Costruisce i quantizzatori
 	//
-	
 	clock_t t = clock();
 	pqnn_index(input);
 	t = clock() - t;

@@ -243,15 +243,14 @@ int calcolaPQ(params* input, int x, int start, int end){
     int i;
     float min=1.79E+308;
     int imin=-1;
-    float* temp=_mm_malloc(sizeof(float), 16);
+    float temp;
     for(i=0; i<input->k; i++){
-        dist_eI(input, input->ds, x, i, start, end, temp);
-        if(*temp<min){ 
-            min=*temp;
+        dist_eI(input, input->ds, x, i, start, end, &temp);
+        if(temp<min){ 
+            min=temp;
             imin=i;
         }
     }
-	_mm_free(temp);
     return imin;
 }
 
@@ -376,15 +375,14 @@ int PQ_non_esaustiva(params* input, int x, int start, int end, int n_centroidi){
     int i;
     float min=1.79E+308;
     int imin=-1;
-    float* temp=_mm_malloc(sizeof(float), 16);
+    float temp;
     for(i=0; i<n_centroidi; i++){
-        dist_eI(input, input->ds, x, i, start, end, temp);
-        if(*temp<min){ 
-            min=*temp;
+        dist_eI(input, input->ds, x, i, start, end, &temp);
+        if(temp<min){ 
+            min=temp;
             imin=i;
         }
     }
-	_mm_free(temp);
     return imin;
 }
 
@@ -409,7 +407,9 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		ind2=input->ds+k*input->d+start;
 		for(j=start; j<end; j++){
 			//printf("%d %d\n", i, j);
-			*ind++=*ind2++;
+			*ind=*ind2;
+			ind++;
+			ind2++;
 			//printf("%d %d\n", i, j);
 		}
 		ind+=input->d-(input->d/input->m);
@@ -423,17 +423,18 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	min=(VECTOR) alloc_matrix(input->n, 1);
 	ind=min;
 	for(i=0; i<input->n; i++){
-		*ind++=1.79E+308;
+		*ind=1.79E+308;
+		ind++;
 	}
-	float* temp=_mm_malloc(sizeof(float), 16);
+	float temp;
 	ind=min;
 	//printf("before for\n");
 	for(i=0; i<input->n; i++){
 		for(j=0; j<input->k; j++){
 			//printf("%d %d\n", i, j);
-			dist_eI(input, input->ds, i, j, start, end, temp);
-			if(*temp<min[i]){ 
-				*ind=*temp;
+			dist_eI(input, input->ds, i, j, start, end, &temp);
+			if(temp<min[i]){ 
+				*ind=temp;
 				input->pq[i*m+ipart]=j;
 			}
 			//printf("%d %d\n", i, j);
@@ -451,15 +452,17 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 			ind=ci;
 			//printf("breakpoint kmeans 0\n");
 			for(j=start; j<end; j++){
-				*ind++=0;
+				*ind=0;
+				ind++;
 			}
 			
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
 			//printf("breakpoint kmeans 1\n");
+			ind2=input->pq+ipart;
 			for(j=0; j<input->n; j++){
-				if(input->pq[j*m+ipart]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+				if(*ind2==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
 					ind=ci;
 					for(k=start; k<end; k++){
@@ -467,6 +470,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 						ind++;
 					}
 				}
+				ind2+=m;
 			}
 			//printf("breakpoint kmeans 2\n");
 			ind=ci;
@@ -495,16 +499,16 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		ind=min;
 		for(i=0; i<input->n; i++){
 			for(j=0; j<input->k; j++){
-				dist_eI(input, input->ds, i, j, start, end, temp);
-				if(*temp<*ind){ 
-					*ind=*temp;
+				dist_eI(input, input->ds, i, j, start, end, &temp);
+				if(temp<*ind){ 
+					*ind=temp;
 					input->pq[i*m+ipart]=j;
 				}
 			}
 			ind++;
 		}
 		//printf("breakpoint kmeans 4\n");
-		printf("%f\n", input->codebook[start]);
+		//printf("%f\n", input->codebook[start]);
 //-----------------------------------
 		
 		fob1=fob2;
@@ -512,15 +516,13 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		//printf("brefore dist\n");
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			dist_eI(input, input->ds, i, input->pq[i*m+ipart], start, end, temp);
-			fob2+=pow(*temp, 2.0);
+			dist_eI(input, input->ds, i, input->pq[i*m+ipart], start, end, &temp);
+			fob2+=pow(temp, 2.0);
 		}
 		//printf("%f %f\n", fob1, fob2);
 		//printf("after dist\n");
 	}
 	printf("%d\n", t);
-	//printf("breakpoint kmeans end\n");
-	_mm_free(temp);
 	//printf("breakpoint kmeans end1\n");
 	_mm_free(min);
 	//printf("breakpoint kmeans end2\n");

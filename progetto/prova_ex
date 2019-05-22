@@ -1,0 +1,2 @@
+gcc -O0 -m32 pqnn32c_opt.c -lm -o a_opt.out
+./a_opt.out ./prova/prova $1 $2 $3

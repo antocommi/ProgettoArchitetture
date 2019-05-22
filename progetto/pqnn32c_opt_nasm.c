@@ -411,6 +411,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	ind=input->codebook+start;
 	for(i=0; i<n_centroidi; i++){
 		k=rand()%input->n;
+		printf("%d\n", k);
 		ind2=input->ds+k*input->d+start;
 		for(j=start; j<end; j++){
 			//printf("%d %d\n", i, j);

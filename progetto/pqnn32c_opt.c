@@ -242,25 +242,53 @@ void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int e
 	*r=ret;
 }
 
-int calcolaPQ(params* input, int x, int start, int end){
-	// estremi start incluso ed end escluso
-    //
-    //	INPUT: 	Punto x di dimensione d.
-    //	OUTPUT: indice del centroide c più vicino ad x. 
-    //
-    int i;
-    float min=1.79E+308;
-    int imin=-1;
-    float temp;
-    for(i=0; i<input->k; i++){
-        dist_eI(input, input->ds, x, i, start, end, &temp);
-        if(temp<min){ 
-            min=temp;
-            imin=i;
-        }
-    }
-    return imin;
+int calcolaPQ(params* input, dist_params* dist, VECTOR min){
+	float* ind=min;
+	for(i=0; i<input->n; i++){
+		*ind=1.79E+308;
+		ind++;
+	}
+	float temp;
+	ind=min;
+	dist->p2=0;
+	//printf("before for\n");
+	for(i=0; i<input->n; i++){
+		dist->p1=0;
+		for(j=0; j<input->k; j++){
+			//printf("%d %d\n", i, j);
+			dist_eI(input, dist, &temp);
+			if(temp<min[i]){ 
+				*ind=temp;
+				input->pq[i*m+ipart]=j;
+			}
+			//printf("%d %d\n", i, j);
+			dist->p1++;
+		}
+		dist->p2++;
+		ind++;
+	}
 }
+
+//int calcolaPQ(params* input, int x, int start, int end){
+//	//funzione non usata
+//	// estremi start incluso ed end escluso
+//    //
+//	//	INPUT: 	Punto x di dimensione d.
+//    //	OUTPUT: indice del centroide c più vicino ad x. 
+//    //
+//    int i;
+//    float min=1.79E+308;
+//    int imin=-1;
+//    float temp;
+//    for(i=0; i<input->k; i++){
+//        dist_eI(input, input->ds, x, i, start, end, &temp);
+//        if(temp<min){ 
+//            min=temp;
+//            imin=i;
+//        }
+//    }
+//    return imin;
+//}
 
 void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end, float* r){
 	// estremi start incluso ed end escluso
@@ -398,12 +426,11 @@ float absf(float f){
 	return -f;
 }
 
-void kmeans(params* input, dist_params* dist, int n_centroidi){
+void kmeans(params* input, dist_params* dist, int n_centroidi, VECTOR min){
 	// estremi start incluso ed end escluso
 	int i, j, k, t;
 	int count;
 	float fob1, fob2;
-	VECTOR min;
 	float *ind, *ind2, *ci;
 	int* ind3;
 	int m=input->m;
@@ -436,33 +463,34 @@ void kmeans(params* input, dist_params* dist, int n_centroidi){
 //		input->pq[i*input->m+(start/(input->d/input->m))]=calcolaPQ(input, i, start, end);
 //	}
 	//--------------------------------------------------------
-	min=(VECTOR) alloc_matrix(input->n, 1);
-	ind=min;
-	for(i=0; i<input->n; i++){
-		*ind=1.79E+308;
-		ind++;
-	}
-	float temp;
-	ind=min;
-	dist->source=input->codebook;
-	dist->dest=input->ds;
-	dist->p2=0;
-	//printf("before for\n");
-	for(i=0; i<input->n; i++){
-		dist->p1=0;
-		for(j=0; j<input->k; j++){
-			//printf("%d %d\n", i, j);
-			dist_eI(input, dist, &temp);
-			if(temp<min[i]){ 
-				*ind=temp;
-				input->pq[i*m+ipart]=j;
-			}
-			//printf("%d %d\n", i, j);
-			dist->p1++;
-		}
-		dist->p2++;
-		ind++;
-	}
+	calcolaPQ(input, dist, min);
+	//--------------------------------------------------------
+//	ind=min;
+//	for(i=0; i<input->n; i++){
+//		*ind=1.79E+308;
+//		ind++;
+//	}
+//	float temp;
+//	ind=min;
+//	dist->source=input->codebook;
+//	dist->dest=input->ds;
+//	dist->p2=0;
+//	//printf("before for\n");
+//	for(i=0; i<input->n; i++){
+//		dist->p1=0;
+//		for(j=0; j<input->k; j++){
+//			//printf("%d %d\n", i, j);
+//			dist_eI(input, dist, &temp);
+//			if(temp<min[i]){ 
+//				*ind=temp;
+//				input->pq[i*m+ipart]=j;
+//			}
+//			//printf("%d %d\n", i, j);
+//			dist->p1++;
+//		}
+//		dist->p2++;
+//		ind++;
+//	}
 	//printf("after for\n");
 	//--------------------------------------------------------
 	fob1=0; //Valori della funzione obiettivo
@@ -519,25 +547,26 @@ void kmeans(params* input, dist_params* dist, int n_centroidi){
 	//	for(i=start; i<end; i++){
 	//		printf("%f\n", input->codebook[i]);
 	//	}
-		ind=min;
-		for(i=0; i<input->n; i++){
-			*ind++=1.79E+308;
-		}
-		ind=min;
-		dist->p2=0;
-		for(i=0; i<input->n; i++){
-			dist->p1=0;
-			for(j=0; j<input->k; j++){
-				dist_eI(input, dist, &temp);
-				if(temp<*ind){ 
-					*ind=temp;
-					input->pq[i*m+ipart]=j;
-				}
-				dist->p1++;
-			}
-			dist->p2++;
-			ind++;
-		}
+		calcolaPQ(input, dist, min);
+//		ind=min;
+//		for(i=0; i<input->n; i++){
+//			*ind++=1.79E+308;
+//		}
+//		ind=min;
+//		dist->p2=0;
+//		for(i=0; i<input->n; i++){
+//			dist->p1=0;
+//			for(j=0; j<input->k; j++){
+//				dist_eI(input, dist, &temp);
+//				if(temp<*ind){ 
+//					*ind=temp;
+//					input->pq[i*m+ipart]=j;
+//				}
+//				dist->p1++;
+//			}
+//			dist->p2++;
+//			ind++;
+//		}
 		//printf("breakpoint kmeans 4\n");
 		//printf("%f\n", input->codebook[start]);
 //-----------------------------------
@@ -931,9 +960,12 @@ void pqnn_index_esaustiva(params* input){
 	dist->d=input->d;
 	dist->start=0;
 	dist->end=dStar;
+	dist->source=input->codebook;
+	dist->dest=input->ds;
+	VECTOR min=(VECTOR) alloc_matrix(input->n, 1);
 	//printf("before kmeans\n");
 	for(i=0; i<input->m; i++){
-		kmeans(input, dist, input->k);
+		kmeans(input, dist, input->k, min);
 		dist->start+=dStar;
 		dist->end+=dStar;
 	}
@@ -961,6 +993,8 @@ void pqnn_index_esaustiva(params* input){
 void pqnn_search_esaustiva(params* input){
 	int i, j, c;
 	int *ipq, *ind;
+	dist_params* dist=(dist_params) _mm_malloc(sizeof(dist_params), 16);
+	dist->d=input->d;
 	if(input->symmetric==1){
 		//printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
@@ -968,12 +1002,18 @@ void pqnn_search_esaustiva(params* input){
 		c=input->d/input->m;
 		//printf("break0.1\n");
 		ipq=input->query_pq;
+		dist->start=0;
+		dist->end=c;
+		dist->p1=0;
 		for(i=0; i<input->nq; i++){
 			ind=ipq;
 			for(j=0; j<input->m; j++){
-				*ind++=calcolaQueryPQ(input, i, j*c, (j+1)*c);
+				*ind++=calcolaQueryPQ(input, dist);
+				dist->start+=c;
+				dist->end+=c;
 			}
 			ipq+=input->m;
+			dist->p1++;
 		}
 	}
 	//printf("break1\n");
@@ -983,6 +1023,7 @@ void pqnn_search_esaustiva(params* input){
 	//printf("break2\n");
 	_mm_free(input->codebook);
 	_mm_free(input->pq);
+	_mm_free(dist);
 	if(input->symmetric==1){
 		_mm_free(input->distanze_simmetriche);
 	}else{

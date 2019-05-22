@@ -127,7 +127,7 @@ typedef struct{
 
 typedef struct{
 	MATRIX source;
-	MATRIX dest;
+	int* dest;
 	int npunti;
 	int ncentroidi;
 	VECTOR min;
@@ -239,36 +239,53 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r){
+void dist_eI(dist_params* dist, float* r){
 	// estremi start incluso ed end escluso
 	int i;
 	float ret=0;
-	float* ind=set+punto1*input->d+start;
-	float* ind2=input->ds+punto2*input->d+start;
-	for(i=start; i<end; i++){
+	float* ind=dist->source+dist->p1*dist->d+dist->start;
+	float* ind2=dist->dest+dist->p2*dist->d+dist->start;
+	for(i=dist->start; i<dist->end; i++){
 		ret+=pow(*ind++ - *ind2++, 2.0);
 	}
 	*r=ret;
 }
 
+void dist_e(dist_params* dist, float* r){
+	//non usata
+	int i;
+	float sum=0;
+	float temp;
+	dist->start=0;
+	dist->end=dist->m;
+	for(i=0; i<dist->m; i++){
+		dist_eI(dist, &temp);
+		sum+=pow(temp, 2);
+		dist->start+=dist->m;
+		dist->end+=dist->m;
+	}
+	*r=sum;
+}
+
 int calcolaPQ(dist_params* dist, pq_params* pq){
+	int i, j;
 	float* ind=pq->min;
 	int ipart=dist->start/(dist->d/dist->m);
-	for(i=0; i<input->n; i++){
+	for(i=0; i<pq->npunti; i++){
 		*ind=1.79E+308;
 		ind++;
 	}
 	float temp;
 	int* ind2=pq->dest+ipart;
-	ind=min;
+	ind=pq->min;
 	dist->p2=0;
 	//printf("before for\n");
 	for(i=0; i<pq->npunti; i++){
 		dist->p1=0;
 		for(j=0; j<pq->ncentroidi; j++){
 			//printf("%d %d\n", i, j);
-			dist_eI(input, dist, &temp);
-			if(temp<min[i]){ 
+			dist_eI(dist, &temp);
+			if(temp<pq->min[i]){ 
 				*ind=temp;
 				*ind2=j;
 			}
@@ -279,28 +296,8 @@ int calcolaPQ(dist_params* dist, pq_params* pq){
 		ind++;
 		ind2+=dist->m;
 	}
+	//printf("fine calcola pq\n");
 }
-
-//int calcolaPQ(params* input, int x, int start, int end){
-//	//funzione non usata
-//	// estremi start incluso ed end escluso
-//    //
-//	//	INPUT: 	Punto x di dimensione d.
-//    //	OUTPUT: indice del centroide c più vicino ad x. 
-//    //
-//    int i;
-//    float min=1.79E+308;
-//    int imin=-1;
-//    float temp;
-//    for(i=0; i<input->k; i++){
-//        dist_eI(input, input->ds, x, i, start, end, &temp);
-//        if(temp<min){ 
-//            min=temp;
-//            imin=i;
-//        }
-//    }
-//    return imin;
-//}
 
 void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end, float* r){
 	// estremi start incluso ed end escluso
@@ -314,50 +311,39 @@ void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, 
 	*r=ret;
 }
 
-void dist_asimmetricaI(params* input, MATRIX set, int punto1, int centroide2, int start, int end, float* r){
-	// estremi start incluso ed end escluso
-	// punto2 è un punto del dataset
-	//
-	// punto1 può essere del dataset o del query set, quindi in set si passa
-	// la constante DATASET o QUERYSET
-	int i;
-	float ret=0;
-	float* ind=set+punto1*input->d+start;
-	float* ind2=input->codebook+centroide2*input->d+start;
-	for(i=start; i<end; i++){
-		ret+=pow(*ind++ - *ind2++, 2);
-	}
-	*r=ret;
-}
-
-float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
+float dist_asimmetrica(params* input, dist_params* dist){
 	int i;
 	float sum=0;
 	int par=0;
 	float temp;
-	int* c2=input->pq+punto2*input->m;
-	for(i=0; i<input->m; i++){
-		printf("start\n");
-		dist_asimmetricaI(input, set, punto1, *c2, par, par+input->m, &temp);
-		printf("end\n");
-		printf("%f\n", temp);
+	int dStar=dist->d/dist->m;
+	int* ind=input->pq+dist->p2*dist->m;
+	dist->p2=*ind;
+	dist->start=0;
+	dist->end=dStar;
+	for(i=0; i<dist->m; i++){
+		//printf("start\n");
+		dist_eI(dist, &temp);
+		//printf("end\n");
+		//printf("%f\n", temp);
 		sum+=pow(temp, 2);
-		par+=input->m;
-		c2++;
-		printf("break\n");
+		ind++;
+		dist->p2=*ind;
+		dist->start+=dStar;
+		dist->end+=dStar;
+		//printf("break\n");
 	}
 	return sum;
 }
 
-float distI(params* input, int* quantizer, int punto1, int centroide2, int start, int end){
+float distI(params* input, dist_params* dist){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
 	// punto1 può essere del dataset o del query set, quindi in set si passa
 	// la constante DATASET o QUERYSET
-	int c1=quantizer[punto1*input->m+(start/(input->d/input->m))];
 	//printf("breakpoint Dist %d %d\n", c1, centroide2);
-	if(c1==centroide2){
+	if(dist->p1==dist->p2){
 		return 0;
 	}else{
 		//row major order-------------------------------------------
@@ -367,68 +353,42 @@ float distI(params* input, int* quantizer, int punto1, int centroide2, int start
 	//		return input->distanze_simmetriche[(input->nDist*start/(input->d/input->m))+calcolaIndice(c1, centroide2)];
 	//	}
 		//column major order-------------------------------------------
-		if(c1<centroide2){
-			return input->distanze_simmetriche[start/(input->d/input->m)+calcolaIndice(centroide2, c1)*input->m];
+		if(dist->p1<dist->p2){
+			return input->distanze_simmetriche[dist->start/(dist->d/dist->m)+calcolaIndice(dist->p2, dist->p1)*dist->m];
 		}else{
-			return input->distanze_simmetriche[start/(input->d/input->m)+calcolaIndice(c1, centroide2)*input->m];
+			return input->distanze_simmetriche[dist->start/(dist->d/dist->m)+calcolaIndice(dist->p1, dist->p2)*dist->m];
 		}
 		//-------------------------------------------
 	}
 }
 
-float dist(params* input, int* quantizer, int punto1, int punto2){
+float dist_S(params* input, dist_params* dist){
 	int i;
 	float sum=0;
-	int* c2=input->pq+punto2*input->m;
 	int par=0;
-	for(i=0; i<input->m; i++){
-		sum+=pow(distI(input, quantizer, punto1, *c2, par, par+input->m), 2);
-		par+=input->m;
-		c2++;
+	float temp;
+	int dStar=dist->d/dist->m;
+	int* ind=input->query_pq+dist->p1*dist->m;
+	int* ind2=input->pq+dist->p2*dist->m;
+	dist->p2=*ind2;
+	dist->p1=*ind;
+	dist->start=0;
+	dist->end=dStar;
+	for(i=0; i<dist->m; i++){
+		//printf("start\n");
+		distI(input, dist);
+		//printf("end\n");
+		//printf("%f\n", temp);
+		sum+=pow(temp, 2);
+		ind2++;
+		dist->p2=*ind2;
+		ind++;
+		dist->p1=*ind;
+		dist->start+=dStar;
+		dist->end+=dStar;
+		//printf("break\n");
 	}
 	return sum;
-}
-
-int calcolaQueryPQ(params* input, int x, int start, int end){
-	// estremi start incluso ed end escluso
-    //
-    //	INPUT: 	Punto x di dimensione d.
-    //	OUTPUT: indice del centroide c più vicino ad x. 
-    //
-    int i;
-    float min=1.79E+308;
-    int imin=-1;
-    float temp;
-	//printf("breakpoint PQ\n");
-	for(i=0; i<input->k; i++){
-		dist_asimmetricaI(input, input->qs, x, i, start, end, &temp);
-		if(temp<min){ 
-			min=temp;
-			imin=i;
-		}
-	}
-	return imin;
-}
-
-// ritorna indice del centroide c più vicino ad x.
-int PQ_non_esaustiva(params* input, int x, int start, int end, int n_centroidi){
-	// 	Estremi start incluso ed end escluso
-    //	
-    //	INPUT: 	Punto x di dimensione d.
-    //	OUTPUT: indice del centroide c più vicino ad x. 
-    //
-    int i;
-    float min=1.79E+308;
-    int imin=-1;
-    float temp;
-    for(i=0; i<n_centroidi; i++){
-        dist_eI(input, input->ds, x, i, start, end, &temp);
-        if(temp<min){ 
-            min=temp;
-            imin=i;
-        }
-    }
-    return imin;
 }
 
 float absf(float f){
@@ -442,19 +402,15 @@ void kmeans(params* input, dist_params* dist, pq_params* pq){
 	// estremi start incluso ed end escluso
 	int i, j, k, t;
 	int count;
-	float fob1, fob2;
+	float fob1, fob2, temp;
 	float *ind, *ind2, *ci;
 	int* ind3;
 	int m=dist->m;
 	int start=dist->start;
 	int end=dist->end;
 	int ipart=start/(dist->d/dist->m);
-	//printf("kmeans 1\n");
-	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
-	//
-	
 	ind=input->codebook+start;
 	for(i=0; i<pq->ncentroidi; i++){
 		k=rand()%input->n;
@@ -469,59 +425,23 @@ void kmeans(params* input, dist_params* dist, pq_params* pq){
 		}
 		ind+=dist->d-(dist->d/dist->m);
 	}
-	//printf("kmeans 2\n");
-    
-//	for(i=0; i<input->n; i++){
-//		input->pq[i*input->m+(start/(input->d/input->m))]=calcolaPQ(input, i, start, end);
-//	}
-	//--------------------------------------------------------
-	calcolaPQ(input, dist, pq);
-	//--------------------------------------------------------
-//	ind=min;
-//	for(i=0; i<input->n; i++){
-//		*ind=1.79E+308;
-//		ind++;
-//	}
-//	float temp;
-//	ind=min;
-//	dist->source=input->codebook;
-//	dist->dest=input->ds;
-//	dist->p2=0;
-//	//printf("before for\n");
-//	for(i=0; i<input->n; i++){
-//		dist->p1=0;
-//		for(j=0; j<input->k; j++){
-//			//printf("%d %d\n", i, j);
-//			dist_eI(input, dist, &temp);
-//			if(temp<min[i]){ 
-//				*ind=temp;
-//				input->pq[i*m+ipart]=j;
-//			}
-//			//printf("%d %d\n", i, j);
-//			dist->p1++;
-//		}
-//		dist->p2++;
-//		ind++;
-//	}
-	//printf("after for\n");
-	//--------------------------------------------------------
+
+	calcolaPQ(dist, pq);
+	
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && absf(fob2-fob1) > input->eps); t++){
 		ci=input->codebook+start;
-		for(i=0; i<n_centroidi; i++){
+		for(i=0; i<pq->ncentroidi; i++){
 			count=0;
 			ind=ci;
-			//printf("breakpoint kmeans 0\n");
 			for(j=start; j<end; j++){
 				*ind=0;
 				ind++;
 			}
 			
-			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
-			//
-			//printf("breakpoint kmeans 1\n");
+			
 			ind3=input->pq+ipart;
 			for(j=0; j<input->n; j++){
 				if(*ind3==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
@@ -534,8 +454,7 @@ void kmeans(params* input, dist_params* dist, pq_params* pq){
 				}
 				ind3+=m;
 			}
-			//printf("%f\n", *ci);
-			//printf("breakpoint kmeans 2\n");
+			
 			ind=ci;
 			for(j=start; j<end; j++){
 				if(count!=0){ 
@@ -546,68 +465,27 @@ void kmeans(params* input, dist_params* dist, pq_params* pq){
 				ind++;
 			}
 			
-			//
 			// FINE: RICALCOLO NUOVI CENTROIDI
-			//
+			
 			ci+=input->d;
 		}
-		//printf("breakpoint kmeans 3\n");
-//		for(i=0; i<input->n; i++){
-//			input->pq[i*input->m+(start/(input->d/input->m))]=calcolaPQ(input, i, start, end);
-//		}
-	//	printf("start print\n");
-	//	for(i=start; i<end; i++){
-	//		printf("%f\n", input->codebook[i]);
-	//	}
-		calcolaPQ(input, dist, pq);
-//		ind=min;
-//		for(i=0; i<input->n; i++){
-//			*ind++=1.79E+308;
-//		}
-//		ind=min;
-//		dist->p2=0;
-//		for(i=0; i<input->n; i++){
-//			dist->p1=0;
-//			for(j=0; j<input->k; j++){
-//				dist_eI(input, dist, &temp);
-//				if(temp<*ind){ 
-//					*ind=temp;
-//					input->pq[i*m+ipart]=j;
-//				}
-//				dist->p1++;
-//			}
-//			dist->p2++;
-//			ind++;
-//		}
-		//printf("breakpoint kmeans 4\n");
-		//printf("%f\n", input->codebook[start]);
-//-----------------------------------
-		//printf("inizio\n");
-		//printf("fob1: %f fob2: %f\n", fob1, fob2);
+		
+		calcolaPQ(dist, pq);
+		
 		fob1=fob2;
-		//printf("fob1: %f fob2: %f\n", fob1, fob2);
 		fob2=0;
-		//printf("fob1: %f fob2: %f\n", fob1, fob2);
-		//printf("inizio\n");
-		//printf("brefore dist\n");
+		
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		dist->p2=0;
 		for(i=0; i<input->n; i++){
 			dist->p1=input->pq[i*m+ipart];
-			dist_eI(input, dist, &temp);
+			dist_eI(dist, &temp);
 			//printf("%f\n", temp);
 			fob2+=pow(temp, 2.0);
 			//printf("%f\n", fob2);
 			dist->p2++;
 		}
-		//printf("%f\n", temp);
-		//printf("a\n");
-		//printf("%f %f %f\n", fob1, fob2, fob2-fob1);
-		//printf("%f %f\n", fob1, fob2);
-		//printf("after dist\n");
 	}
-	printf("%d\n", t);
-	//printf("breakpoint kmeans end2\n");
 }
 
 void creaMatricedistanze(params* input, dist_params* dist){
@@ -639,7 +517,7 @@ void creaMatricedistanze(params* input, dist_params* dist){
 			dist->end=dStar;
 			for(k=0; k<input->m; k++){
 				//printf("prima dist\n");
-				dist_eI(input, dist, &temp);
+				dist_eI(dist, &temp);
 				//printf("dopo dist\n");
 				//printf("%f\n", temp);
 				//printf("porca troia\n");
@@ -734,7 +612,7 @@ void mergesort(VECTOR arr, int* arr2, int i1, int i2){
 	merge(arr, arr2, i1, t2, i2);
 }
 
-void calcolaNN(params* input, int query){
+void calcolaNN(params* input, dist_params* dist, int query){
 	int i, j, k;
 	VECTOR distanze=alloc_matrix(input->n, 1);
 	VECTOR m;
@@ -742,15 +620,19 @@ void calcolaNN(params* input, int query){
 	float* ind=distanze;
 	int* ind2;
 	float* ind3;
+	dist->dest=input->codebook;
+	dist->p1=query;
 	//printf("breakpoint NN 1\n");
 	if(input->knn<4500){
 		if(input->symmetric==0){
+			dist->source=input->qs;
 			for(i=0; i<input->n; i++){
-				*ind++=dist_asimmetrica(input, input->qs, query, i);
+				*ind++=dist_asimmetrica(input, dist);
 			}
 		}else{
+			dist->source=input->codebook;
 			for(i=0; i<input->n; i++){
-				*ind++=dist(input, input->query_pq, query, i);
+				*ind++=dist_S(input, dist);
 			}
 		}
 
@@ -805,159 +687,30 @@ void calcolaNN(params* input, int query){
 		}
 		_mm_free(m);
 	}else{
-		//modificare anche questa parte con i puntatori
-		di=(int*) _mm_malloc(input->n*sizeof(int), 16);
-		//printf("breakpoint 1\n");
-		if(input->symmetric==0){
-			for(i=0; i<input->n; i++){
-				distanze[i]=dist_asimmetrica(input, input->qs, query, i);
-				di[i]=i;
-			}
-		}else{
-			for(i=0; i<input->n; i++){
-				distanze[i]=dist(input, input->query_pq, query, i);
-				di[i]=i;
-			}
-		}
-		bubbleSort(distanze, di, input->n, input->knn);
-		//mergesort(distanze, di, 0, input->n);
-		for(i=0; i<input->knn; i++){
-			input->ANN[query*input->knn+i]=di[i];
-		}
-		_mm_free(di);
+	//	//modificare anche questa parte con i puntatori
+	//	di=(int*) _mm_malloc(input->n*sizeof(int), 16);
+	//	//printf("breakpoint 1\n");
+	//	if(input->symmetric==0){
+	//		for(i=0; i<input->n; i++){
+	//			distanze[i]=dist_asimmetrica(input, input->qs, query, i);
+	//			di[i]=i;
+	//		}
+	//	}else{
+	//		for(i=0; i<input->n; i++){
+	//			distanze[i]=dist(input, input->query_pq, query, i);
+	//			di[i]=i;
+	//		}
+	//	}
+	//	bubbleSort(distanze, di, input->n, input->knn);
+	//	//mergesort(distanze, di, 0, input->n);
+	//	for(i=0; i<input->knn; i++){
+	//		input->ANN[query*input->knn+i]=di[i];
+	//	}
+	//	_mm_free(di);
 	}
 	
 	//printf("breakpoint NN 5\n");
 	dealloc_matrix(distanze);
-}
-
-void inizializza_learning_set(params* input){
-	//TODO: 
-	//AL momento sceglie i primi nr come elementi del learning set. 
-	input->residual_set = _mm_malloc(sizeof(float)*input->nr*input->d, 16);
-	if(input->residual_set==NULL) exit(-1);
-	
-	//inizializza vettore
-	input->qc_indexes = _mm_malloc(sizeof(unsigned char)*input->nr,16);
-	if(input->qc_indexes==NULL) exit(-1);
-
-}
-
-// Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
-VECTOR qp_of_r(params* input, int r){
-	int qp_index, dStar;
-	float* res;
-	dStar = input->d/input->m;
-	res = _mm_malloc(sizeof(float)*input->d, 16);
-	for(int i=0;i<input->m;i++){
-		qp_index = input->pq[r*input->d+i];
-		for(int j=0;j<dStar;j++){
-			res[i*input->m+j] = input->residual_codebook[qp_index*input->d+i*dStar+j];
-		}
-	}
-	return res;
-}
-
-// Aggiunge a input.v la entry new alla posizione i-esima
-void add (struct entry * new, int i, params* input){
-	struct entry* vett;
-	vett=input->v;
-	if(vett[i].next== NULL){
-		vett[i].next= new;
-		new->next=NULL;
-	}
-	else{
-		new->next = vett[i].next;
-		vett[i].next = new;
-	}
-}
-
-// Inizializza il vettore di entry v in modo tale da avere una lista di liste
-// 
-void inizializzaSecLiv(params* input){
-	int qc_i;
-	struct entry* new;
-	input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
-	if(input->v==NULL) return;
-	for(int y= 0;y<input->nr;y++){
-		qc_i = input->qc_indexes[y];
-		new = _mm_malloc(sizeof(struct entry),16);
-		if(new==NULL) exit(-1);
-		new->index=y;
-		new->q = qp_of_r(input, y);
-		add(new,qc_i,input);
-	}
-}
-
-float dist_coarse_and_residual(params* input, int qc, int y){
-	// qc 		: indice del quantizzatore grossolano nel codebook in input
-	// y	: puntatore al vettore residuo pari a r(y)=y-qc(y)
-	//	
-	//	<-------------------------------------------------------------->
-	//	
-	//	return -> distanza euclidea tra qc e residual, entrambi vettori a d coordinate
-	int i; 
-	float sum=0; //somma parziale
-	for(i=0; i<input->m; i++){
-		sum+=pow(input->codebook[qc*input->d+i]-input->ds[y*input->d+i], 2);
-	}
-	return sum;
-
-
-}
-
-// Calcola il centroide grossolano associato ad y.
-int qc_index(params* input, int y){ 
-	return input->qc_indexes[y];
-}
-
-void compute_residual(params* input, float* res, int qc_i, int y){
-	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
-	// y 	: indice del punto y appartenente al dataset ds in input
-	//
-	// -----------------------------------------
-	// ritorna un puntatore al residuo r(y)
-	for(int i=0; i<input->d;i++)
-		res[i]=input->ds[y*input->d+i] - input->codebook[qc_i*input->d+i]; // r(y) = y - qc(y)
-}
-
-// Calcola tutti i residui dei vettori appartenenti al learning set
-void calcola_residui(params* input){
-	int qc_i; 
-	float* ry; // puntatore al residuo corrente nel residual_codebook
-	//ry = _mm_malloc(input->d*sizeof(float),16);
-	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
-		qc_i = qc_index(input,y); // Calcola il suo quantizzatore grossolano qc(y)
-		ry = &input->residual_set[y*input->nr];
-		compute_residual(input,ry,qc_i,y); // calcolo del residuo r(y) = y - qc(y)
-	}
-}
-
-void pqnn_index_non_esaustiva(params* input){
-	int i, dStar;
-	float* tmp;
-	dStar=input->d/input->m;
-	printf("--1--\n");
-	inizializza_learning_set(input);//selezionati i primi nr del dataset
-	input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
-	printf("--2--\n");
-	tmp = input->residual_set;
-	input->residual_set=input->qs;
-	//kmeans_from(input, 0, input->d, input->kc);//calcolo dei q. grossolani memorizzati messi in codebook
-	//mancano parametri
-	input->residual_set=tmp; //scambio di puntatori per calcolare i centroidi grossolani dal learning set
-	
-	calcola_residui(input);
-	//calcolo dei quantizzatori prodotto
-	for(i=0;i<input->m;i++){
-		//kmeans_from(input, i*dStar, (i+1)*dStar, input->k);
-		//mancano parametri
-	}
-	inizializzaSecLiv(input);
-}
-
-void pqnn_search_non_esaustiva(params* input){
-
 }
 
 void pqnn_index_esaustiva(params* input){
@@ -1004,40 +757,43 @@ void pqnn_index_esaustiva(params* input){
 	if(input->symmetric==1){
 		creaMatricedistanze(input, dist);
 	}
+	_mm_free(pq->min);
+	_mm_free(pq);
+	_mm_free(dist);
 }
 
 void pqnn_search_esaustiva(params* input){
 	int i, j, c;
 	int *ipq, *ind;
-	dist_params* dist=(dist_params) _mm_malloc(sizeof(dist_params), 16);
+	dist_params* dist=(dist_params*) _mm_malloc(sizeof(dist_params), 16);
 	dist->d=input->d;
 	dist->m=input->m;
 	if(input->symmetric==1){
-		//printf("break0\n");
+		printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
 		if(input->query_pq==NULL) exit(-1);
 		c=input->d/input->m;
-		//printf("break0.1\n");
+		printf("break0.1\n");
+		pq_params* pq=(pq_params*) _mm_malloc(sizeof(pq_params), 16);
+		pq->dest=input->query_pq;
+		pq->npunti=input->nq;
+		pq->ncentroidi=input->k;
+		pq->source=input->qs;
+		pq->min=(VECTOR) alloc_matrix(input->n, 1);
 		ipq=input->query_pq;
 		dist->start=0;
 		dist->end=c;
 		dist->p1=0;
-		for(i=0; i<input->nq; i++){
-			ind=ipq;
-			for(j=0; j<input->m; j++){
-				*ind++=calcolaQueryPQ(input, dist);
-				dist->start+=c;
-				dist->end+=c;
-			}
-			ipq+=input->m;
-			dist->p1++;
-		}
+		printf("break0.2\n");
+		calcolaPQ(dist, pq);
+		_mm_free(pq->min);
+		_mm_free(pq);
 	}
-	//printf("break1\n");
+	printf("break1\n");
 	for(i=0; i<input->nq; i++){
-		calcolaNN(input, i);
+		calcolaNN(input, dist, i);
 	}
-	//printf("break2\n");
+	printf("break2\n");
 	_mm_free(input->codebook);
 	_mm_free(input->pq);
 	_mm_free(dist);
@@ -1058,7 +814,7 @@ void pqnn_index(params* input) {
 	if(input->exaustive==1){
 		pqnn_index_esaustiva(input);
 	}else{
-		pqnn_index_non_esaustiva(input);
+		//pqnn_index_non_esaustiva(input);
 	}
     
     //pqnn32_index(input); // Chiamata funzione assembly
@@ -1076,7 +832,7 @@ void pqnn_search(params* input) {
 	if(input->exaustive==1){
 		pqnn_search_esaustiva(input);
 	}else{
-		pqnn_search_non_esaustiva(input);
+		//pqnn_search_non_esaustiva(input);
 	}
 
     //pqnn32_search(input); // Chiamata funzione assembly

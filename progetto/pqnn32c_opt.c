@@ -122,7 +122,16 @@ typedef struct{
 	int start;
 	int end;
 	int d;
+	int m;
 } dist_params;
+
+typedef struct{
+	MATRIX source;
+	MATRIX dest;
+	int npunti;
+	int ncentroidi;
+	VECTOR min;
+} pq_params;
 
 /*
  * 
@@ -242,30 +251,33 @@ void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int e
 	*r=ret;
 }
 
-int calcolaPQ(params* input, dist_params* dist, VECTOR min){
-	float* ind=min;
+int calcolaPQ(dist_params* dist, pq_params* pq){
+	float* ind=pq->min;
+	int ipart=dist->start/(dist->d/dist->m);
 	for(i=0; i<input->n; i++){
 		*ind=1.79E+308;
 		ind++;
 	}
 	float temp;
+	int* ind2=pq->dest+ipart;
 	ind=min;
 	dist->p2=0;
 	//printf("before for\n");
-	for(i=0; i<input->n; i++){
+	for(i=0; i<pq->npunti; i++){
 		dist->p1=0;
-		for(j=0; j<input->k; j++){
+		for(j=0; j<pq->ncentroidi; j++){
 			//printf("%d %d\n", i, j);
 			dist_eI(input, dist, &temp);
 			if(temp<min[i]){ 
 				*ind=temp;
-				input->pq[i*m+ipart]=j;
+				*ind2=j;
 			}
 			//printf("%d %d\n", i, j);
 			dist->p1++;
 		}
 		dist->p2++;
 		ind++;
+		ind2+=dist->m;
 	}
 }
 
@@ -426,17 +438,17 @@ float absf(float f){
 	return -f;
 }
 
-void kmeans(params* input, dist_params* dist, int n_centroidi, VECTOR min){
+void kmeans(params* input, dist_params* dist, pq_params* pq){
 	// estremi start incluso ed end escluso
 	int i, j, k, t;
 	int count;
 	float fob1, fob2;
 	float *ind, *ind2, *ci;
 	int* ind3;
-	int m=input->m;
+	int m=dist->m;
 	int start=dist->start;
 	int end=dist->end;
-	int ipart=start/(input->d/input->m);
+	int ipart=start/(dist->d/dist->m);
 	//printf("kmeans 1\n");
 	//
 	// Inizializzazione del codebook
@@ -444,10 +456,10 @@ void kmeans(params* input, dist_params* dist, int n_centroidi, VECTOR min){
 	//
 	
 	ind=input->codebook+start;
-	for(i=0; i<n_centroidi; i++){
+	for(i=0; i<pq->ncentroidi; i++){
 		k=rand()%input->n;
 		//printf("%d\n", k);
-		ind2=input->ds+k*input->d+start;
+		ind2=input->ds+k*dist->d+start;
 		for(j=start; j<end; j++){
 			//printf("%d %d\n", i, j);
 			*ind=*ind2;
@@ -455,7 +467,7 @@ void kmeans(params* input, dist_params* dist, int n_centroidi, VECTOR min){
 			ind2++;
 			//printf("%d %d\n", i, j);
 		}
-		ind+=input->d-(input->d/input->m);
+		ind+=dist->d-(dist->d/dist->m);
 	}
 	//printf("kmeans 2\n");
     
@@ -463,7 +475,7 @@ void kmeans(params* input, dist_params* dist, int n_centroidi, VECTOR min){
 //		input->pq[i*input->m+(start/(input->d/input->m))]=calcolaPQ(input, i, start, end);
 //	}
 	//--------------------------------------------------------
-	calcolaPQ(input, dist, min);
+	calcolaPQ(input, dist, pq);
 	//--------------------------------------------------------
 //	ind=min;
 //	for(i=0; i<input->n; i++){
@@ -547,7 +559,7 @@ void kmeans(params* input, dist_params* dist, int n_centroidi, VECTOR min){
 	//	for(i=start; i<end; i++){
 	//		printf("%f\n", input->codebook[i]);
 	//	}
-		calcolaPQ(input, dist, min);
+		calcolaPQ(input, dist, pq);
 //		ind=min;
 //		for(i=0; i<input->n; i++){
 //			*ind++=1.79E+308;
@@ -595,8 +607,6 @@ void kmeans(params* input, dist_params* dist, int n_centroidi, VECTOR min){
 		//printf("after dist\n");
 	}
 	printf("%d\n", t);
-	//printf("breakpoint kmeans end1\n");
-	_mm_free(min);
 	//printf("breakpoint kmeans end2\n");
 }
 
@@ -962,10 +972,16 @@ void pqnn_index_esaustiva(params* input){
 	dist->end=dStar;
 	dist->source=input->codebook;
 	dist->dest=input->ds;
-	VECTOR min=(VECTOR) alloc_matrix(input->n, 1);
+	dist->m=input->m;
+	pq_params* pq=(pq_params*) _mm_malloc(sizeof(pq_params), 16);
+	pq->dest=input->pq;
+	pq->npunti=input->n;
+	pq->ncentroidi=input->k;
+	pq->source=input->ds;
+	pq->min=(VECTOR) alloc_matrix(input->n, 1);
 	//printf("before kmeans\n");
 	for(i=0; i<input->m; i++){
-		kmeans(input, dist, input->k, min);
+		kmeans(input, dist, pq);
 		dist->start+=dStar;
 		dist->end+=dStar;
 	}
@@ -995,6 +1011,7 @@ void pqnn_search_esaustiva(params* input){
 	int *ipq, *ind;
 	dist_params* dist=(dist_params) _mm_malloc(sizeof(dist_params), 16);
 	dist->d=input->d;
+	dist->m=input->m;
 	if(input->symmetric==1){
 		//printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);

@@ -267,43 +267,38 @@ extern void dist_simmetricaI(params* input, int centroide1, int centroide2, int 
 //	*r=ret;
 //}
 
-float dist_simmetrica(params* input, int centroide1, int centroide2){
-	int i;
-	float sum=0;
-	int par=0;
-	float temp;
-	for(i=0; i<input->m; i++){
-		dist_simmetricaI(input, centroide1, centroide2, par, par+input->m, &temp);
-		sum+=pow(temp, 2);
-		par+=input->m;
-	}
-	return sum;
-}
-
-float dist_asimmetricaI(params* input, MATRIX set, int punto1, int centroide2, int start, int end){
+//extern void dist_asimmetricaI(params* input, MATRIX set, int punto1, int centroide2, int start, int end, float* r);
+void dist_asimmetricaI(params* input, MATRIX set, int punto1, int centroide2, int start, int end, float* r){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
 	//
 	// punto1 può essere del dataset o del query set, quindi in set si passa
 	// la constante DATASET o QUERYSET
-	int i, c;
+	int i;
 	float ret=0;
 	float* ind=set+punto1*input->d+start;
 	float* ind2=input->codebook+centroide2*input->d+start;
 	for(i=start; i<end; i++){
 		ret+=pow(*ind++ - *ind2++, 2);
 	}
-	return ret;
+	*r=ret;
 }
 
 float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	float sum=0;
-	int c2=input->pq[punto2];
 	int par=0;
+	float temp;
+	int* c2=input->pq+punto2*input->m;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_asimmetricaI(input, set, punto1, c2, par, par+input->m), 2);
+		printf("start\n");
+		dist_asimmetricaI(input, set, punto1, *c2, par, par+input->m, &temp);
+		printf("end\n");
+		printf("%f\n", temp);
+		sum+=pow(temp, 2);
 		par+=input->m;
+		c2++;
+		printf("break\n");
 	}
 	return sum;
 }
@@ -338,11 +333,12 @@ float distI(params* input, int* quantizer, int punto1, int centroide2, int start
 float dist(params* input, int* quantizer, int punto1, int punto2){
 	int i;
 	float sum=0;
-	int c2=input->pq[punto2];
+	int* c2=input->pq+punto2*input->m;
 	int par=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(distI(input, quantizer, punto1, c2, par, par+input->m), 2);
+		sum+=pow(distI(input, quantizer, punto1, *c2, par, par+input->m), 2);
 		par+=input->m;
+		c2++;
 	}
 	return sum;
 }
@@ -359,7 +355,7 @@ int calcolaQueryPQ(params* input, int x, int start, int end){
     float temp;
 	//printf("breakpoint PQ\n");
 	for(i=0; i<input->k; i++){
-		temp=dist_asimmetricaI(input, input->qs, x, i, start, end);
+		dist_asimmetricaI(input, input->qs, x, i, start, end, &temp);
 		if(temp<min){ 
 			min=temp;
 			imin=i;

@@ -4,19 +4,20 @@ section .data
 section .bss
 section .text
 
-global dist_simmetricaI
+global dist_asimmetricaI
 
-r equ 28
-end equ 24
-startt equ 20
-centroide2 equ 16
-centroide1 equ 12
+r equ 32
+end equ 28
+startt equ 24
+centroide2 equ 20
+punto1 equ 16
+set equ 12
 input equ 8
 
 in_d equ 16
 in_codebook equ 92
 
-dist_simmetricaI:
+dist_asimmetricaI:
 		push ebp
 		mov	ebp, esp
 		push ebx
@@ -29,9 +30,9 @@ dist_simmetricaI:
 		mov edi, [ebp+input]		;input
 		mov ecx, [edi+in_d]			;ind=input->d
 		mov edx, ecx				;ind2=input->d
-		imul ecx, [ebp+centroide1]	;ind=input->d*centroide1
-		add ecx, [edi+in_codebook]	;ind=input->d*centroide1+codebook
-		add ecx, [ebp+startt]		;ind=input->d*centroide1+codebook+start
+		imul ecx, [ebp+punto1]		;ind=input->d*centroide1
+		add ecx, [ebp+set]			;ind=input->d*centroide1+set
+		add ecx, [ebp+startt]		;ind=input->d*centroide1+set+start
 		imul edx, [ebp+centroide2]	;ind2=input->d*centroide2
 		add edx, [edi+in_codebook]	;ind2=input->d*centroide2+codebook
 		add edx, [ebp+startt]		;ind2=input->d*centroide2+codebook+start

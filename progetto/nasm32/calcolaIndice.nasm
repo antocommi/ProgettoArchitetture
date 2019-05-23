@@ -6,8 +6,8 @@ section .text
 
 global calcolaIndice
 
-j equ 8
-i equ 12
+i equ 8
+j equ 12
 
 calcolaIndice:
 		push ebp
@@ -15,6 +15,7 @@ calcolaIndice:
 		push ebx
 		push esi
 		push edi	;inizio
+
 		mov eax, [ebp+i]	;i
 		mov ebx, [ebp+j]	;j
 		mov ecx, eax		;i
@@ -22,6 +23,7 @@ calcolaIndice:
 		imul eax, ecx		;i*(i-1)
 		shr eax, 1			;i*(i-1)/2
 		add eax, ebx		;i*(i-1)/2+j
+
 		pop	edi		;fine
 		pop	esi
 		pop	ebx

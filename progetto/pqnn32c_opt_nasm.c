@@ -215,6 +215,10 @@ void save_ANN(char* filename, int* ANN, int nq, int knn) {
 
 //funzioni fatte da noi
 
+float pow2(float f, float s){
+	return f*f;
+}
+
 extern int calcolaIndice(int i, int j);
 //int calcolaIndice(int i, int j){
 //	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
@@ -229,7 +233,7 @@ extern void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start
 //	float* ind=set+punto1*input->d+start;
 //	float* ind2=input->ds+punto2*input->d+start;
 //	for(i=start; i<end; i++){
-//		ret+=pow(*ind++ - *ind2++, 2.0);
+//		ret+=pow2(*ind++ - *ind2++, 2.0);
 //	}
 //	*r=ret;
 //}
@@ -262,7 +266,7 @@ extern void dist_simmetricaI(params* input, int centroide1, int centroide2, int 
 //	float* ind=input->codebook+centroide1*input->d+start;
 //	float* ind2=input->codebook+centroide2*input->d+start;
 //	for(i=start; i<end; i++){
-//		ret+=pow(*ind++ - *ind2++, 2);
+//		ret+=pow2(*ind++ - *ind2++, 2);
 //	}
 //	*r=ret;
 //}
@@ -279,7 +283,7 @@ void dist_asimmetricaI(params* input, MATRIX set, int punto1, int centroide2, in
 	float* ind=set+punto1*input->d+start;
 	float* ind2=input->codebook+centroide2*input->d+start;
 	for(i=start; i<end; i++){
-		ret+=pow(*ind++ - *ind2++, 2);
+		ret+=pow2(*ind++ - *ind2++, 2);
 	}
 	*r=ret;
 }
@@ -295,7 +299,7 @@ float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 		dist_asimmetricaI(input, set, punto1, *c2, par, par+input->m, &temp);
 		printf("end\n");
 		printf("%f\n", temp);
-		sum+=pow(temp, 2);
+		sum+=pow2(temp, 2);
 		par+=input->m;
 		c2++;
 		printf("break\n");
@@ -336,7 +340,7 @@ float dist(params* input, int* quantizer, int punto1, int punto2){
 	int* c2=input->pq+punto2*input->m;
 	int par=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(distI(input, quantizer, punto1, *c2, par, par+input->m), 2);
+		sum+=pow2(distI(input, quantizer, punto1, *c2, par, par+input->m), 2);
 		par+=input->m;
 		c2++;
 	}
@@ -411,7 +415,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	ind=input->codebook+start;
 	for(i=0; i<n_centroidi; i++){
 		k=rand()%input->n;
-		printf("%d\n", k);
+		//printf("%d\n", k);
 		ind2=input->ds+k*input->d+start;
 		for(j=start; j<end; j++){
 			//printf("%d %d\n", i, j);
@@ -535,7 +539,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		for(i=0; i<input->n; i++){
 			dist_eI(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
 			//printf("%f\n", temp);
-			fob2+=pow(temp, 2.0);
+			fob2+=pow2(temp, 2.0);
 			//printf("%f\n", fob2);
 		}
 		//printf("%f\n", temp);
@@ -544,7 +548,7 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		//printf("%f %f\n", fob1, fob2);
 		//printf("after dist\n");
 	}
-	printf("%d\n", t);
+	//printf("%d\n", t);
 	//printf("breakpoint kmeans end1\n");
 	_mm_free(min);
 	//printf("breakpoint kmeans end2\n");
@@ -828,7 +832,7 @@ float dist_coarse_and_residual(params* input, int qc, int y){
 	int i; 
 	float sum=0; //somma parziale
 	for(i=0; i<input->m; i++){
-		sum+=pow(input->codebook[qc*input->d+i]-input->ds[y*input->d+i], 2);
+		sum+=pow2(input->codebook[qc*input->d+i]-input->ds[y*input->d+i], 2);
 	}
 	return sum;
 

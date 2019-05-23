@@ -986,16 +986,7 @@ void pqnn_search_non_esaustiva(params* input){
 		qp_heap = CreateHeap(input->knn);
 
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
-		for(int i=0;i<input->w;i++){
-			curr_qc = qc_heap->arr[i].index;
-			curr_pq = input; 
-			do{ 
-
-				//todo
-				curr_pq->index;
-			}
-			while(curr_pq->next!=NULL);
-		}
+		
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);
 		_mm_free(qp_heap);

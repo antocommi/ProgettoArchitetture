@@ -47,6 +47,7 @@
 #include <xmmintrin.h>
 #include <limits.h>
 #include <float.h>
+#include <assert.h>
 
 #define	MATRIX		float*
 #define	VECTOR		float*
@@ -436,15 +437,11 @@ void dist_asimmetrica_ne(params* input, VECTOR set1, VECTOR set2, int start, int
 	float pow=0, ret=0, sott=0;
 	float* ind=set1+start;
 	float* ind2=set2+start;
-	printf("start: %d, end: %d \n", start, end);
+	*r = 0;
 	for(i=start; i<end; i++){
-		printf("---1a---\n");
 		sott=*ind - *ind2;
-		printf("---2a---\n");
 		pow=(sott)*(sott);
-		printf("---3a---\n");
 		(*r) +=pow;
-		printf("---4a---\n");
 		ind++;  
 		ind2++;
 	}
@@ -517,7 +514,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
 	//
-	printf("\t --y--start=[%d]&end=[%d]\n",start,end);
+	// printf("\t --y--start=[%d]&end=[%d]\n",start,end);
     for(i=0; i<data->n_centroidi; i++){
 		k = rand()%input->nr;
 		for(j=start; j<end; j++){
@@ -711,13 +708,6 @@ VECTOR qp_of_r(params* input, int r){
 			res[initial_offset+j] = input->residual_codebook[partial_index+j];
 		}
 	}
-	
-	for(int i=0;i<input->d;i++){
-		printf("%.2f ", res[i]);
-	}
-	
-	printf("-------------------\n");
-	
 	return res;
 }
 
@@ -739,17 +729,37 @@ void add (struct entry * new, int i, params* input){
 // 
 void inizializzaSecLiv(params* input){
 	int qc_i, y;//qc_i è l'indice del quantizzatore grossolano associato ad y
-	struct entry* res; //res è il residuo
+	struct entry *res; //res è il residuo
+	
 	input->v = malloc(sizeof(struct entry)*input->kc);
 	if(input->v==NULL) exit(-1);
+
 	for(y=0;y<input->nr;y++){
+		
 		res = malloc(sizeof(struct entry));
 		if(res==NULL) exit(-1);
+
 		qc_i = input->qc_indexes[y];
+		assert(qc_i>=0 && qc_i<input->kc);
 		res->index=y;
 		res->q = qp_of_r(input, y);// ritorna il quantizzatore del residuo
-		add(&res,qc_i,input); 
+		add(res, qc_i, input); 
+		assert(res->index>=0 && res->index<input->nr);
 	}
+	
+	//
+	// STAMPA DEL VETTORE DI LISTE V
+	//
+	// printf("---Inizio stampa lista a due livelli\n");
+	// for(int i=0;i<input->kc;i++){
+	// 	res = &(*(input->v+i));
+	// 	while(res!=NULL){
+	// 		printf("%d, ", res->index);
+	// 		res=res->next;
+	// 	}
+	// 	printf("\n ");
+	// }
+	// printf("fine");
 }
 
 float dist_coarse_and_residual(params* input, int qc, int y){
@@ -759,13 +769,15 @@ float dist_coarse_and_residual(params* input, int qc, int y){
 	//	<-------------------------------------------------------------->
 	//	
 	//	return -> distanza euclidea tra qc e residual, entrambi vettori a d coordinate
-	int i; 
-	float sum=0;
-	float pow=0; //somma parziale
+	int i, offset1, offset2; 
+	float sum=0, pow=0, tmp;
+	offset2=y*input->d;
+	offset1=qc*input->d;
 	for(i=0; i<input->m; i++){
-		pow=((input->codebook[qc*input->d+i]-input->ds[y*input->d+i])*(input->codebook[qc*input->d+i]-input->ds[y*input->d+i]));
+		tmp = input->codebook[offset1+i] - input->ds[offset2+i];
+		pow=tmp*tmp;
 		sum+=pow;
-		}
+	}
 	return sum;
 
 
@@ -874,49 +886,39 @@ void pqnn_search_non_esaustiva(params* input){
 	data->source=input->qs;
 	data->dest=input->qc;
 	
-	printf("--1--\n");
-	for(int q=0;q<input->nq;q++){
-		printf("--2--\n");
+	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
+	for(int q=0;q<1;q++){
+		
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 		//potrei aggiungere un metodo restore?
-		printf("--3--\n");
+
 		for(int i=0;i<input->kc;i++){
 			dist = dist_eI(input, data, q, i, 0, input->d);
 			insert(qc_heap,dist,i);
 		}
-		printf("--4--\n");
 		arr = qc_heap->arr;
 		qp_heap = CreateHeap(input->knn);
-		printf("--5--\n");
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		for(int i=0;i<input->w;i++){
 			curr_qc = (qc_heap->arr)[i].index;
-			printf("--6 index:%d, curr_qc: %d--\n", input->v[1].index, qc_heap->arr[i].index);
 			curr_pq = ((input->v)[curr_qc]).next;
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
 			for(int j=0; j<input->d;j++){
 					residuo[j]=input->qs[q*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
 			}
-			printf("--7--\n");
 			while(curr_pq!=NULL){
-				printf("--x--\n");
 				for (int j=0;j<input->m;j++){
-					printf("--aa-- index_pq:%f \n", curr_pq->q[input->d-1]);
 					dist_asimmetrica_ne(input, residuo, curr_pq->q, dS*j, dS*(j+1), &temp);
-					printf("--bb--\n");
 					somma += (temp*temp);
 				}
-				printf("--y--\n");
 				insert(qp_heap, somma, curr_pq->index);
 				curr_pq = curr_pq->next;
 
 			}
-			printf("<-------STAMPA-------->\n");
 			// A questo punto in qp_heap dovrebbero esserci i k vicini
 			for(int k=0;k<input->knn;k++){
-				printf("%d\n", qp_heap->arr[i].index);
+				printf("vicino[%d]:%d\n", i, qp_heap->arr[i].index);
 			}
-			printf("--8--\n");
 		}
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);

@@ -267,16 +267,17 @@ void dist_e(dist_params* dist, float* r){
 	*r=sum;
 }
 
-int calcolaPQ(dist_params* dist, pq_params* pq){
+void calcolaPQ(dist_params* dist, pq_params* pq){
 	int i, j;
 	float* ind=pq->min;
-	int ipart=dist->start/(dist->d/dist->m);
+	//int ipart=dist->start/(dist->d/dist->m);
 	for(i=0; i<pq->npunti; i++){
 		*ind=1.79E+308;
 		ind++;
 	}
 	float temp;
-	int* ind2=pq->dest+ipart;
+	//int* ind2=pq->dest+ipart;
+	int* ind2=pq->dest;
 	ind=pq->min;
 	dist->p2=0;
 	//printf("before for\n");
@@ -291,12 +292,46 @@ int calcolaPQ(dist_params* dist, pq_params* pq){
 			}
 			//printf("%d %d\n", i, j);
 			dist->p1++;
+			ind2++;
+		}
+		dist->p2++;
+		ind++;
+		ind2=pqq+pq->npunti*dist->m;
+	}
+	//printf("fine calcola pq\n");
+}
+
+void calcolaPQ2(dist_params* dist, pq_params* pq){
+	int i, j;
+	float* ind=pq->min;
+	int ipart=dist->start/(dist->d/dist->m);
+	for(i=0; i<pq->npunti; i++){
+		*ind=1.79E+308;
+		ind++;
+	}
+	float temp;
+	int* ind2=pq->dest+ipart;
+	ind=pq->min;
+	dist->p2=0;
+	printf("before for\n");
+	for(i=0; i<pq->npunti; i++){
+		dist->p1=0;
+		for(j=0; j<pq->ncentroidi; j++){
+			printf("%d %d\n", i, j);
+			dist_eI(dist, &temp);
+			printf("middle\n");
+			if(temp<pq->min[i]){ 
+				*ind=temp;
+				*ind2=j;
+			}
+			printf("%d %d\n", i, j);
+			dist->p1++;
 		}
 		dist->p2++;
 		ind++;
 		ind2+=dist->m;
 	}
-	//printf("fine calcola pq\n");
+	printf("fine calcola pq\n");
 }
 
 void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end, float* r){
@@ -366,7 +401,6 @@ float dist_S(params* input, dist_params* dist){
 	int i;
 	float sum=0;
 	int par=0;
-	float temp;
 	int dStar=dist->d/dist->m;
 	int* ind=input->query_pq+dist->p1*dist->m;
 	int* ind2=input->pq+dist->p2*dist->m;
@@ -376,17 +410,19 @@ float dist_S(params* input, dist_params* dist){
 	dist->end=dStar;
 	for(i=0; i<dist->m; i++){
 		//printf("start\n");
-		distI(input, dist);
 		//printf("end\n");
-		//printf("%f\n", temp);
-		sum+=pow(temp, 2);
+		printf("%d\n", i);
+		sum+=pow(distI(input, dist), 2);
+		printf("%f\n", sum);
+		printf("%d %d\n", dist->p1, dist->p2);
 		ind2++;
 		dist->p2=*ind2;
 		ind++;
 		dist->p1=*ind;
+		printf("%d %d\n", dist->p1, dist->p2);
 		dist->start+=dStar;
 		dist->end+=dStar;
-		//printf("break\n");
+		printf("break\n");
 	}
 	return sum;
 }
@@ -621,27 +657,31 @@ void calcolaNN(params* input, dist_params* dist, int query){
 	int* ind2;
 	float* ind3;
 	dist->dest=input->codebook;
-	dist->p1=query;
-	//printf("breakpoint NN 1\n");
+	printf("breakpoint NN 1\n");
 	if(input->knn<4500){
 		if(input->symmetric==0){
 			dist->source=input->qs;
 			for(i=0; i<input->n; i++){
+				dist->p2=i;
+				dist->p1=query;
 				*ind++=dist_asimmetrica(input, dist);
 			}
 		}else{
 			dist->source=input->codebook;
 			for(i=0; i<input->n; i++){
+				dist->p2=i;
+				dist->p1=query;
+				printf("%d\n", i);
 				*ind++=dist_S(input, dist);
 			}
 		}
-
+		printf("breakpoint NN 1.2");
 		
-	//	for(i=0; i<input->n; i++){
-	//		printf("%f ", distanze[i]);
-	//	}
+		for(i=0; i<input->n; i++){
+			printf("%f ", distanze[i]);
+		}
 
-		//printf("breakpoint NN 2\n");
+		printf("breakpoint NN 2\n");
 
 		m=(VECTOR) _mm_malloc(input->knn*sizeof(float),16);
 		ind=m;
@@ -714,7 +754,7 @@ void calcolaNN(params* input, dist_params* dist, int query){
 }
 
 void pqnn_index_esaustiva(params* input){
-	int i, dStar;
+	int i, j, dStar;
 	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
 	dStar=input->d/input->m;
 	input->codebook = alloc_matrix(input->k, input->d); // row-major-order?
@@ -757,6 +797,12 @@ void pqnn_index_esaustiva(params* input){
 	if(input->symmetric==1){
 		creaMatricedistanze(input, dist);
 	}
+
+	for(i=0; i<input->n; i++){
+		for(j=0; j<input->m; j++){
+			printf("%d\n", input->pq[i*input->m+j]);
+		}
+	}
 	_mm_free(pq->min);
 	_mm_free(pq);
 	_mm_free(dist);
@@ -783,11 +829,17 @@ void pqnn_search_esaustiva(params* input){
 		ipq=input->query_pq;
 		dist->start=0;
 		dist->end=c;
-		dist->p1=0;
+		dist->source=input->codebook;
+		dist->dest=input->qs;
 		printf("break0.2\n");
 		calcolaPQ(dist, pq);
 		_mm_free(pq->min);
 		_mm_free(pq);
+	}
+	for(i=0; i<input->nq; i++){
+		for(j=0; j<input->m; j++){
+			printf("%d\n", input->query_pq[i*input->m+j]);
+		}
 	}
 	printf("break1\n");
 	for(i=0; i<input->nq; i++){

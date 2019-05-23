@@ -606,7 +606,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->nr; i++){
-			fob2+=pow(dist_eI(input, data, i, data->index[i*data->index_colums+start/dStar], start, end), 2.0);
+			fob2 += pow(dist_eI(input, data, i, data->index[i*data->index_colums+start/dStar], start, end), 2.0);
 		}
 		// printf("delta=%.2f - %.2f - %.2f \n",fob2-fob1, fob2, fob1 );
 	}
@@ -962,7 +962,7 @@ void pqnn_search_non_esaustiva(params* input){
 			curr_qc = qc_heap->arr[i].index;
 			curr_pq = input; 
 			do{ 
-				
+
 				//todo
 				curr_pq->index;
 			}

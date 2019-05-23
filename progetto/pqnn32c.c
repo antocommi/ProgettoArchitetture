@@ -248,15 +248,6 @@ void heapify_top_bottom(Heap *h, int parent_node){
     }
 }
 
-void stampa_matrice_flt(float* M, int rows, int col){
-	int i,j;
-	for(i=0;i<rows;i++){
-		for(j=0;j<col;j++){
-			printf(" %.2f",M[i*col+j]);
-		}
-		printf("\n---%d---\n",i);
-	}
-}
 
 /*
  * 
@@ -435,37 +426,32 @@ float dist_simmetrica(params* input, int centroide1, int centroide2){
 	return sum;
 }
 
-float dist_asimmetricaI(params* input, MATRIX set, int punto, int centroide2, int start, int end){
+void dist_asimmetrica_ne(params* input, VECTOR set1, VECTOR set2, int start, int end, float* r){
 	// estremi start incluso ed end escluso
-	// centroide è un punto del dataset
+	// punto2 è un punto del dataset
 	//
-	// punto può essere del dataset o del query set, quindi in set si passa
+	// punto1 può essere del dataset o del query set, quindi in set si passa
 	// la constante DATASET o QUERYSET
-	int i, c;
-	float ret=0;
-	float pow=0;
-	for(i=start; i<end; i++){
-		pow=(
-			(set[punto*input->d+i] - input->codebook[centroide2*input->d+i])*
-			( set[punto*input->d+i] - input->codebook[centroide2*input->d+i]));
-		ret += pow;
-	}
-	return ret;
-}
-
-float dist_asimmetrica(params* input, MATRIX set, int punto, int centroide){
 	int i;
-	float sum=0;
-	float pow=0;
-	for(i=0; i<input->m; i++){
-		pow=(
-			dist_asimmetricaI(input, set, punto, input->pq[centroide], i*input->m, (i+1)*input->m)*
-			dist_asimmetricaI(input, set, punto, input->pq[centroide], i*input->m, (i+1)*input->m));
-		sum+=pow;
-
+	float pow=0, ret=0, sott=0;
+	float* ind=set1+start;
+	float* ind2=set2+start;
+	printf("start: %d, end: %d \n", start, end);
+	for(i=start; i<end; i++){
+		printf("---1a---\n");
+		sott=*ind - *ind2;
+		printf("---2a---\n");
+		pow=(sott)*(sott);
+		printf("---3a---\n");
+		(*r) +=pow;
+		printf("---4a---\n");
+		ind++;  
+		ind2++;
 	}
-	return sum;
+	// *r=ret;
 }
+
+
 
 float distI(params* input, int* quantizer, int punto, int centroide2, int start, int end){
 	// estremi start incluso ed end escluso
@@ -492,53 +478,6 @@ float distI(params* input, int* quantizer, int punto, int centroide2, int start,
 		}
 		//-------------------------------------------
 	}
-}
-
-float dist(params* input, int* quantizer, int punto, int centroide){
-	int i;
-	float sum=0;
-	float pow=0;
-	for(i=0; i<input->m; i++){
-		pow=(
-			distI(input, quantizer, punto, input->pq[centroide], i*input->m, (i+1)*input->m)*
-			distI(input, quantizer, punto, input->pq[centroide], i*input->m, (i+1)*input->m)
-			);
-		sum+=pow;
-	}
-	return sum;
-}
-
-int calcolaQueryPQ(params* input, int x, int start, int end){
-	// estremi start incluso ed end escluso
-    //
-    //	INPUT: 	Punto x di dimensione d.
-    //	OUTPUT: indice del centroide c più vicino ad x. 
-    //
-    int i;
-    float min=1.79E+308;
-    int imin=-1;
-    float dist;
-	//printf("breakpoint PQ\n");
-	// valore 2 messo temporaneamente, inpossibile calcolare la distanza simmetrica per calcolare il centroide
-	if(input->symmetric==2){
-		for(i=0; i<input->k; i++){
-			dist=distI(input, input->query_pq, x, i, start, end);
-			if(dist<min){ 
-				min=dist;
-				imin=i;
-			}	
-			//printf("breakpoint PQ %d\n", i);
-		}
-	}else{
-		for(i=0; i<input->k; i++){
-			dist=dist_asimmetricaI(input, input->qs, x, i, start, end);
-			if(dist<min){ 
-				min=dist;
-				imin=i;
-			}
-		}
-	}
-	return imin;
 }
 
 
@@ -750,83 +689,35 @@ void mergesort(VECTOR arr, int* arr2, int i1, int i2){
 }
 
 void calcolaNN(params* input, int query){
-	int i, j, k;
-	VECTOR distanze=alloc_matrix(input->n, 1);
-	VECTOR m;
-	int* ind;
-
-	if(input->knn<4500){
-		if(input->symmetric==0){
-			for(i=0; i<input->n; i++){
-				distanze[i]=dist_asimmetrica(input, input->qs, query, i);
-			}
-		}else{
-			for(i=0; i<input->n; i++){
-				distanze[i]=dist(input, input->query_pq, query, i);
-			}
-		}
-
-		m=(VECTOR) _mm_malloc(input->knn*sizeof(float),16);
-		for(i=0; i<input->knn; i++){
-			m[i]=1.79E+308;
-			input->ANN[query*input->knn+i]=-1;
-		}
-		for(i=0; i<input->n; i++){
-			for(j=0; j<input->knn; j++){
-				if(distanze[i]<m[j]){
-					for(k=input->knn-1; k>j; k--){
-						if(m[k-1]!=-1){
-							input->ANN[query*input->knn+k]=input->ANN[query*input->knn+k-1];
-							m[k]=m[k-1];
-						}
-					}
-					input->ANN[query*input->knn+j]=i;
-					m[j]=distanze[i];
-					//printf("%d %d", i, j);
-					break;
-				}
-			}
-		}
-		_mm_free(m);
-	}else{
-		ind=(int*) _mm_malloc(input->n*sizeof(int), 16);
-		//printf("breakpoint 1\n");
-		if(input->symmetric==0){
-			for(i=0; i<input->n; i++){
-				distanze[i]=dist_asimmetrica(input, input->qs, query, i);
-				ind[i]=i;
-			}
-		}else{
-			for(i=0; i<input->n; i++){
-				distanze[i]=dist(input, input->query_pq, query, i);
-				ind[i]=i;
-			}
-		}
-		bubbleSort(distanze, ind, input->n, input->knn);
-		//mergesort(distanze, ind, 0, input->n);
-		for(i=0; i<input->knn; i++){
-			input->ANN[query*input->knn+i]=ind[i];
-		}
-		_mm_free(ind);
-	}
-	dealloc_matrix(distanze);
+	
 }
 
 
 
 // Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
 VECTOR qp_of_r(params* input, int r){
-	int qp_index, dStar;
+	int qp_index, dStar, partial_index, initial_offset;
 	float* res;
 	dStar = input->d/input->m;
+	
 	res = _mm_malloc(sizeof(float)*input->d, 16);
 	if(res==NULL) exit(-1);
+	
 	for(int i=0;i<input->m;i++){
 		qp_index = input->pq[r*input->m+i];
+		partial_index = qp_index*input->d+i*dStar;
+		initial_offset = i*dStar;
 		for(int j=0;j<dStar;j++){
-			res[i*input->m+j] = input->residual_codebook[qp_index*input->d+i*dStar+j];
+			res[initial_offset+j] = input->residual_codebook[partial_index+j];
 		}
 	}
+	
+	for(int i=0;i<input->d;i++){
+		printf("%.2f ", res[i]);
+	}
+	
+	printf("-------------------\n");
+	
 	return res;
 }
 
@@ -847,8 +738,8 @@ void add (struct entry * new, int i, params* input){
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
 void inizializzaSecLiv(params* input){
-	int qc_i, y;
-	struct entry* res;
+	int qc_i, y;//qc_i è l'indice del quantizzatore grossolano associato ad y
+	struct entry* res; //res è il residuo
 	input->v = malloc(sizeof(struct entry)*input->kc);
 	if(input->v==NULL) exit(-1);
 	for(y=0;y<input->nr;y++){
@@ -856,8 +747,8 @@ void inizializzaSecLiv(params* input){
 		if(res==NULL) exit(-1);
 		qc_i = input->qc_indexes[y];
 		res->index=y;
-		res->q = qp_of_r(input, y);
-		add(&res,qc_i,input);
+		res->q = qp_of_r(input, y);// ritorna il quantizzatore del residuo
+		add(&res,qc_i,input); 
 	}
 }
 
@@ -970,23 +861,63 @@ void pqnn_search_non_esaustiva(params* input){
 	struct kmeans_data* data;
 	float dist;
 	struct entry_heap* arr;
+	float * residuo; 
+	float somma=0, temp;
+	int dS=((input->d)/(input->m));
+
+	residuo=_mm_malloc(sizeof(float)*input->d,16);
+	if(residuo==NULL) exit(-1);
 
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	if(data==NULL) exit(-1);
+	
 	data->source=input->qs;
 	data->dest=input->qc;
+	
+	printf("--1--\n");
 	for(int q=0;q<input->nq;q++){
+		printf("--2--\n");
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 		//potrei aggiungere un metodo restore?
+		printf("--3--\n");
 		for(int i=0;i<input->kc;i++){
 			dist = dist_eI(input, data, q, i, 0, input->d);
-			insert(qc_heap,dist,qc_index);
+			insert(qc_heap,dist,i);
 		}
+		printf("--4--\n");
 		arr = qc_heap->arr;
 		qp_heap = CreateHeap(input->knn);
-
+		printf("--5--\n");
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
-		
+		for(int i=0;i<input->w;i++){
+			curr_qc = (qc_heap->arr)[i].index;
+			printf("--6 index:%d, curr_qc: %d--\n", input->v[1].index, qc_heap->arr[i].index);
+			curr_pq = ((input->v)[curr_qc]).next;
+			// Calcolo r(x) rispetto al i-esimo centroide grossolano
+			for(int j=0; j<input->d;j++){
+					residuo[j]=input->qs[q*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
+			}
+			printf("--7--\n");
+			while(curr_pq!=NULL){
+				printf("--x--\n");
+				for (int j=0;j<input->m;j++){
+					printf("--aa-- index_pq:%f \n", curr_pq->q[input->d-1]);
+					dist_asimmetrica_ne(input, residuo, curr_pq->q, dS*j, dS*(j+1), &temp);
+					printf("--bb--\n");
+					somma += (temp*temp);
+				}
+				printf("--y--\n");
+				insert(qp_heap, somma, curr_pq->index);
+				curr_pq = curr_pq->next;
+
+			}
+			printf("<-------STAMPA-------->\n");
+			// A questo punto in qp_heap dovrebbero esserci i k vicini
+			for(int k=0;k<input->knn;k++){
+				printf("%d\n", qp_heap->arr[i].index);
+			}
+			printf("--8--\n");
+		}
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);
 		_mm_free(qp_heap);
@@ -1010,32 +941,7 @@ void pqnn_index_esaustiva(params* input){
 }
 
 void pqnn_search_esaustiva(params* input){
-	int i, j, c;
-	if(input->symmetric==1){
-		//printf("break0\n");
-		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
-		if(input->query_pq==NULL) exit(-1);
-		c=input->d/input->m;
-		//printf("break0.1\n");
-		for(i=0; i<input->nq; i++){
-			for(j=0; j<input->m; j++){
-				input->query_pq[i*input->m+j]=calcolaQueryPQ(input, i, j*c, (j+1)*c);
-			}
-		}
-	}
-	//printf("break1\n");
-	for(i=0; i<input->nq; i++){
-		calcolaNN(input, i);
-	}
-	//printf("break2\n");
-	_mm_free(input->codebook);
-	_mm_free(input->pq);
-	if(input->symmetric==1){
-		_mm_free(input->distanze_simmetriche);
-	}else{
-		_mm_free(input->query_pq);
-		_mm_free(input->distanze_asimmetriche);
-	}
+	
 }
 
 /*

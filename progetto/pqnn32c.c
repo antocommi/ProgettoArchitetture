@@ -435,37 +435,27 @@ float dist_simmetrica(params* input, int centroide1, int centroide2){
 	return sum;
 }
 
-float dist_asimmetricaI(params* input, MATRIX set, int punto, int centroide2, int start, int end){
+void dist_asimmetricaI(params* input, MATRIX set1,MATRIX set2, int punto1, int centroide2, int start, int end, float* r){
 	// estremi start incluso ed end escluso
-	// centroide è un punto del dataset
+	// punto2 è un punto del dataset
 	//
-	// punto può essere del dataset o del query set, quindi in set si passa
+	// punto1 può essere del dataset o del query set, quindi in set si passa
 	// la constante DATASET o QUERYSET
-	int i, c;
-	float ret=0;
-	float pow=0;
-	for(i=start; i<end; i++){
-		pow=(
-			(set[punto*input->d+i] - input->codebook[centroide2*input->d+i])*
-			( set[punto*input->d+i] - input->codebook[centroide2*input->d+i]));
-		ret += pow;
-	}
-	return ret;
-}
-
-float dist_asimmetrica(params* input, MATRIX set, int punto, int centroide){
 	int i;
-	float sum=0;
 	float pow=0;
-	for(i=0; i<input->m; i++){
-		pow=(
-			dist_asimmetricaI(input, set, punto, input->pq[centroide], i*input->m, (i+1)*input->m)*
-			dist_asimmetricaI(input, set, punto, input->pq[centroide], i*input->m, (i+1)*input->m));
-		sum+=pow;
-
+	float ret=0;
+	float sott=0;
+	float* ind=set1+start;
+	float* ind2=input->set2+start;
+	for(i=start; i<end; i++){
+		sott=*ind++ - *ind2++;
+		pow=(sott)*(sott);
+		ret+=pow;
 	}
-	return sum;
+	*r=ret;
 }
+
+
 
 float distI(params* input, int* quantizer, int punto, int centroide2, int start, int end){
 	// estremi start incluso ed end escluso
@@ -847,8 +837,8 @@ void add (struct entry * new, int i, params* input){
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
 void inizializzaSecLiv(params* input){
-	int qc_i, y;
-	struct entry* res;
+	int qc_i, y;//qc_i è l'indice del quantizzatore grossolano associato ad y
+	struct entry* res; //res è il residuo
 	input->v = malloc(sizeof(struct entry)*input->kc);
 	if(input->v==NULL) exit(-1);
 	for(y=0;y<input->nr;y++){
@@ -856,8 +846,8 @@ void inizializzaSecLiv(params* input){
 		if(res==NULL) exit(-1);
 		qc_i = input->qc_indexes[y];
 		res->index=y;
-		res->q = qp_of_r(input, y);
-		add(&res,qc_i,input);
+		res->q = qp_of_r(input, y);// ritorna il quantizzatore del residuo
+		add(&res,qc_i,input); 
 	}
 }
 
@@ -970,7 +960,12 @@ void pqnn_search_non_esaustiva(params* input){
 	struct kmeans_data* data;
 	float dist;
 	struct entry_heap* arr;
+	float * residuo; 
+	float somma=0;
+	int dS=((input->d)/(input->m));
 
+	residuo=_mm_malloc(sizeof(float)*input->d,16);
+	if(residuo==NULL) exit(-1);
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	if(data==NULL) exit(-1);
 	data->source=input->qs;
@@ -988,13 +983,18 @@ void pqnn_search_non_esaustiva(params* input){
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		for(int i=0;i<input->w;i++){
 			curr_qc = qc_heap->arr[i].index;
-			curr_pq = input; 
-			do{ 
-
-				//todo
-				curr_pq->index;
+			curr_pq = (input->v[curr_qc]).next; 
+			
+			while(curr_pq!=NULL){
+				for(int j=0; j<input->d;j++){
+				residuo[j]=input->qs[q*input->d+j] - input->qc[curr_qc*input->d+j]; // r(y) = y - qc(y)
+				somma+=dist_asimmetricaI(input,residuo,curr_pq->, int punto1, int centroide2, int start, int end, float* r)
 			}
-			while(curr_pq->next!=NULL);
+
+
+
+
+			}
 		}
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);

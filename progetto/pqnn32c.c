@@ -94,7 +94,7 @@ typedef struct {
 	// Vettore contenente alla posizione i l'indice di qc(Y_i) in codebook
 	int * qc_indexes;
 
-	// Coarse q. dim: input.d x input.kc
+	// Coarse q. dim: input.kc x input.d
 	MATRIX qc;
 
 	// Residual product quantizators in non exhaustive search
@@ -134,6 +134,119 @@ struct kmeans_data{
 	// Numero di centroidi da calcolare
 	int n_centroidi;
 };
+
+struct entry_heap{
+	
+	float dist;
+	
+	int index;
+};
+
+struct Heap{	
+    struct entry_heap *arr;	
+    int count;	
+    int capacity;
+};	
+
+typedef struct Heap Heap;	
+
+ // Metodi su heap 	
+Heap* CreateHeap(int capacity);	
+
+void insert(Heap *h, float key, int index);	
+
+void heapify_bottom_top(Heap *h,int index);
+
+void heapify_top_bottom(Heap *h, int parent_node);
+
+Heap* CreateHeap(int capacity){	
+    Heap *h = (Heap * ) malloc(sizeof(Heap)); //one is number of heap	
+
+     //check if memory allocation is fails	
+    if(h == NULL) exit(-1);
+    h->count=0;	
+    h->capacity = capacity;	
+    h->arr = _mm_malloc(capacity*sizeof(struct entry_heap),16); //size in bytes	
+
+     //check if allocation succeed	
+    if ( h->arr == NULL) exit(-1);	
+    return h;	
+}	
+
+void insert(Heap *h, float key, int qc_index){	
+    if( h->count < h->capacity){	
+        (h->arr[h->count]).dist  = key;	
+		(h->arr[h->count]).index = qc_index;
+        heapify_bottom_top(h, h->count);	
+        h->count++;	
+    }
+	else if( key < (h->arr[0]).dist ){
+		(h->arr[0]).dist = key;
+		(h->arr[0]).index = qc_index;
+		heapify_top_bottom(h, 0);
+	}
+}
+
+void heapify_bottom_top(Heap *h,int index){	
+    int parent_node = (index-1)/2;
+	float temp_dist;
+	int temp_index;	
+
+     if((h->arr[parent_node]).dist < (h->arr[index]).dist){	
+        //swap and recursive call	
+        temp_dist = (h->arr[parent_node]).dist;
+		temp_index = (h->arr[parent_node]).index;
+
+        // h->arr[parent_node] = h->arr[index];	
+        (h->arr[parent_node]).dist = (h->arr[index]).dist;
+		(h->arr[parent_node]).index = (h->arr[index]).index;
+		
+		// h->arr[index] = temp;	
+        (h->arr[index]).dist = temp_dist;
+		(h->arr[index]).index =temp_index;
+
+		heapify_bottom_top(h,parent_node);	
+    }	
+}
+
+void heapify_top_bottom(Heap *h, int parent_node){
+    int left = parent_node*2+1;
+    int right = parent_node*2+2;
+    int min;
+	float temp_dist;
+	int temp_index;
+
+	//forse si possono cacciare questi minori di zero. 
+    if(left >= h->count || left <0)
+        left = -1;
+    if(right >= h->count || right <0)
+        right = -1;
+
+    if(left != -1 && (h->arr[left]).dist > (h->arr[parent_node]).dist )
+        min=left;
+    else
+        min =parent_node;
+    if(right != -1 && (h->arr[right]).dist > (h->arr[min]).dist )
+        min = right;
+
+    if(min != parent_node){
+        // temp = h->arr[min];
+        // h->arr[min] = h->arr[parent_node];
+        // h->arr[parent_node] = temp;
+
+        temp_dist = (h->arr[min]).dist;
+		temp_index = (h->arr[min]).index;
+
+        (h->arr[min]).dist = (h->arr[parent_node]).dist;
+		(h->arr[min]).index = (h->arr[parent_node]).index;
+		
+        (h->arr[parent_node]).dist = temp_dist;
+		(h->arr[parent_node]).index =temp_index;
+
+        // recursive  call
+        heapify_top_bottom(h, min);
+    }
+}
 
 void stampa_matrice_flt(float* M, int rows, int col){
 	int i,j;
@@ -249,12 +362,12 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-float dist_eI(params* input, struct kmeans_data* data, int punto, int centroide, int start, int end){
+float dist_eI(params* input, struct kmeans_data* data, int x, int y, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
 	float ret=0;
 	for(i=start; i<end; i++){
-		ret += pow( data->source[punto*input->d+i]-data->dest[centroide*input->d+i], 2.0);
+		ret += pow( data->source[x*input->d+i]-data->dest[y*input->d+i], 2.0);
 	}
 	return ret;
 }
@@ -822,7 +935,45 @@ void pqnn_index_non_esaustiva(params* input){
 }
 
 void pqnn_search_non_esaustiva(params* input){
+	int i, q;
+	int curr_qc;
+	struct entry* curr_pq;
+	Heap* qc_heap, *qp_heap;
+	struct kmeans_data* data;
+	float dist;
+	struct entry_heap* arr;
 
+	data = _mm_malloc(sizeof(struct kmeans_data),16);
+	if(data==NULL) exit(-1);
+	data->source=input->qs;
+	data->dest=input->qc;
+	for(int q=0;q<input->nq;q++){
+		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
+		//potrei aggiungere un metodo restore?
+		for(int i=0;i<input->kc;i++){
+			dist = dist_eI(input, data, q, i, 0, input->d);
+			insert(qc_heap,dist,qc_index);
+		}
+		arr = qc_heap->arr;
+		qp_heap = CreateHeap(input->knn);
+
+		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
+		for(int i=0;i<input->w;i++){
+			curr_qc = qc_heap->arr[i].index;
+			curr_pq = input; 
+			do{ 
+				
+				//todo
+				curr_pq->index;
+			}
+			while(curr_pq->next!=NULL);
+		}
+		_mm_free(qp_heap->arr);
+		_mm_free(qc_heap->arr);
+		_mm_free(qp_heap);
+		_mm_free(qc_heap);
+	}
+	_mm_free(data);
 }
 
 void pqnn_index_esaustiva(params* input){

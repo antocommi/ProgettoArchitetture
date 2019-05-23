@@ -366,8 +366,10 @@ float dist_eI(params* input, struct kmeans_data* data, int x, int y, int start, 
 	// estremi start incluso ed end escluso
 	int i;
 	float ret=0;
+	float pow=0;
 	for(i=start; i<end; i++){
-		ret += pow( data->source[x*input->d+i]-data->dest[y*input->d+i], 2.0);
+		pow=((data->source[x*input->d+i]-data->dest[y*input->d+i])*( data->source[x*input->d+i]-data->dest[y*input->d+i]));
+		ret += pow;
 	}
 	return ret;
 }
@@ -412,8 +414,10 @@ float dist_simmetricaI(params* input, int centroide1, int centroide2, int start,
 	// estremi start incluso ed end escluso
 	int i;
 	float ret=0;
+	float pow=0;
 	for(i=start; i<end; i++){
-		ret += pow( input->codebook[centroide1*input->d+i] - input->codebook[centroide2*input->d+i] , 2);
+		pow=((input->codebook[centroide1*input->d+i] - input->codebook[centroide2*input->d+i])*(input->codebook[centroide1*input->d+i] - input->codebook[centroide2*input->d+i]));
+		ret += pow;
 	}
 	return ret;
 }
@@ -421,8 +425,12 @@ float dist_simmetricaI(params* input, int centroide1, int centroide2, int start,
 float dist_simmetrica(params* input, int centroide1, int centroide2){
 	int i;
 	float sum=0;
+	float pow=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_simmetricaI(input, centroide1, centroide2, i*input->m, (i+1)*input->m), 2);
+		pow=(
+			dist_simmetricaI(input, centroide1, centroide2, i*input->m, (i+1)*input->m)*
+			dist_simmetricaI(input, centroide1, centroide2, i*input->m, (i+1)*input->m));
+		sum+=pow;
 	}
 	return sum;
 }
@@ -435,8 +443,12 @@ float dist_asimmetricaI(params* input, MATRIX set, int punto, int centroide2, in
 	// la constante DATASET o QUERYSET
 	int i, c;
 	float ret=0;
+	float pow=0;
 	for(i=start; i<end; i++){
-		ret += pow( set[punto*input->d+i] - input->codebook[centroide2*input->d+i] , 2);
+		pow=(
+			(set[punto*input->d+i] - input->codebook[centroide2*input->d+i])*
+			( set[punto*input->d+i] - input->codebook[centroide2*input->d+i]));
+		ret += pow;
 	}
 	return ret;
 }
@@ -444,8 +456,13 @@ float dist_asimmetricaI(params* input, MATRIX set, int punto, int centroide2, in
 float dist_asimmetrica(params* input, MATRIX set, int punto, int centroide){
 	int i;
 	float sum=0;
+	float pow=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(dist_asimmetricaI(input, set, punto, input->pq[centroide], i*input->m, (i+1)*input->m), 2);
+		pow=(
+			dist_asimmetricaI(input, set, punto, input->pq[centroide], i*input->m, (i+1)*input->m)*
+			dist_asimmetricaI(input, set, punto, input->pq[centroide], i*input->m, (i+1)*input->m));
+		sum+=pow;
+
 	}
 	return sum;
 }
@@ -480,8 +497,13 @@ float distI(params* input, int* quantizer, int punto, int centroide2, int start,
 float dist(params* input, int* quantizer, int punto, int centroide){
 	int i;
 	float sum=0;
+	float pow=0;
 	for(i=0; i<input->m; i++){
-		sum+=pow(distI(input, quantizer, punto, input->pq[centroide], i*input->m, (i+1)*input->m), 2);
+		pow=(
+			distI(input, quantizer, punto, input->pq[centroide], i*input->m, (i+1)*input->m)*
+			distI(input, quantizer, punto, input->pq[centroide], i*input->m, (i+1)*input->m)
+			);
+		sum+=pow;
 	}
 	return sum;
 }
@@ -549,7 +571,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	int count;
 	float fob1, fob2;
 	int* index, dStar;
-
+	float pow=0;
 	dStar = input->d/input->m;
 
 	//
@@ -606,7 +628,11 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->nr; i++){
-			fob2+= pow(dist_eI(input, data, i, data->index[i*data->index_colums+start/dStar], start, end), 2.0);
+			pow=(
+				dist_eI(input, data, i, data->index[i*data->index_colums+start/dStar], start, end)*
+				dist_eI(input, data, i, data->index[i*data->index_colums+start/dStar], start, end));
+			fob2+=pow;
+		
 		}
 		// printf("delta=%.2f - %.2f - %.2f \n",fob2-fob1, fob2, fob1 );
 	}
@@ -843,10 +869,12 @@ float dist_coarse_and_residual(params* input, int qc, int y){
 	//	
 	//	return -> distanza euclidea tra qc e residual, entrambi vettori a d coordinate
 	int i; 
-	float sum=0; //somma parziale
+	float sum=0;
+	float pow=0; //somma parziale
 	for(i=0; i<input->m; i++){
-		sum+=pow(input->codebook[qc*input->d+i]-input->ds[y*input->d+i], 2);
-	}
+		pow=((input->codebook[qc*input->d+i]-input->ds[y*input->d+i])*(input->codebook[qc*input->d+i]-input->ds[y*input->d+i]));
+		sum+=pow;
+		}
 	return sum;
 
 

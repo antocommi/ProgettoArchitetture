@@ -112,6 +112,7 @@ typedef struct {
 //Entry della s.d. multilivello
 struct entry{
 	int index;
+	// Residuo q di dimensione d.
 	VECTOR q;
 	//temporaneo
 	//Serve per gestire liste a dimensione sconosciuta. 
@@ -414,13 +415,13 @@ void dist_asimmetrica_ne(params* input, VECTOR set1, VECTOR set2, int start, int
 	// la constante DATASET o QUERYSET
 	int i;
 	float pow=0, ret=0, sott=0;
-	float* ind=set1+start;
-	float* ind2=set2+start;
+	float *ind=set1+start;
+	float *ind2=set2+start;
 	*r = 0;
 	for(i=start; i<end; i++){
 		sott=*ind - *ind2;
 		pow=(sott)*(sott);
-		(*r) +=pow;
+		*r = *r + pow;
 		ind++;  
 		ind2++;
 	}
@@ -754,7 +755,7 @@ void pqnn_search_non_esaustiva(params* input){
 	data->dest=input->qc;
 	
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
-	for(int query=0; query<1;query++){
+	for(int query=0; query<1; query++){
 		
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 		//potrei aggiungere un metodo restore?
@@ -776,11 +777,16 @@ void pqnn_search_non_esaustiva(params* input){
 			while(curr_pq!=NULL){
 				for (int j=0;j<input->m;j++){
 					dist_asimmetrica_ne(input, residuo, curr_pq->q, dS*j, dS*(j+1), &temp);
+					assert(temp>-1.0);
 					somma += (temp*temp);
 				}
 				insert(qp_heap, somma, curr_pq->index);
 				curr_pq = curr_pq->next;
 
+			}
+			printf("ss");
+			for(int l=0;l<input->knn;l++){
+				printf("heap[%d]=%d ", l, qp_heap->arr[l].index);
 			}
 			// A questo punto in qp_heap dovrebbero esserci i k vicini
 			for(int k=0;k<input->knn;k++){

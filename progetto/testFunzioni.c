@@ -72,18 +72,20 @@ float pow2(float f, float e){
 // void calcolaIndiceTest(){
 // 	for(int i=1; i<10; i++){
 // 		for(int j=0; j<i; j++){
-// 			printf("%d %d nasm:%d c:%d\n", i, j, calcolaIndice(i, j), calcolaIndice2(i, j));
+// 			printf("%d %d\nnasm:%d\n   c:%d\n", i, j, calcolaIndice(i, j), calcolaIndice2(i, j));
 // 		}
 // 	}
 // }
 
 extern void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r);
 void dist_eI2(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r){
+	// estremi start incluso ed end escluso
 	int i;
 	float ret=0;
 	float* ind=set+punto1*input->d+start;
 	float* ind2=input->ds+punto2*input->d+start;
 	for(i=start; i<end; i++){
+		//printf("%f\n", pow2(*ind - *ind2, 2.0));
 		ret+=pow2(*ind++ - *ind2++, 2.0);
 	}
 	*r=ret;
@@ -91,26 +93,26 @@ void dist_eI2(params* input, MATRIX set, int punto1, int punto2, int start, int 
 
 void dist_eITest(){
 	params* input=_mm_malloc(sizeof(params), 16);
-	input->d=2;
-	MATRIX set=_mm_malloc(8*sizeof(float), 16);
-	set[0]=(float)rand()/(float)RAND_MAX;
-	set[1]=(float)rand()/(float)RAND_MAX;
-	set[2]=(float)rand()/(float)RAND_MAX;
-	set[3]=(float)rand()/(float)RAND_MAX;
-	set[4]=(float)rand()/(float)RAND_MAX;
-	set[5]=(float)rand()/(float)RAND_MAX;
-	set[6]=(float)rand()/(float)RAND_MAX;
-	set[7]=(float)rand()/(float)RAND_MAX;
+	input->d=8;
+	MATRIX set=_mm_malloc(2*input->d*sizeof(float), 16);
+	for(int i=0; i<input->d*2; i++){
+		set[i]=100*(float)rand()/(float)RAND_MAX;
+		//printf("%f\n", set[i]);
+	}
 	input->ds=set;
 	int punto1=0;
 	int punto2=1;
 	int start=0;
-	int end=3;
+	int end=input->d;
 	float r;
 	float r2;
-	dist_eI(input, set, punto1, punto2, start, end, &r);
+	printf("Inizio c\n");
 	dist_eI2(input, set, punto1, punto2, start, end, &r2);
-	printf("nasm:%f c:%f\n", r, r2);
+	printf("Fine c\n");
+	printf("Inizio nasm\n");
+	dist_eI(input, set, punto1, punto2, start, end, &r);
+	printf("Fine nasm\n");
+	printf("nasm:%f\n   c:%f\n", r, r2);
 }
 
 int main(int argc, char** argv) {

@@ -11,3 +11,12 @@ progetto/pqnn32c.o
 execute.sh
 .project
 progetto/pqnn32c.o
+progetto/a_opt.out
+progetto/brute.out
+progetto/test.out
+progetto/nasm32/calcolaIndice.o
+progetto/nasm32/dist_asimmetricaI.o
+progetto/nasm32/dist_eI.o
+progetto/nasm32/dist_simmetricaI.o
+progetto/prova/brute.ann
+progetto/prova/prova.ann

@@ -488,19 +488,21 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	int* index, dStar, index_offset;
 	float pow=0;
 	dStar = input->d/input->m;
+	srand( (time(NULL)) );
 	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
 	//
 	// printf("\t --y--start=[%d]&end=[%d]\n",start,end);
     for(i=0; i<data->n_centroidi; i++){
-		k = rand()%input->nr;
+		k = rand()% input->nr;
 		//SCELTA DEI PRIMI n_centroidi
-		memcpy(&data->dest[i*input->d+start], &data->source[k*input->d+j], sizeof(float)*(end-start));
-		// for(j=start; j<end; j++){
-		// 	data->dest[i*input->d+j]=data->source[k*input->d+j];
-		// }
+		// memcpy(&data->dest[i*input->d+start], &data->source[i*input->d+j], sizeof(float)*(end-start));
+		for(j=start; j<end; j++){
+			data->dest[i*input->d+j]=data->source[k*input->d+j];
+		}
     }
+	printf("casuali!");
 	// Assegnazione dei vettori ai centroidi casuali individuati
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
     for(i=0; i<data->index_rows; i++){
@@ -511,14 +513,13 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	fob2=0;
 	
 	for(t=0; !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps )); t++){
-		printf("%f", fob1-fob2);
 		for(i=0; i<data->n_centroidi; i++){
 			count=0; 
 			memset(&data->dest[i*input->d+start], 0, (end-start)*sizeof(float));
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
-			
+
 			for(j=0; j<input->nr; j++){
 				if(data->index[j*data->index_colums+start/dStar]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
@@ -549,7 +550,6 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 			tmp_pow = dist_eI(input, data, y, c, start, end);
 			pow = tmp_pow * tmp_pow;
 			fob2+=pow;
-		
 		}
 		
 		// printf("------\nfob1=%.2f \nfob2=%.2f \n------\n", fob1, fob2 );

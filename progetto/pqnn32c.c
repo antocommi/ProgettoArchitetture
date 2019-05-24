@@ -357,11 +357,11 @@ int calcolaIndice(int i, int j){
 float dist_eI(params* input, struct kmeans_data* data, int x, int y, int start, int end){
 	// estremi start incluso ed end escluso
 	int i;
-	float ret=0;
-	float pow=0;
+	float ret=0, pow, tmp;
 	for(i=start; i<end; i++){
-		pow=((data->source[x*input->d+i]-data->dest[y*input->d+i])*( data->source[x*input->d+i]-data->dest[y*input->d+i]));
-		ret += pow;
+		tmp = data->source[x*input->d+i]-data->dest[y*input->d+i];
+		pow=tmp*tmp;
+		ret =ret + pow;
 	}
 	return ret;
 }
@@ -380,27 +380,6 @@ int dist_e(params* input, MATRIX set, int punto, int centroide){
 	return sum;
 }*/
 
-int calcolaPQ(params* input, int x, int start, int end){
-	/*
-	// estremi start incluso ed end escluso
-    //
-    //	INPUT: 	Punto x di dimensione d.
-    //	OUTPUT: indice del centroide c più vicino ad x. 
-    //
-    int i;
-    float min=1.79E+308;
-    int imin=-1;
-    float dist;
-    for(i=0; i<input->k; i++){
-        dist=dist_eI(input, input->ds, x, i, start, end);
-        if(dist<min){ 
-            min=dist;
-            imin=i;
-        }
-    }
-    return imin;
-    */
-}
 
 float dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end){
 	// estremi start incluso ed end escluso
@@ -505,11 +484,10 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// estremi start incluso ed end escluso
 	int i, j, k, t, c, imin;
 	int count;
-	float fob1, fob2;
-	int* index, dStar;
+	float fob1, fob2, tmp_pow;
+	int* index, dStar, index_offset;
 	float pow=0;
 	dStar = input->d/input->m;
-
 	//
 	// Inizializzazione del codebook
 	//		-Scelta dei k vettori casuali
@@ -517,9 +495,11 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// printf("\t --y--start=[%d]&end=[%d]\n",start,end);
     for(i=0; i<data->n_centroidi; i++){
 		k = rand()%input->nr;
-		for(j=start; j<end; j++){
-			data->dest[i*input->d+j]=data->source[k*input->d+j];
-		}
+		//SCELTA DEI PRIMI n_centroidi
+		memcpy(&data->dest[i*input->d+start], &data->source[k*input->d+j], sizeof(float)*(end-start));
+		// for(j=start; j<end; j++){
+		// 	data->dest[i*input->d+j]=data->source[k*input->d+j];
+		// }
     }
 	// Assegnazione dei vettori ai centroidi casuali individuati
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
@@ -529,7 +509,9 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
-	for(t=0; t<input->tmin || (t<input->tmax && (fob2-fob1) > input->eps); t++){
+	
+	for(t=0; !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps )); t++){
+		printf("%f", fob1-fob2);
 		for(i=0; i<data->n_centroidi; i++){
 			count=0; 
 			memset(&data->dest[i*input->d+start], 0, (end-start)*sizeof(float));
@@ -556,139 +538,23 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 			//
 		}
 		for(i=0; i<input->nr; i++){
-			// printf("prima: %d \n", data->index[i*data->index_colums+start]);
-			data->index[i*data->index_colums+start/(data->index_colums)]=PQ_non_esaustiva(input, i, start, end, data);
-			// printf("dopo: %d \n", data->index[i*data->index_colums+start]);
+			data->index[i*data->index_colums+start/dStar]=PQ_non_esaustiva(input, i, start, end, data);
 		}
 		fob1=fob2;
 		fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
-		for(i=0; i<input->nr; i++){
-			pow=(
-				dist_eI(input, data, i, data->index[i*data->index_colums+start/dStar], start, end)*
-				dist_eI(input, data, i, data->index[i*data->index_colums+start/dStar], start, end));
+		for(int y=0; y<input->nr; y++){
+			c = data->index[y*data->index_colums+start/dStar];
+			tmp_pow = dist_eI(input, data, y, c, start, end);
+			pow = tmp_pow * tmp_pow;
 			fob2+=pow;
 		
 		}
-		// printf("delta=%.2f - %.2f - %.2f \n",fob2-fob1, fob2, fob1 );
+		
+		// printf("------\nfob1=%.2f \nfob2=%.2f \n------\n", fob1, fob2 );
 	}
+	printf("# di iterazioni: %d\n",t);
 }
-
-void kmeans(params* input, int start, int end, int n_centroidi){
-	
-}
-
-void creaMatricedistanze(params* input){
-	int i, j, k;
-	MATRIX distanze_simmetriche;
-	input->nDist=input->k*(input->k+1)/2;
-	distanze_simmetriche = alloc_matrix(input->m, input->nDist);
-	if(distanze_simmetriche==NULL) exit(-1);
-	//row major order---------------------------------------------------------
-//	for(k=0; k<input->m; k++){
-//		for(i=1; i<input->k; i++){
-//			for(j=0; j<i; j++){
-//				distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
-//				// verificare se qui va usata la distanza simmetrica o no
-//			}
-//		}
-//	}
-	//column major order---------------------------------------------------------
-	for(i=1; i<input->k; i++){
-		for(j=0; j<i; j++){
-			for(k=0; k<input->m; k++){
-				distanze_simmetriche[k+calcolaIndice(i, j)*input->m] = dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m);
-				// verificare se qui va usata la distanza simmetrica o no
-			}
-		}
-	}
-	//---------------------------------------------------------
-	input->distanze_simmetriche=distanze_simmetriche;
-}
-
-void bubbleSort(VECTOR arr, int* arr2, int n, int nit){ 
-	int i, j, t1;
-	float t2;
-	int scambi=1; 
-	for (i = 0; i < nit && scambi==1; i++){
-		scambi=0;
-    	for (j = n-2; j > i-1; j--)  
-        	if (arr[j] > arr[j+1]){
-				t2=arr[j];
-				arr[j]=arr[j+1];
-				arr[j+1]=t2;
-				t1=arr2[j];
-				arr2[j]=arr2[j+1];
-				arr2[j+1]=t1;
-				scambi=1;
-			}
-	}
-}
-
-void merge(VECTOR arr, int* arr2, int i, int j, int k){
-	VECTOR a=(VECTOR) _mm_malloc(k-i+1 ,16);
-	int* b=(int*) _mm_malloc(k-i+1 ,16);
-	int c=0;
-	int i2=i;
-	int j1=j;
-	while(i<j && j1<k){
-		if(arr[i]<arr[j]){
-			a[c]=arr[i];
-			b[c]=arr2[i];
-			i++;
-		}else{
-			a[c]=arr[j1];
-			b[c]=arr2[j1];
-			j1++;
-		}
-		c++;
-	}
-	while(i<j){
-		a[c]=arr[i];
-		b[c]=arr2[i];
-		i++;
-		c++;
-	}
-	while(j1<k){
-		a[c]=arr[j1];
-		b[c]=arr2[j1];
-		j1++;
-		c++;
-	}
-	c=i2;
-	while(i2<k){
-		arr[i2]=a[i2-c];
-		arr2[i2]=b[i2-c];
-		i2++;
-	}
-	_mm_free(a);
-	_mm_free(b);
-}
-
-void mergesort(VECTOR arr, int* arr2, int i1, int i2){
-	double t1;
-	int t2;
-	if(i2-i1<2) return;
-	if(i2-i2==2){
-		if(arr[i1]<=arr[i2]) return;
-		t1=arr[i1];
-		arr[i1]=arr[i2];
-		arr[i2]=t1;
-		t2=arr2[i1];
-		arr2[i1]=arr2[i2];
-		arr2[i2]=t2;
-		return;
-	}
-	t2=(i2+i1)/2;
-	mergesort(arr, arr2, i1, t2);
-	mergesort(arr, arr2, t2, i2);
-	merge(arr, arr2, i1, t2, i2);
-}
-
-void calcolaNN(params* input, int query){
-	
-}
-
 
 
 // Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
@@ -928,23 +794,7 @@ void pqnn_search_non_esaustiva(params* input){
 	_mm_free(data);
 }
 
-void pqnn_index_esaustiva(params* input){
-	int i, dStar;
-	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
-	dStar=input->d/input->m;
-	input->codebook = alloc_matrix(input->k, input->n); // row-major-order?
-    if(input->codebook==NULL) exit(-1);
-	for(i=0; i<input->m; i++){
-		kmeans(input, i*dStar, (i+1)*dStar, input->k);
-	}
-	if(input->symmetric==1){
-		creaMatricedistanze(input);
-	}
-}
 
-void pqnn_search_esaustiva(params* input){
-	
-}
 
 /*
  *	pqnn_index
@@ -954,10 +804,9 @@ void pqnn_index(params* input) {
 	// TODO: Gestire liberazione della memoria.
 	if(input->exaustive==1){
 		printf("ricerca esaustiva disattivata");
-		//pqnn_index_esaustiva(input);
 	}else{
 		pqnn_index_non_esaustiva(input);
-		pqnn_search_non_esaustiva(input);
+		// pqnn_search_non_esaustiva(input);
 	}
     
     //pqnn32_index(input); // Chiamata funzione assembly
@@ -971,12 +820,9 @@ void pqnn_index(params* input) {
  * 	===========
  */
 void pqnn_search(params* input) {
-	int i, j;
-	if(input->exaustive==1){
-		pqnn_search_esaustiva(input);
-	}else{
+	// int i, j;
+	if(input->exaustive==0)
 		pqnn_search_non_esaustiva(input);
-	}
 
     //pqnn32_search(input); // Chiamata funzione assembly
 

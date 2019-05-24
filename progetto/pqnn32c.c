@@ -485,7 +485,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	int i, j, k, t, c, imin;
 	int count;
 	float fob1, fob2, tmp_pow;
-	int* index, dStar, index_offset;
+	int* index, dStar;
 	float pow=0;
 	dStar = input->d/input->m;
 	srand( (time(NULL)) );
@@ -754,13 +754,13 @@ void pqnn_search_non_esaustiva(params* input){
 	data->dest=input->qc;
 	
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
-	for(int q=0;q<1;q++){
+	for(int query=0; query<1;query++){
 		
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 		//potrei aggiungere un metodo restore?
 
 		for(int i=0;i<input->kc;i++){
-			dist = dist_eI(input, data, q, i, 0, input->d);
+			dist = dist_eI(input, data, query, i, 0, input->d);
 			insert(qc_heap,dist,i);
 		}
 		arr = qc_heap->arr;
@@ -771,7 +771,7 @@ void pqnn_search_non_esaustiva(params* input){
 			curr_pq = ((input->v)[curr_qc]).next;
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
 			for(int j=0; j<input->d;j++){
-					residuo[j]=input->qs[q*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
+					residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
 			}
 			while(curr_pq!=NULL){
 				for (int j=0;j<input->m;j++){

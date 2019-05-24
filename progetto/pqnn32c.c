@@ -518,6 +518,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
+			
 			for(j=0; j<input->nr; j++){
 				if(data->index[j*data->index_colums+start/dStar]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;

@@ -79,6 +79,7 @@ float pow2(float f, float e){
 
 extern void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r);
 void dist_eI2(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r){
+	// estremi start incluso ed end escluso
 	int i;
 	float ret=0;
 	float* ind=set+punto1*input->d+start;

@@ -751,13 +751,13 @@ void pqnn_index_esaustiva(params* input){
 	ind1=input->codebook;
 	ind2=input->ds;
 	//inizializzazione codebook
-	for(i=0; i<input->k*input->d; i++){
-		*ind1=*ind2;
-		ind1++;
-		ind2++;
-	}
+	// for(i=0; i<input->k*input->d; i++){
+	// 	*ind1=*ind2;
+	// 	ind1++;
+	// 	ind2++;
+	// }
 	//confrontare
-	//memcpy(input->codebook, input->ds, input->k*input->d*sizeof(float));
+	memcpy(input->codebook, input->ds, input->k*input->d*sizeof(float));
 	for(i=0; i<input->m; i++){
 		kmeans(input, d2, d2+dStar, input->k);
 		d2+=dStar;

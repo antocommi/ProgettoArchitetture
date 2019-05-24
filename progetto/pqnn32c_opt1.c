@@ -756,6 +756,8 @@ void pqnn_index_esaustiva(params* input){
 		ind1++;
 		ind2++;
 	}
+	//confrontare
+	//memcpy(input->codebook, input->ds, input->k*input->d*sizeof(float));
 	for(i=0; i<input->m; i++){
 		kmeans(input, d2, d2+dStar, input->k);
 		d2+=dStar;

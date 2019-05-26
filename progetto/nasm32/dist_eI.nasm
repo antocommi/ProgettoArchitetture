@@ -1,6 +1,11 @@
-%include "sseutils.nasm"
+;%include "sseutils.nasm"
+
+extern	printf
 
 section .data
+;msg1 db	'breakpoint',0xA,0xD
+;f db '(%f) ',0xA,0xD
+d db '(%d)',0xA,0xD
 section .bss
 section .text
 
@@ -37,9 +42,18 @@ dist_eI:
 		sub ebx, 4					;end ciclo quoziente
 		xorps xmm0, xmm0
 		xor esi, esi				;i=0
+
 cicloQ:	cmp esi, ebx				;i < end-start
-		jge somme
+		jg somme
 		movaps xmm1, [ecx+4*esi]
+
+		pushad
+		push esi
+		push d
+		call printf
+		add esp, 8
+		popad
+
 		subps xmm1, [edx+4*esi]
 		mulps xmm1, xmm1
 		addps xmm0, xmm1
@@ -47,15 +61,7 @@ cicloQ:	cmp esi, ebx				;i < end-start
 		jmp cicloQ
 somme:	haddps xmm0, xmm0
 		haddps xmm0, xmm0
-		add ebx, 4
-cicloR:	cmp esi, ebx
-		jge endloop
-		movss xmm1, [ecx+4*esi]
-		subss xmm1, [edx+4*esi]
-		mulss xmm1, xmm1
-		addss xmm0, xmm1
-		inc esi
-		jmp cicloR
+
 endloop:mov eax, [ebp+r]
 		movss [eax], xmm0
 		pop	edi		;fine
@@ -64,3 +70,14 @@ endloop:mov eax, [ebp+r]
 		mov	esp, ebp
 		pop	ebp
 		ret
+
+
+		add ebx, 4		
+cicloR:	cmp esi, ebx
+		jge endloop
+		movss xmm1, [ecx+4*esi]
+		subss xmm1, [edx+4*esi]
+		mulss xmm1, xmm1
+		addss xmm0, xmm1
+		inc esi
+		jmp cicloR

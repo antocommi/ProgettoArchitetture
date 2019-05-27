@@ -89,17 +89,21 @@ void dist_eI2(params* input, MATRIX set, int punto1, int punto2, int start, int 
 	for(i=start; i<end; i++){
 		//printf("%f\n", pow2(*ind - *ind2, 2.0));
 		ret+=pow2(*ind++ - *ind2++, 2.0);
+		//ret+=(*ind++ - *ind2++);
 	}
 	*r=ret;
 }
 void dist_eI_Test(){
+	int i;
 	params* input=_mm_malloc(sizeof(params), 16);
-	input->d=8;
+	input->d=16;
 	MATRIX set=_mm_malloc(2*(input->d)*sizeof(float), 16);
-	for(int i=0; i<input->d*2; i++){
+	srand((long)clock());
+	for(i=0; i<input->d*2; i++){
 		set[i]=100*(float)rand()/(float)RAND_MAX;
 		printf("%d %f\n", i, set[i]);
 	}
+
 	input->ds=set;
 	int punto1=0;
 	int punto2=1;
@@ -110,7 +114,6 @@ void dist_eI_Test(){
 	//printf("Inizio c\n");
 	dist_eI2(input, set, punto1, punto2, start, end, &r2);
 	//printf("Fine c\n");
-	printf("%d\n", (int)set);
 	printf("Inizio nasm\n");
 	dist_eI(input, set, punto1, punto2, start, end, &r);
 	printf("Fine nasm\n");
@@ -154,6 +157,13 @@ void dist_simmetricaI_Test(){
 	printf("nasm:%f\n   c:%f\n", r, r2);
 	_mm_free(input->codebook);
 	_mm_free(input);
+}
+
+void printReg(){
+	register int i asm("esi");
+	printf("%d\n", i);
+	register float f asm("xmm0");
+	printf("%f\n", f);
 }
 
 int main(int argc, char** argv) {

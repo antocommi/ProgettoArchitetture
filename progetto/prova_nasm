@@ -5,5 +5,6 @@ nasm -f elf32 dist_simmetricaI.nasm
 nasm -f elf32 dist_asimmetricaI.nasm
 cd ..
 #gcc -O0 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/dist_eI.o ./nasm32/dist_simmetricaI.o ./nasm32/dist_asimmetricaI.o pqnn32c_opt_nasm.c -lm -o a_opt.out
-gcc -O0 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/dist_eI.o ./nasm32/dist_simmetricaI.o pqnn32c_opt_nasm.c -lm -o a_opt.out
+#gcc -O0 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/dist_eI.o pqnn32c_opt_nasm.c -lm -o a_opt.out
+gcc -O0 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/dist_eI.o pqnn32c_opt_nasm.c -lm -o a_opt.out
 ./a_opt.out ./prova/prova $1 $2 $3

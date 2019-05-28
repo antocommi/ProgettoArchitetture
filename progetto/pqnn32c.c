@@ -361,17 +361,30 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
-float dist_eI(params* input, struct kmeans_data* data, int x, int y, int start, int end){
+void dist_eI(float* punto1, float* punto2, int dimensione, float* r){
 	// estremi start incluso ed end escluso
 	int i;
-	float ret=0, pow, tmp;
-	for(i=start; i<end; i++){
-		tmp = data->source[x*input->d+i]-data->dest[y*input->d+i];
-		pow=tmp*tmp;
-		ret =ret + pow;
+	float ret=0;
+	float* ind=punto1;
+	float* ind2=punto2;
+	for(i=0; i<dimensione; i++){
+		ret+=pow2(*ind++ - *ind2++, 2.0);
 	}
-	return ret;
+	*r=ret;
 }
+
+// VECCHIA DIST
+// float dist_eI(params* input, struct kmeans_data* data, int x, int y, int start, int end){
+// 	// estremi start incluso ed end escluso
+// 	int i;
+// 	float ret=0, pow, tmp;
+// 	for(i=start; i<end; i++){
+// 		tmp = data->source[x*input->d+i]-data->dest[y*input->d+i];
+// 		pow=tmp*tmp;
+// 		ret =ret + pow;
+// 	}
+// 	return ret;
+// }
 
 void dist_asimmetrica_ne(params* input, VECTOR set1, VECTOR set2, int start, int end, float* r){
 	// estremi start incluso ed end escluso
@@ -417,17 +430,17 @@ float* calcola_q(params* input, int query){
 	for(int i=0;i<input->m;i++){
 		for(int c=0;c<input->k;c++){
 			// todo
-			//
+			// 
 			// dist = dist_eI(input, data, x, y, i*dStar, (i+1)*dStar);
 		}
 	}
 		
 }
 
-void creaMatricedistanze(params* input){
+void creaMatricedistanze(params* input, float* codebook){
 	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
 	// puntatore alla src dei centroidi
-	int i, j, k, dStar=input->d/input->m;
+	int i, j, k, dStar=input->d/input->m, d=input->d;
 	float temp;
 	input->nDist=input->k*(input->k+1)/2;
 	
@@ -437,7 +450,8 @@ void creaMatricedistanze(params* input){
 	for(i=1; i<input->k; i++){
 		for(j=0; j<i; j++){
 			for(k=0; k<input->m; k++){
-				dist_simmetricaI(input, input->residual_codebook, i, j, k*dStar, (k+1)*dStar, &temp);
+				dist_eI(codebook+i*d+k*dStar, codebook+j*d+k*dStar,dStar,&temp);
+				// dist_simmetricaI(input, input->residual_codebook, i, j, k*dStar, (k+1)*dStar, &temp);
 				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
 			}
 		}
@@ -485,10 +499,12 @@ int PQ_non_esaustiva(params* input, int x, int start, int end, struct kmeans_dat
     //
     int i;
     float min=FLT_MAX;
-    int imin=-1;
+    int imin=-1, offset = x*input->d, dStar=input->d/input->m;
     float dist;
+	float *src,*dest;
+	src = data->source+offset+start;
     for(i=0; i<data->n_centroidi; i++){
-        dist=dist_eI(input, data, x, i, start, end);
+        dist_eI(src,data->dest+i*input->d+start,dStar, &dist);
         if(dist<min){ 
             min=dist;
             imin=i;
@@ -567,7 +583,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(int y=0; y<input->nr; y++){
 			c = data->index[y*data->index_colums+start/dStar];
-			tmp_pow = dist_eI(input, data, y, c, start, end);
+			tmp_pow = dist_eI( , , end-start, &tmp_pow);
 			pow = tmp_pow * tmp_pow;
 			fob2+=pow;
 		}

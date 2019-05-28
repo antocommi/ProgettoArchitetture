@@ -1,4 +1,11 @@
 /**************************************************************************************
+ * DISATTIVARE ASSERT
+ * DISATTIVARE ASSERT
+ * DISATTIVARE ASSERT
+ * DISATTIVARE ASSERT
+ * DISATTIVARE ASSERT
+ * DISATTIVARE ASSERT
+ * DISATTIVARE ASSERT
  * 
  * CdL Magistrale in Ingegneria Informatica
  * Corso di Architetture e Programmazione dei Sistemi di Elaborazione - a.a. 2018/19
@@ -181,15 +188,14 @@ void insert(Heap *h, float key, int qc_index){
 		(h->arr[h->count]).index = qc_index;
         heapify_bottom_top(h, h->count);	
         h->count++;	
-    }
-	else if( key < (h->arr[0]).dist ){
+    }else if( key < (h->arr[0]).dist ){
 		(h->arr[0]).dist = key;
 		(h->arr[0]).index = qc_index;
 		heapify_top_bottom(h, 0);
 	}
 }
 
-void heapify_bottom_top(Heap *h,int index){	
+void heapify_bottom_top(Heap *h, int index){	
     int parent_node = (index-1)/2;
 	float temp_dist;
 	int temp_index;	
@@ -367,46 +373,6 @@ float dist_eI(params* input, struct kmeans_data* data, int x, int y, int start, 
 	return ret;
 }
 
-/*
-
-
-
-
-int dist_e(params* input, MATRIX set, int punto, int centroide){
-	int i;
-	float sum=0;
-	for(i=0; i<input->m; i++){
-		sum+=pow(dist_eI(input, set, punto, centroide, i*input->m, (i+1)*input->m), 2);
-	}
-	return sum;
-}*/
-
-
-float dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end){
-	// estremi start incluso ed end escluso
-	int i;
-	float ret=0;
-	float pow=0;
-	for(i=start; i<end; i++){
-		pow=((input->codebook[centroide1*input->d+i] - input->codebook[centroide2*input->d+i])*(input->codebook[centroide1*input->d+i] - input->codebook[centroide2*input->d+i]));
-		ret += pow;
-	}
-	return ret;
-}
-
-float dist_simmetrica(params* input, int centroide1, int centroide2){
-	int i;
-	float sum=0;
-	float pow=0;
-	for(i=0; i<input->m; i++){
-		pow=(
-			dist_simmetricaI(input, centroide1, centroide2, i*input->m, (i+1)*input->m)*
-			dist_simmetricaI(input, centroide1, centroide2, i*input->m, (i+1)*input->m));
-		sum+=pow;
-	}
-	return sum;
-}
-
 void dist_asimmetrica_ne(params* input, VECTOR set1, VECTOR set2, int start, int end, float* r){
 	// estremi start incluso ed end escluso
 	// punto2 è un punto del dataset
@@ -417,15 +383,68 @@ void dist_asimmetrica_ne(params* input, VECTOR set1, VECTOR set2, int start, int
 	float pow=0, ret=0, sott=0;
 	float *ind=set1+start;
 	float *ind2=set2+start;
-	*r = 0;
 	for(i=start; i<end; i++){
 		sott=*ind - *ind2;
 		pow=(sott)*(sott);
-		*r = *r + pow;
+		ret += pow;
 		ind++;  
 		ind2++;
 	}
-	// *r=ret;
+	*r=ret;
+}
+
+float pow2(float f, float s){
+	//non modificata rispetto a file pqnn32_opt1.c
+	return f*f;
+}
+
+void dist_simmetricaI(params* input, float* src, int centroide1, int centroide2, int start, int end, float* r){
+	// estremi start incluso ed end escluso
+	int i;
+	float ret=0;
+	float* ind=src+centroide1*input->d+start;
+	float* ind2=src+centroide2*input->d+start;
+	for(i=start; i<end; i++){
+		ret+=pow2(*ind++ - *ind2++, 2);
+	}
+	*r=ret;
+}
+
+float* calcola_q(params* input, int query){
+	// Ritorna un puntatore al quantizzatore esteso di q
+	int dStar = input->d/input->m;
+	struct kmeans_data* data;
+	for(int i=0;i<input->m;i++){
+		for(int c=0;c<input->k;c++){
+			// todo
+			// dist = dist_eI(input, data, x, y, i*dStar, (i+1)*dStar);
+		}
+	}
+		
+}
+
+void creaMatricedistanze(params* input){
+	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
+	// puntatore alla src dei centroidi
+	int i, j, k, dStar=input->d/input->m;
+	float temp;
+	input->nDist=input->k*(input->k+1)/2;
+	
+	input->distanze_simmetriche = alloc_matrix(input->m, input->nDist);
+	if(input->distanze_simmetriche==NULL) exit(-1);
+	
+	for(i=1; i<input->k; i++){
+		for(j=0; j<i; j++){
+			for(k=0; k<input->m; k++){
+				dist_simmetricaI(input, input->residual_codebook, i, j, k*dStar, (k+1)*dStar, &temp);
+				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
+			}
+		}
+	}
+}
+
+void dist_simmetrica_ne(params* input){
+	
 }
 
 
@@ -503,7 +522,6 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 			data->dest[i*input->d+j]=data->source[k*input->d+j];
 		}
     }
-	printf("casuali!");
 	// Assegnazione dei vettori ai centroidi casuali individuati
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
     for(i=0; i<data->index_rows; i++){
@@ -741,7 +759,7 @@ void pqnn_search_non_esaustiva(params* input){
 	struct kmeans_data* data;
 	float dist;
 	struct entry_heap* arr;
-	float * residuo; 
+	float * residuo, *q_x; 
 	float somma=0, temp;
 	int dS=((input->d)/(input->m));
 
@@ -754,20 +772,30 @@ void pqnn_search_non_esaustiva(params* input){
 	data->source=input->qs;
 	data->dest=input->qc;
 	
+	creaMatricedistanze(input);
+
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
-	for(int query=0; query<1; query++){
+	for(int query=0; query<input->nq; query++){
 		
+		q_x = calcola_q(input, query);
+
+
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
-		//potrei aggiungere un metodo restore?
+		//potrei aggiungere un metodo restore su heap?
+		
+
 
 		for(int i=0;i<input->kc;i++){
 			dist = dist_eI(input, data, query, i, 0, input->d);
 			insert(qc_heap,dist,i);
 		}
+
+		
+		
 		arr = qc_heap->arr;
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
-		for(int i=0;i<input->w;i++){
+		for(int i=0; i<input->w; i++){
 			curr_qc = (qc_heap->arr)[i].index;
 			curr_pq = ((input->v)[curr_qc]).next;
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
@@ -775,29 +803,34 @@ void pqnn_search_non_esaustiva(params* input){
 					residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
 			}
 			while(curr_pq!=NULL){
-				for (int j=0;j<input->m;j++){
-					dist_asimmetrica_ne(input, residuo, curr_pq->q, dS*j, dS*(j+1), &temp);
+				somma=0;
+				for (int j=0; j<input->m; j++){
+					if(input->symmetric==0){
+						printf("simmetrica non implementata");
+						// dist_simmetrica_ne();
+					}
+					else
+						// Si può aggiungere caching delle dist tra pq e query? Usando pq ed un vettore di bit
+						// Sarebbe una matrice k*m*sizeof(float) più vettore/matrice k*m*sizeof(bit)  
+						dist_asimmetrica_ne(input, residuo, curr_pq->q, dS*j, dS*(j+1), &temp); 
 					assert(temp>-1.0);
-					somma += (temp*temp);
+					somma += (temp*temp); 
 				}
 				insert(qp_heap, somma, curr_pq->index);
 				curr_pq = curr_pq->next;
-
-			}
-			printf("ss");
-			for(int l=0;l<input->knn;l++){
-				printf("heap[%d]=%d ", l, qp_heap->arr[l].index);
-			}
-			// A questo punto in qp_heap dovrebbero esserci i k vicini
-			for(int k=0;k<input->knn;k++){
-				printf("vicino[%d]:%d\n", i, qp_heap->arr[i].index);
 			}
 		}
+		// for(int k=0;k<input->knn;k++){
+		// 		printf("vicino-%d-[%d]:%d\n",k+1,query,qp_heap->arr[k].index);
+		// }
+		// printf("fine0\n");
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);
 		_mm_free(qp_heap);
 		_mm_free(qc_heap);
+		// printf("fine1\n");
 	}
+	// printf("fine2\n");
 	_mm_free(data);
 }
 

@@ -417,6 +417,7 @@ float* calcola_q(params* input, int query){
 	for(int i=0;i<input->m;i++){
 		for(int c=0;c<input->k;c++){
 			// todo
+			//
 			// dist = dist_eI(input, data, x, y, i*dStar, (i+1)*dStar);
 		}
 	}

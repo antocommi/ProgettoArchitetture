@@ -23,7 +23,6 @@ dist_asimmetricaI:
 		push ebx
 		push esi
 		push edi	;inizio
-		xor esi, esi				;i=0
 		mov ebx, [ebp+end]			;end
 		sub ebx, [ebp+startt]		;end-start
 		sub ebx, 4					;end ciclo quoziente
@@ -31,29 +30,34 @@ dist_asimmetricaI:
 		mov ecx, [edi+in_d]			;ind=input->d
 		mov edx, ecx				;ind2=input->d
 		imul ecx, [ebp+punto1]		;ind=input->d*centroide1
-		add ecx, [ebp+set]			;ind=input->d*centroide1+set
-		add ecx, [ebp+startt]		;ind=input->d*centroide1+set+start
 		imul edx, [ebp+centroide2]	;ind2=input->d*centroide2
-		add edx, [edi+in_codebook]	;ind2=input->d*centroide2+codebook
-		add edx, [ebp+startt]		;ind2=input->d*centroide2+codebook+start
-		xorps xmm1, xmm1
+		add ecx, [ebp+startt]		;ind=input->d*centroide1+start
+		add edx, [ebp+startt]		;ind2=input->d*centroide2+start
+
+		imul ecx, 4					;gli indici usati in c vanno moltiplicati per 4 per farli diventare indirizzi,
+		imul edx, 4					;in quanto ogni elemento occupa 4 celle
+		
+		add ecx, [ebp+set]			;ind=input->d*centroide1+start+set
+		add edx, [edi+in_codebook]	;ind2=input->d*centroide2+start+codebook
+		xor esi, esi				;i=0
+		xorps xmm0, xmm0
 cicloQ:	cmp esi, ebx				;i < end-start
-		jge somme
-		movaps xmm0, [ecx+4*esi]
-		subps xmm0, [edx+4*esi]
-		mulps xmm0, xmm0
-		addps xmm1, xmm0
+		jg somme
+		movaps xmm1, [ecx+4*esi]
+		subps xmm1, [edx+4*esi]
+		mulps xmm1, xmm1
+		addps xmm0, xmm1
 		add esi, 4
 		jmp cicloQ
-somme:	haddps xmm1, xmm1
-		haddps xmm1, xmm1
+somme:	haddps xmm0, xmm0
+		haddps xmm0, xmm0
 		add ebx, 4
 cicloR:	cmp esi, ebx
 		jge endloop
-		movss xmm0, [ecx+4*esi]
-		subss xmm0, [edx+4*esi]
-		mulss xmm0, xmm0
-		addss xmm1, xmm0
+		movss xmm1, [ecx+4*esi]
+		subss xmm1, [edx+4*esi]
+		mulss xmm1, xmm1
+		addss xmm0, xmm1
 		inc esi
 		jmp cicloR
 endloop:mov eax, [ebp+r]

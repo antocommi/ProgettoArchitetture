@@ -283,16 +283,18 @@ void dist_asimmetricaI(params* input, MATRIX set, int punto1, int centroide2, in
 float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 	int i;
 	float sum=0;
-	int par=0;
 	float temp;
+	float *ind1, *ind2;
+	int dStar=input->d/input->m;
 	int* c2=input->pq+punto2*input->m;
+	ind1=set+punto1*input->d;
+	ind2=input->codebook+dStar;
 	for(i=0; i<input->m; i++){
-		printf("start\n");
-		dist_asimmetricaI(input, set, punto1, *c2, par, par+input->m, &temp);
-		printf("end\n");
-		printf("%f\n", temp);
+		//dist_asimmetricaI(input, set, punto1, *c2, par, par+input->m, &temp);
+		dist_eI(ind1, ind2+(*c2)*input->d, dStar, &temp);
 		sum+=pow2(temp, 2);
-		par+=input->m;
+		ind1+=dStar;
+		ind2+=dStar;
 		c2++;
 		printf("break\n");
 	}
@@ -350,16 +352,22 @@ int calcolaQueryPQ(params* input, int start, int end){
     float min;
     float temp;
 	int* ind=input->query_pq+start/(input->d/input->m);
+	float *ind1, *ind2;
 	//printf("breakpoint PQ\n");
+	ind1=input->qs+start;
 	for(j=0; j<input->nq; j++){
 		min=1.79E+308;
+		ind2=input->codebook+start;
 		for(i=0; i<input->k; i++){
-			dist_asimmetricaI(input, input->qs, j, i, start, end, &temp);
+			//dist_asimmetricaI(input, input->qs, j, i, start, end, &temp);
+			dist_eI(ind1, ind2, end-start, &temp);
 			if(temp<min){ 
 				min=temp;
 				*ind=i;
 			}
+			ind2+=input->d;
 		}
+		ind1+=input->d;
 		ind+=m;
 	}
 }
@@ -376,21 +384,26 @@ void calcolaPQ(params* input, int start, int end){
 	int m=input->m;
 	float min;
 	float temp;
+	float *ind1, *ind2;
 	int* ind=input->pq+start/(input->d/input->m);
 	//printf("before for\n");
+	ind1=input->ds+start;
 	for(i=0; i<input->n; i++){
 		min=1.79E+308;
+		ind2=input->codebook+start;
 		for(j=0; j<input->k; j++){
 			//printf("%d %d\n", i, j);
 			//dist_eI(input, input->codebook, j, i, start, end, &temp);
-			dist_eI(input->ds+i*input>d+start, input->codebook+j*input->d+start, end-start, &temp);
+			dist_eI(ind1, ind2, end-start, &temp);
 			if(temp<min){ 
 				min=temp;
 				*ind=j;
 			}
+			ind2+=input->d;
 			//printf("%d %d\n", i, j);
 		}
 		ind+=m;
+		ind1+=input->d;
 	}
 }
 
@@ -524,12 +537,15 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		//printf("inizio\n");
 		//printf("brefore dist\n");
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
+		ind=input->codebook+start;
+		ind2=input->ds+start;
 		for(i=0; i<input->n; i++){
 			//dist_eI(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
-			dist_eI(input->codebook+input->pq[i*m+ipart]*input->d+start, input->ds+i*input->d+start, end-start, &temp);
+			dist_eI(ind+input->pq[i*m+ipart]*input->d, ind2, end-start, &temp);
 			//printf("%f\n", temp);
 			fob2+=pow2(temp, 2.0);
 			//printf("%f\n", fob2);
+			ind2+=input->d;
 		}
 		//printf("%f\n", temp);
 		//printf("a\n");
@@ -543,38 +559,33 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 	//printf("breakpoint kmeans end2\n");
 }
 
-void creaMatricedistanze(params* input){
+
+
+void creaMatricedistanze(params* input, float* codebook){
+	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
+	// puntatore alla src dei centroidi
 	int i, j, k;
+	int dStar=input->d/input->m;
+	int d=input->d;
 	float temp;
+	float *ind1, *ind2;
 	input->nDist=input->k*(input->k+1)/2;
+	
 	input->distanze_simmetriche = alloc_matrix(input->m, input->nDist);
 	if(input->distanze_simmetriche==NULL) exit(-1);
-	printf("crea matrice\n");
-	//row major order---------------------------------------------------------
-//	for(k=0; k<input->m; k++){
-//		for(i=1; i<input->k; i++){
-//			for(j=0; j<i; j++){
-//				dist_simmetricaI(input, i, j, k*input->m, (k+1)*input->m, &temp);
-//				input->distanze_simmetriche[k*input->nDist+calcolaIndice(i, j)]=temp; 
-//				// verificare se qui va usata la distanza simmetrica o no
-//			}
-//		}
-//	}
-	//column major order---------------------------------------------------------
 	for(i=1; i<input->k; i++){
 		for(j=0; j<i; j++){
+			ind1=codebook+i*d;
+			ind2=codebook+j*d;
 			for(k=0; k<input->m; k++){
-				//printf("prima dist\n");
-				dist_simmetricaI(input, i, j, k*(input->d/input->m), (k+1)*(input->d/input->m), &temp);
-				//printf("dopo dist\n");
-				//printf("%f\n", temp);
-				//printf("porca troia\n");
+				dist_eI(ind1, ind2, dStar, &temp);
+				// dist_simmetricaI(input, input->residual_codebook, i, j, k*dStar, (k+1)*dStar, &temp);
 				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
-				// verificare se qui va usata la distanza simmetrica o no
+				ind1+=dStar;
+				ind2+=dStar;
 			}
 		}
 	}
-	//---------------------------------------------------------
 }
 
 void bubbleSort(VECTOR arr, int* arr2, int n, int nit){ 
@@ -793,7 +804,7 @@ void pqnn_index_esaustiva(params* input){
 //	}
 
 	if(input->symmetric==1){
-		creaMatricedistanze(input);
+		creaMatricedistanze(input, input->codebook);
 	}
 }
 

@@ -219,13 +219,13 @@ float pow2(float f, float s){
 	return f*f;
 }
 
-extern int calcolaIndice(int i, int j);
-// int calcolaIndice(int i, int j){
-// 	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
-// 	return i*(i-1)/2+j;
-// }
+//extern int calcolaIndice(int i, int j);
+int calcolaIndice(int i, int j){
+	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
+	return i*(i-1)/2+j;
+}
 
-extern void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r);
+//extern void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r);
 // void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r){
 // 	// estremi start incluso ed end escluso
 // 	int i;
@@ -237,6 +237,18 @@ extern void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start
 // 	}
 // 	*r=ret;
 // }
+
+void dist_eI(float* punto1, float* punto2, int dimensione, float* r){
+	// estremi start incluso ed end escluso
+	int i;
+	float ret=0;
+	float* ind=punto1;
+	float* ind2=punto2;
+	for(i=0; i<dimensione; i++){
+		ret+=pow2(*ind++ - *ind2++, 2.0);
+	}
+	*r=ret;
+}
 
 //extern void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end, float* r);
 void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end, float* r){
@@ -370,7 +382,8 @@ void calcolaPQ(params* input, int start, int end){
 		min=1.79E+308;
 		for(j=0; j<input->k; j++){
 			//printf("%d %d\n", i, j);
-			dist_eI(input, input->codebook, j, i, start, end, &temp);
+			//dist_eI(input, input->codebook, j, i, start, end, &temp);
+			dist_eI(input->ds+i*input>d+start, input->codebook+j*input->d+start, end-start, &temp);
 			if(temp<min){ 
 				min=temp;
 				*ind=j;
@@ -512,7 +525,8 @@ void kmeans(params* input, int start, int end, int n_centroidi){
 		//printf("brefore dist\n");
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(i=0; i<input->n; i++){
-			dist_eI(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
+			//dist_eI(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
+			dist_eI(input->codebook+input->pq[i*m+ipart]*input->d+start, input->ds+i*input->d+start, end-start, &temp);
 			//printf("%f\n", temp);
 			fob2+=pow2(temp, 2.0);
 			//printf("%f\n", fob2);

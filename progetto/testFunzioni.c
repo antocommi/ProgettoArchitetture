@@ -65,17 +65,19 @@ float pow2(float f, float e){
 //---------------------------------------
 
 // extern int calcolaIndice(int i, int j);
-// int calcolaIndice2(int i, int j){
-// 	return i*(i-1)/2+j;
-// }
-
-// void calcolaIndiceTest(){
-// 	for(int i=1; i<10; i++){
-// 		for(int j=0; j<i; j++){
-// 			printf("%d %d\nnasm:%d\n   c:%d\n", i, j, calcolaIndice(i, j), calcolaIndice2(i, j));
-// 		}
-// 	}
-// }
+int calcolaIndice2(int i, int j){
+	return i*(i-1)/2+j;
+}
+void calcolaIndice_Test(){
+	int a, b;
+	for(int i=1; i<10; i++){
+		for(int j=0; j<i; j++){
+			//a=calcolaIndice(i, j);
+			b=calcolaIndice2(i, j);
+			printf("%d %d\nnasm:%d\n   c:%d\n", i, j, a, b);
+		}
+	}
+}
 
 extern void dist_eI(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r);
 void dist_eI2(params* input, MATRIX set, int punto1, int punto2, int start, int end, float* r){
@@ -87,18 +89,21 @@ void dist_eI2(params* input, MATRIX set, int punto1, int punto2, int start, int 
 	for(i=start; i<end; i++){
 		//printf("%f\n", pow2(*ind - *ind2, 2.0));
 		ret+=pow2(*ind++ - *ind2++, 2.0);
+		//ret+=(*ind++ - *ind2++);
 	}
 	*r=ret;
 }
-
-void dist_eITest(){
+void dist_eI_Test(){
+	int i;
 	params* input=_mm_malloc(sizeof(params), 16);
-	input->d=8;
-	MATRIX set=_mm_malloc(2*input->d*sizeof(float), 16);
-	for(int i=0; i<input->d*2; i++){
+	input->d=16;
+	MATRIX set=_mm_malloc(2*(input->d)*sizeof(float), 16);
+	srand((long)clock());
+	for(i=0; i<input->d*2; i++){
 		set[i]=100*(float)rand()/(float)RAND_MAX;
-		//printf("%f\n", set[i]);
+		printf("%d %f\n", i, set[i]);
 	}
+
 	input->ds=set;
 	int punto1=0;
 	int punto2=1;
@@ -106,16 +111,64 @@ void dist_eITest(){
 	int end=input->d;
 	float r;
 	float r2;
-	printf("Inizio c\n");
+	//printf("Inizio c\n");
 	dist_eI2(input, set, punto1, punto2, start, end, &r2);
-	printf("Fine c\n");
+	//printf("Fine c\n");
 	printf("Inizio nasm\n");
 	dist_eI(input, set, punto1, punto2, start, end, &r);
 	printf("Fine nasm\n");
 	printf("nasm:%f\n   c:%f\n", r, r2);
+	_mm_free(set);
+	_mm_free(input);
+}
+
+//extern void dist_simmetricaI(params* input, int centroide1, int centroide2, int start, int end, float* r); 
+void dist_simmetricaI2(params* input, int centroide1, int centroide2, int start, int end, float* r){
+	// estremi start incluso ed end escluso
+	int i;
+	float ret=0;
+	float* ind=input->codebook+centroide1*input->d+start;
+	float* ind2=input->codebook+centroide2*input->d+start;
+	for(i=start; i<end; i++){
+		ret+=pow2(*ind++ - *ind2++, 2);
+	}
+	*r=ret;
+}
+void dist_simmetricaI_Test(){
+	params* input=_mm_malloc(sizeof(params), 16);
+	input->d=8;
+	input->codebook=_mm_malloc(2*input->d*sizeof(float), 16);
+	for(int i=0; i<input->d*2; i++){
+		input->codebook[i]=100*(float)rand()/(float)RAND_MAX;
+		//printf("%f\n", set[i]);
+	}
+	int centroide1=0;
+	int centroide2=1;
+	int start=0;
+	int end=input->d;
+	float r;
+	float r2;
+	printf("Inizio c\n");
+	dist_simmetricaI2(input, centroide1, centroide2, start, end, &r2);
+	printf("Fine c\n");
+	printf("Inizio nasm\n");
+	//dist_simmetricaI(input, centroide1, centroide2, start, end, &r);
+	printf("Fine nasm\n");
+	printf("nasm:%f\n   c:%f\n", r, r2);
+	_mm_free(input->codebook);
+	_mm_free(input);
+}
+
+void printReg(){
+	register int i asm("esi");
+	printf("%d\n", i);
+	register float f asm("xmm0");
+	printf("%f\n", f);
 }
 
 int main(int argc, char** argv) {
-	dist_eITest();
+	//calcolaIndice_Test();
+	dist_eI_Test();
+	//dist_simmetricaI_Test();
 	return 0;
 }

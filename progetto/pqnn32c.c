@@ -504,7 +504,7 @@ int PQ_non_esaustiva(params* input, int x, int start, int end, struct kmeans_dat
 	float *src,*dest;
 	src = data->source+offset+start;
     for(i=0; i<data->n_centroidi; i++){
-        dist_eI(src,data->dest+i*input->d+start,dStar, &dist);
+        dist_eI(src,data->dest+i*input->d+start,dStar,&dist);
         if(dist<min){ 
             min=dist;
             imin=i;
@@ -583,7 +583,8 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		for(int y=0; y<input->nr; y++){
 			c = data->index[y*data->index_colums+start/dStar];
-			tmp_pow = dist_eI( , , end-start, &tmp_pow);
+			// tmp_pow = dist_eI(input, data, y, c, start, end);
+			dist_eI(data->source+y*input->d+start,data->dest+c*input->d+start,end-start,&tmp_pow);
 			pow = tmp_pow * tmp_pow;
 			fob2+=pow;
 		}
@@ -789,7 +790,7 @@ void pqnn_search_non_esaustiva(params* input){
 	data->source=input->qs;
 	data->dest=input->qc;
 	
-	creaMatricedistanze(input);
+	creaMatricedistanze(input, input->residual_codebook);
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){
@@ -803,7 +804,8 @@ void pqnn_search_non_esaustiva(params* input){
 
 
 		for(int i=0;i<input->kc;i++){
-			dist = dist_eI(input, data, query, i, 0, input->d);
+			// dist = dist_eI(input, data, query, i, 0, input->d);
+			dist_eI(input->qs+query*input->d, input->qc+i*input->d, input->d, &dist);
 			insert(qc_heap,dist,i);
 		}
 

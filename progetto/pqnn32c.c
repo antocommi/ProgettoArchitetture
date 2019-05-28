@@ -45,6 +45,7 @@
  ./runpqnn32
 
 */
+sudo apt-get install libgtk2.0-dev
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -437,22 +438,29 @@ float* calcola_q(params* input, int query){
 		
 }
 
+
 void creaMatricedistanze(params* input, float* codebook){
 	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
 	// puntatore alla src dei centroidi
-	int i, j, k, dStar=input->d/input->m, d=input->d;
+	int i, j, k;
+	int dStar=input->d/input->m;
+	int d=input->d;
 	float temp;
+	float *ind1, *ind2;
 	input->nDist=input->k*(input->k+1)/2;
 	
 	input->distanze_simmetriche = alloc_matrix(input->m, input->nDist);
 	if(input->distanze_simmetriche==NULL) exit(-1);
-	
 	for(i=1; i<input->k; i++){
 		for(j=0; j<i; j++){
+			ind1=codebook+i*d;
+			ind2=codebook+j*d;
 			for(k=0; k<input->m; k++){
-				dist_eI(codebook+i*d+k*dStar, codebook+j*d+k*dStar,dStar,&temp);
+				dist_eI(ind1, ind2, dStar, &temp);
 				// dist_simmetricaI(input, input->residual_codebook, i, j, k*dStar, (k+1)*dStar, &temp);
 				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
+				ind1+=dStar;
+				ind2+=dStar;
 			}
 		}
 	}
@@ -790,7 +798,10 @@ void pqnn_search_non_esaustiva(params* input){
 	data->source=input->qs;
 	data->dest=input->qc;
 	
-	creaMatricedistanze(input, input->residual_codebook);
+	if(input->symmetric==0){
+		creaMatricedistanze(input, input->residual_codebook);
+	}
+	
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){

@@ -361,6 +361,11 @@ int calcolaIndice(int i, int j){
 	return i*(i-1)/2+j;
 }
 
+float pow2(float f, float s){
+	//non modificata rispetto a file pqnn32_opt1.c
+	return f*f;
+}
+
 void dist_eI(float* punto1, float* punto2, int dimensione, float* r){
 	// estremi start incluso ed end escluso
 	int i;
@@ -406,10 +411,7 @@ void dist_asimmetrica_ne(params* input, VECTOR set1, VECTOR set2, int start, int
 	*r=ret;
 }
 
-float pow2(float f, float s){
-	//non modificata rispetto a file pqnn32_opt1.c
-	return f*f;
-}
+
 
 void dist_simmetricaI(params* input, float* src, int centroide1, int centroide2, int start, int end, float* r){
 	// estremi start incluso ed end escluso
@@ -425,14 +427,23 @@ void dist_simmetricaI(params* input, float* src, int centroide1, int centroide2,
 
 float* calcola_q(params* input, int query){
 	// Ritorna un puntatore al quantizzatore esteso di q
-	int dStar = input->d/input->m;
-	struct kmeans_data* data;
+	int dStar = input->d/input->m, offset;
+	float dist;
+	int imin=-1;
+	float min=FLT_MAX;
+	float *q=input->qs+query*input->d, *res;
+	res = _mm_malloc(sizeof(float)*input->d,16);
 	for(int i=0;i<input->m;i++){
+		offset = i*dStar;
 		for(int c=0;c<input->k;c++){
-			// todo
-			// 
+			dist_eI(q+i*dStar, input->residual_codebook+c*input->d+offset,dStar,&dist);
+			if(dist<min){
+				imin=c;
+				min=dist;
+			}
 			// dist = dist_eI(input, data, x, y, i*dStar, (i+1)*dStar);
 		}
+		memcpy(input->residual_codebook+imin*input->d+i*dStar,res,sizeof(float)*dStar);
 	}
 		
 }
@@ -550,7 +561,7 @@ void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
     for(i=0; i<data->index_rows; i++){
 		data->index[i*data->index_colums+start/dStar] = PQ_non_esaustiva(input, i, start, end, data);
-    } 
+    }
 	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
@@ -805,22 +816,21 @@ void pqnn_search_non_esaustiva(params* input){
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){
 		
-		q_x = calcola_q(input, query);
-
+		if(input->symmetric==0){
+			q_x = calcola_q(input, query);
+		}else{
+			q_x = input->qs+query*input->d;
+		}
 
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 		//potrei aggiungere un metodo restore su heap?
 		
-
-
 		for(int i=0;i<input->kc;i++){
 			// dist = dist_eI(input, data, query, i, 0, input->d);
-			dist_eI(input->qs+query*input->d, input->qc+i*input->d, input->d, &dist);
+			dist_eI(q_x, input->qc+i*input->d, input->d, &dist);
 			insert(qc_heap,dist,i);
 		}
 
-		
-		
 		arr = qc_heap->arr;
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
@@ -831,6 +841,7 @@ void pqnn_search_non_esaustiva(params* input){
 			for(int j=0; j<input->d;j++){
 					residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
 			}
+
 			while(curr_pq!=NULL){
 				somma=0;
 				for (int j=0; j<input->m; j++){

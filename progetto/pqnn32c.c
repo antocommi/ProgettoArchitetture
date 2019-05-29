@@ -58,9 +58,9 @@
 
 #define	MATRIX		float*
 #define	VECTOR		float*
-
 #define DATASET		0
 #define QUERYSET	1
+#define OFFSET 		0
 
 
 typedef struct {
@@ -148,24 +148,6 @@ typedef struct kmeans_data{
 	int d;
 	
 } kmeans_data;
-
-// struct kmeans_data{
-
-// 	// Sorgente da cui si impara il codebook
-// 	float* source;
-	
-// 	// Per ogni vettore contiene il centroide di appartenenza
-// 	int* index; 
-	
-// 	// Per ogni riga contiene il centroide per intero
-// 	float* dest;
-
-// 	// Dimensione degli index
-// 	int index_rows,index_colums;
-
-// 	// Numero di centroidi da calcolare
-// 	int n_centroidi;
-// };
 
 struct entry_heap{
 	
@@ -401,42 +383,6 @@ void distanza(float* punto1, float* punto2, int dimensione, float* r){
 	*r=ret;
 }
 
-
-void dist_asimmetrica_ne(params* input, VECTOR set1, VECTOR set2, int start, int end, float* r){
-	// estremi start incluso ed end escluso
-	// punto2 è un punto del dataset
-	//
-	// punto1 può essere del dataset o del query set, quindi in set si passa
-	// la constante DATASET o QUERYSET
-	int i;
-	float pow=0, ret=0, sott=0;
-	float *ind=set1+start;
-	float *ind2=set2+start;
-	for(i=start; i<end; i++){
-		sott=*ind - *ind2;
-		pow=(sott)*(sott);
-		ret += pow;
-		ind++;  
-		ind2++;
-	}
-	*r=ret;
-}
-
-
-
-void dist_simmetricaI(params* input, float* src, int centroide1, int centroide2, int start, int end, float* r){
-	// estremi start incluso ed end escluso
-	int i;
-	float ret=0;
-	float* ind=src+centroide1*input->d+start;
-	float* ind2=src+centroide2*input->d+start;
-	for(i=start; i<end; i++){
-		ret+=pow2(*ind++ - *ind2++, 2);
-	}
-	*r=ret;
-}
-
-
 void creaMatricedistanze(params* input, float* codebook){
 	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
 	// puntatore alla src dei centroidi
@@ -465,33 +411,6 @@ void creaMatricedistanze(params* input, float* codebook){
 }
 
 
-float distI(params* input, int* quantizer, int punto, int centroide2, int start, int end){
-	// estremi start incluso ed end escluso
-	// centroide è un punto del dataset
-	//
-	// punto può essere del dataset o del query set, quindi in set si passa
-	// la constante DATASET o QUERYSET
-	int c1=quantizer[punto*input->m+(start/input->m)];
-	//printf("breakpoint Dist %d %d\n", c1, centroide2);
-	if(c1==centroide2){
-		return 0;
-	}else{
-		//row major order-------------------------------------------
-//		if(c1<centroide2){
-//			return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(centroide2, c1)];
-//		}else{
-//			return input->distanze_simmetriche[(input->nDist*start/input->m)+calcolaIndice(c1, centroide2)];
-//		}
-		//column major order-------------------------------------------
-		if(c1<centroide2){
-			return input->distanze_simmetriche[start/input->m+calcolaIndice(centroide2, c1)*input->m];
-		}else{
-			return input->distanze_simmetriche[start/input->m+calcolaIndice(c1, centroide2)*input->m];
-		}
-		//-------------------------------------------
-	}
-}
-
 void calcolaPQ(kmeans_data* data, int start, int end){
 	int i, j;
 	int m=data->index_columns;
@@ -514,34 +433,6 @@ void calcolaPQ(kmeans_data* data, int start, int end){
 		ind+=m;
 		ind1+=data->d;
 	}
-}
-
-int PQ_non_esaustiva(params* input, int x, int start, int end, struct kmeans_data* data){
-	// 	Estremi -> [start,end)
-    //	INPUT: 	Punto x di dimensione d.
-    //	OUTPUT: indice del centroide c più vicino ad x. 
-    //
-    int i;
-    float min=FLT_MAX;
-    int imin=-1, dStar=input->d/input->m;
-    float dist;
-	float *src,*dest;
-	src = &data->source[x*input->d+start];
-    for(i=0; i<data->n_centroidi; i++){
-		// printf("prima dist: %d\n",dist);
-        distanza(src, &data->dest[i*input->d+start], dStar, &dist);
-		assert(dist>=0);
-        if(dist<min){ 
-            min=dist;
-            imin=i;
-        }
-    }
-	// if(imin==-1){
-	// 	for(i=0;i<input)
-	// 	printf("");
-	// }
-	// printf("trovato c=%d a distanza=%.2f di x=%d \n", imin, min, x);
-    return imin;
 }
 
 float absf(float f){
@@ -636,88 +527,6 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	printf("%d\n", t);
 }
 
-
-// source : Rappresenta la sorgente da cui calcolare il codebook (prodotto o vettoriale)
-//			lo spazio deve essere già allocato a priori. 
-// dest   : Rappresenta la destinazione dove dovranno essere inseriti i centroidi calcolati
-void kmeans_from(params* input, struct kmeans_data* data, int start, int end ){
-	// estremi start incluso ed end escluso
-	int i, j, k, t, c, imin;
-	int count;
-	float fob1, fob2, tmp_pow;
-	int* index, dStar;
-	float pow=0;
-	dStar = input->d/input->m;
-	srand( (time(NULL)) );
-	//
-	// Inizializzazione del codebook
-	//		-Scelta dei k vettori casuali
-	//
-	// printf("\t --y--start=[%d]&end=[%d]\n",start,end);
-    for(i=0; i<data->n_centroidi; i++){
-		k = rand()% input->nr;
-		//SCELTA DEI PRIMI n_centroidi
-		// memcpy(&data->dest[i*input->d+start], &data->source[i*input->d+j], sizeof(float)*(end-start));
-		for(j=start; j<end; j++){
-			data->dest[i*input->d+j]=data->source[k*input->d+j];
-		}
-    }
-	// Assegnazione dei vettori ai centroidi casuali individuati
-	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
-    for(i=0; i<data->index_rows; i++){
-		data->index[i*data->index_columns+start/dStar] = PQ_non_esaustiva(input, i, start, end, data);
-    }
-	// stampa_matrice_flt(input->qc_indexes, input->nr, 1);
-	fob1=0; //Valori della funzione obiettivo
-	fob2=0;
-	
-	for(t=0; !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps )); t++){
-		for(i=0; i<data->n_centroidi; i++){
-			count=0; 
-			memset(&data->dest[i*input->d+start], 0, (end-start)*sizeof(float));
-			//
-			// INIZIO: RICALCOLO NUOVI CENTROIDI
-			//
-
-			for(j=0; j<input->nr; j++){
-				if(data->index[j*data->index_columns+start/dStar]==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
-					count++;
-					for(k=start; k<end; k++){
-						data->dest[i*input->d+k] += data->source[j*input->d+k];
-					}
-				}
-			}
-			for(j=start; j<end; j++){
-				if(count!=0){ 
-					// Alcune partizioni potrebbero essere vuote
-					// Specie se ci sono degli outliers
-					data->dest[i*input->d+j]=data->dest[i*input->d+j]/count;
-				}
-			}
-			//
-			// FINE: RICALCOLO NUOVI CENTROIDI
-			//
-		}
-		for(i=0; i<input->nr; i++){
-			data->index[i*data->index_columns+start/dStar]=PQ_non_esaustiva(input, i, start, end, data);
-		}
-		fob1=fob2;
-		fob2=0;
-		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
-		for(int y=0; y<input->nr; y++){
-			c = data->index[y*data->index_columns+start/dStar];
-			// tmp_pow = distanza(input, data, y, c, start, end);
-			distanza(data->source+y*input->d+start,data->dest+c*input->d+start,end-start,&tmp_pow);
-			pow = tmp_pow * tmp_pow;
-			fob2+=pow;
-		}
-		
-		// printf("------\nfob1=%.2f \nfob2=%.2f \n------\n", fob1, fob2 );
-	}
-	printf("# di iterazioni: %d\n",t);
-}
-
-
 // Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
 VECTOR qp_of_r(params* input, int r){
 	int qp_index, dStar, partial_index, initial_offset;
@@ -773,20 +582,6 @@ void inizializzaSecLiv(params* input){
 		add(res, qc_i, input); 
 		assert(res->index>=0 && res->index<input->nr);
 	}
-	
-	//
-	// STAMPA DEL VETTORE DI LISTE V
-	//
-	// printf("---Inizio stampa lista a due livelli\n");
-	// for(int i=0;i<input->kc;i++){
-	// 	res = &(*(input->v+i));
-	// 	while(res!=NULL){
-	// 		printf("%d, ", res->index);
-	// 		res=res->next;
-	// 	}
-	// 	printf("\n ");
-	// }
-	// printf("fine");
 }
 
 
@@ -811,11 +606,12 @@ extern void compute_residual(params* input, float* res, int qc_i, int y);
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
 	int qc_i; 
-	float* ry; // puntatore al residuo corrente nel residual_codebook
+	float *ry;
+	int *indexes=input->qc_indexes; // puntatore al residuo corrente nel residual_codebook
 	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
-		qc_i = qc_index(input,y); // Calcola il suo quantizzatore grossolano qc(y)
-		ry = &(input->residual_set[y*input->d]);
-		compute_residual(input,ry,qc_i,y); // calcolo del residuo r(y) = y - qc(y)
+		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
+		ry = input->residual_set+y*input->d;
+		compute_residual(input, ry, *(indexes+y), y); // calcolo del residuo r(y) = y - qc(y)
 	}
 }
 
@@ -846,7 +642,7 @@ void pqnn_index_non_esaustiva(params* input){
 	if(input->pq==NULL) exit(-1);
 	
 	//nuova aggiunta
-	memcpy(input->qc, input->ds+10*input->d, input->kc*input->d*sizeof(float));
+	memcpy(input->qc, input->ds, input->kc*input->d*sizeof(float));
 
 	// Settagio parametri k-means
 	data->source = input->ds;
@@ -864,7 +660,7 @@ void pqnn_index_non_esaustiva(params* input){
 	calcola_residui(input);
 	
 	//nuova aggiunta
-	memcpy(input->residual_codebook, input->residual_set, input->k*input->d*sizeof(float));
+	memcpy(input->residual_codebook, input->residual_set+OFFSET*input->d, input->k*input->d*sizeof(float));
 	data->dim_source=input->nr;
 
 	// Settagio parametri k-means
@@ -913,13 +709,22 @@ void pqnn_search_non_esaustiva(params* input){
 	}
 
 	// STAMPA DELLA MATRICE DEGLI INDICI PQ
-	// for(int i=0;i<input->nr;i++){
-	// 	for(int j=0;j<input->m;j++){
-	// 		printf(" %3d,",input->pq[i*input->m+j]);
-	// 		assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
-	// 	}
-	// 	printf("\n");
-	// }
+	for(int i=0;i<300;i++){
+		if(i==input->k+OFFSET || i==OFFSET) printf("--------------------\n");
+		printf("index[%3d]= ", i);
+		for(int j=0;j<input->m;j++){
+			if(input->pq[i*input->m+j]+OFFSET==i)
+				printf(" %3d,",0);
+			else
+				printf(" %3d,",input->pq[i*input->m+j]+OFFSET);
+			assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
+		}
+		if(input->qc_indexes[i]==i)
+			printf(" | qc_i:XXX,");
+		else
+			printf(" | qc_i:%3d,",input->qc_indexes[i]);
+		printf("\n");
+	}
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){
@@ -950,11 +755,18 @@ void pqnn_search_non_esaustiva(params* input){
 
 			if(input->symmetric==1){
 				data->source=residuo;
+				data->dim_source=1;
 				data->dest=input->residual_codebook;
 				data->n_centroidi=input->k;
+				data->index = qp_query;
+				data->d = input->d;
+				data->index_columns = input->m;
+				data->index_rows = 1;
 				for(int l=0;l<input->m;l++){
 					// printf("prima: %d\n",qp_query[l]);
-					qp_query[l] = PQ_non_esaustiva(input, 0, l*dS, (l+1)*dS, data);
+					// qp_query[l] = PQ_non_esaustiva(input, 0, l*dS, (l+1)*dS, data);
+					// qp_query[l];
+					calcolaPQ(data, l*dS, (l+1)*dS);
 					// printf("dopo: %d\n",qp_query[l]);
 				}
 			}	
@@ -966,8 +778,7 @@ void pqnn_search_non_esaustiva(params* input){
 						if(qp_query[j] > input->pq[input->m*curr_pq->index+j]){
 							h = qp_query[j];
 							p = input->pq[input->m*curr_pq->index+j];
-						}
-						else{
+						}else{
 							h = input->pq[input->m*curr_pq->index+j];
 							p = qp_query[j];
 						}
@@ -994,9 +805,12 @@ void pqnn_search_non_esaustiva(params* input){
 		
 		//A questo punto i knn vicini sono in qp_heap->arr
 		for(int s=0;s<input->knn;s++){
+			assert(qp_heap->arr[s].index>=0 && qp_heap->arr[s].index<input->nr);
 			input->ANN[query*input->knn+s] = qp_heap->arr[s].index;
 		}
 		
+		
+
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);
 		_mm_free(qp_heap);

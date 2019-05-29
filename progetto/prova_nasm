@@ -1,6 +1,8 @@
 cd nasm32
 nasm -f elf32 calcolaIndice.nasm
 nasm -f elf32 distanza.nasm
+nasm -f elf32 calcolaPQ.nasm
 cd ..
-gcc -O3 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/distanza.o pqnn32c_opt_nasm.c -lm -o a_opt.out
+gcc -O3 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/distanza.o ./nasm32/calcolaPQ.o pqnn32c_opt_nasm.c -lm -o a_opt.out
+#gcc -O3 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/distanza.o pqnn32c_opt_nasm.c -lm -o a_opt.out
 ./a_opt.out ./prova/prova $1 $2 $3

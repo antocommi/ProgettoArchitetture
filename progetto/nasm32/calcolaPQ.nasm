@@ -1,5 +1,12 @@
+extern distanza
+
+extern printf
+
 section .data
-dd max 1.79E+308
+max dd 1.79E+308
+d1 db '%d '
+;d2 db '%d %d '
+;break db 'breakpoint', 10, 0
 
 section .bss
 temp: resd 1
@@ -27,56 +34,72 @@ calcolaPQ:
 		push ebx
 		push esi
 		push edi	;inizio
-
-		mov edi, [ebp+data]				;edi=data
-		mov ecx, [ebp+startt]			;ind=start
-		imul ecx, [edi+index_columns]	;ind=start*index_columns
-		div ecx, [edi+d]				;ind=start*index_columns/d
-		imul ecx, 4						; solito problema  poi modificare con shift
-		add ecx, [edi+index] 			;ind=start*index_columns/d+index
-		mov edx, [ebp+startt]			;ind1=start
-		imul edx, 4						; solito problema  poi modificare con shift
-		add edx, [edi+source]			;ind1=start+source
-
-		xor esi, esi					;i=0
-forI:	cmp esi, [edi+dim_source]
-		jg endI							;controllare condizione di fine ciclo
-		movss xmm2, max
-		mov eax, [ebp+startt]			;ind2=start
+		
+		mov edx, [ebp+data]				;edx=data
+		mov eax, [ebp+startt]			;ind=start
+		imul eax, [edx+index_columns]	;ind=start*index_columns
+		mov ecx, dword [edx+d]
+		cdq
+		idiv ecx				;ind=start*index_columns/d
+		mov edx, [ebp+data]				;edx=data
 		imul eax, 4						; solito problema  poi modificare con shift
-		add eax, [edi+dest]				;ind2=start+dest
+		add eax, [edx+index] 			;ind=start*index_columns/d+index
 
-		xor esp, esp					;j=0
-forJ:	cmp esp, [edi+n_centroidi]
-		jg endJ							;controllare condizione di fine ciclo
-		mov ebx, [edi+end]
-		sub ebx, [edi+startt]
+		push temp						;  primo parametro funzione dist
+		mov ecx, [ebp+end]
+		sub ecx, [ebp+startt]
+		push ecx						;  secondo parametro funzione dist
+		mov ecx, [ebp+startt]			;ind1=start
+		imul ecx, 4						; solito problema  poi modificare con shift
+		add ecx, [edx+source]			;ind1=start+source
+		push ecx						;  terzo parametro funzione dist
+		mov ebx, [edx+d]
+		imul ebx, 4
 
-		pushad
-		push temp
-		push ebx
-		push eax
-		push edx
-		call distanza
-		;add esp, 16 problema serio
+		mov esi, [edx+dim_source]		;end loop i
+forI:	cmp esi, 0
+		jle endI						;controllare condizione
+		movss xmm0, [max]
+		mov ecx, [ebp+startt]			;ind2=start
+		imul ecx, 4						; solito problema  poi modificare con shift
+		add ecx, [edx+dest]				;ind2=start+dest
+		push ecx						;  quarto parametro funzione dist
+
+		pushad							;inizio stampa
+		push esi
+		push dword d1
+		call printf
+		add esp, 12
 		popad
 
-		; continuare il codice dall'if
+		xor edi, edi
+forJ:	cmp edi, [edx+n_centroidi]
+		jge endJ						;controllare condizione
 
-		;end if
-		
-		mov ebx, [edi+d]
-		imul ebx, 4
-		add eax, ebx
-		inc esp
-		jmp forJ
-endJ:	mov ebx, [edi+index_columns]
-		imul ebx, 4
+		pushad							;inizio stampa
+		push edi
+		push dword d1
+		call printf
+		add esp, 12
+		popad							;fine stampa
+
+		call distanza
+		movss xmm1, [temp]
+		comiss xmm1, xmm0
+		jge endif
+		movss xmm0, xmm1
+		mov [eax], edi
+endif:	pop ecx
 		add ecx, ebx
-		mov ebx, [edi+d]
-		imul ebx, 4
-		add edx, ebx
-		inc esi
+		push ecx
+		jmp forJ
+endJ:	pop ecx
+		pop ecx
+		add ecx, ebx
+		push ecx
+		mov ecx, [edx+index_columns]
+		imul ecx, 4
+		add eax, ecx
 		jmp forI
 endI:	pop	edi		;fine
 		pop	esi
@@ -85,11 +108,11 @@ endI:	pop	edi		;fine
 		pop	ebp
 		ret
 
-; eax	ind2
-; ebx	movimenti
-; ecx	ind
-; edx	ind1
-; esi	i
-; edi	data
-; ebp
-; esp	j
+
+;eax ind
+;ebx endj
+;ecx temporaneo puntatori
+;edx data
+;esi i
+;edi j
+

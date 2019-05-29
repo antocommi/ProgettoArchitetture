@@ -992,28 +992,16 @@ void pqnn_search_non_esaustiva(params* input){
 		}
 		
 		//A questo punto i knn vicini sono in qp_heap->arr
-		printf("inizio ann\n");
 		for(int s=0;s<input->knn;s++){
 			input->ANN[query*input->knn+s] = qp_heap->arr[s].index;
 		}
-		printf("fine ann\n");
 		
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);
 		_mm_free(qp_heap);
 		_mm_free(qc_heap);
-		// printf("fine1\n");
 	}
-	// printf("fine2\n");
 	_mm_free(data);
-	// printf("uscito stampa ann\n");
-	// for(int qry=0;qry<input->nq;qry++){
-	// 	printf("query %d: ", qry);
-	// 	for(int ww=0;ww<input->knn;ww++){
-	// 		printf("%d ",input->ANN[qry*input->knn+ww]);
-	// 	}
-	// 	printf("\n");
-	// }
 }
 
 

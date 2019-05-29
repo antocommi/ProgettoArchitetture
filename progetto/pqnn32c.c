@@ -121,6 +121,7 @@ struct entry{
 	int index;
 	// Residuo q di dimensione d.
 	VECTOR q;
+	VECTOR indexes;
 	//temporaneo
 	//Serve per gestire liste a dimensione sconosciuta. 
 	struct entry * next;
@@ -517,12 +518,14 @@ int PQ_non_esaustiva(params* input, int x, int start, int end, struct kmeans_dat
     //
     int i;
     float min=FLT_MAX;
-    int imin=-1, offset = x*input->d, dStar=input->d/input->m;
+    int imin=-1, dStar=input->d/input->m;
     float dist;
 	float *src,*dest;
-	src = data->source+offset+start;
+	src = data->source+x*input->d+start;
     for(i=0; i<data->n_centroidi; i++){
+		printf("prima dist: %d\n",dist);
         dist_eI(src,data->dest+i*input->d+start,dStar,&dist);
+		assert(dist>=0);
         if(dist<min){ 
             min=dist;
             imin=i;
@@ -684,26 +687,6 @@ void inizializzaSecLiv(params* input){
 	// printf("fine");
 }
 
-float dist_coarse_and_residual(params* input, int qc, int y){
-	// qc 		: indice del quantizzatore grossolano nel codebook in input
-	// y	: puntatore al vettore residuo pari a r(y)=y-qc(y)
-	//	
-	//	<-------------------------------------------------------------->
-	//	
-	//	return -> distanza euclidea tra qc e residual, entrambi vettori a d coordinate
-	int i, offset1, offset2; 
-	float sum=0, pow=0, tmp;
-	offset2=y*input->d;
-	offset1=qc*input->d;
-	for(i=0; i<input->m; i++){
-		tmp = input->codebook[offset1+i] - input->ds[offset2+i];
-		pow=tmp*tmp;
-		sum+=pow;
-	}
-	return sum;
-
-
-}
 
 // Calcola il centroide grossolano associato ad y.
 int qc_index(params* input, int y){ 
@@ -788,7 +771,7 @@ void pqnn_index_non_esaustiva(params* input){
 }
 
 void pqnn_search_non_esaustiva(params* input){
-	int i, q;
+	int i, q, p, h;
 	int curr_qc;
 	struct entry* curr_pq;
 	Heap* qc_heap, *qp_heap;
@@ -797,62 +780,77 @@ void pqnn_search_non_esaustiva(params* input){
 	struct entry_heap* arr;
 	float * residuo, *q_x; 
 	float somma=0, temp;
-	int dS=((input->d)/(input->m));
-
-	residuo=_mm_malloc(sizeof(float)*input->d,16);
+	int dS=((input->d)/(input->m)), *qp_query;
+	qp_query = _mm_malloc(sizeof(int)*input->m,16);
+	if(qp_query==NULL) exit(-1);
+	residuo= _mm_malloc(sizeof(float)*input->d,16);
 	if(residuo==NULL) exit(-1);
-
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	if(data==NULL) exit(-1);
-	
 	data->source=input->qs;
 	data->dest=input->qc;
-	
-	if(input->symmetric==0){
+	if(input->symmetric==1){
 		creaMatricedistanze(input, input->residual_codebook);
 	}
-	
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){
 		
-		if(input->symmetric==0){
-			q_x = calcola_q(input, query);
-		}else{
-			q_x = input->qs+query*input->d;
-		}
-
+		// if(input->symmetric==0){
+		// 	q_x = calcola_q(input, query);
+		// }else{
+		// }
+		q_x = input->qs+query*input->d;
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 		//potrei aggiungere un metodo restore su heap?
-		
 		for(int i=0;i<input->kc;i++){
 			// dist = dist_eI(input, data, query, i, 0, input->d);
 			dist_eI(q_x, input->qc+i*input->d, input->d, &dist);
 			insert(qc_heap,dist,i);
 		}
-
 		arr = qc_heap->arr;
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		for(int i=0; i<input->w; i++){
+			
 			curr_qc = (qc_heap->arr)[i].index;
+			
 			curr_pq = ((input->v)[curr_qc]).next;
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
 			for(int j=0; j<input->d;j++){
 					residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
 			}
-
+			if(input->symmetric==1){
+				data->source=residuo;
+				data->dest=input->residual_codebook;
+				for(int l=0;l<input->m;l++){
+					// printf("prima: %d\n",qp_query[l]);
+					qp_query[l] = PQ_non_esaustiva(input, 0, l*dS, (l+1)*dS, data);
+					// printf("dopo: %d\n",qp_query[l]);
+				}
+			}	
 			while(curr_pq!=NULL){
 				somma=0;
 				for (int j=0; j<input->m; j++){
-					if(input->symmetric==0){
-						printf("simmetrica non implementata");
-						// dist_simmetrica_ne();
+					if(input->symmetric==1){
+						if(qp_query[j] < input->pq[input->m*curr_pq->index+j]){
+							h = qp_query[j];
+							p = input->pq[input->m*query+j];
+						}
+						else{
+							p = qp_query[j];
+							h = input->pq[input->m*query+j];
+						}
+						printf("--15 p:%d h:%d--\n",p,h);
+						temp = input->distanze_simmetriche[j+calcolaIndice(p,h)*input->m];
+						printf("--16--\n");
 					}
-					else
+					else{
 						// Si può aggiungere caching delle dist tra pq e query? Usando pq ed un vettore di bit
 						// Sarebbe una matrice k*m*sizeof(float) più vettore/matrice k*m*sizeof(bit)  
-						dist_asimmetrica_ne(input, residuo, curr_pq->q, dS*j, dS*(j+1), &temp); 
+						// dist_asimmetrica_ne(input, residuo, curr_pq->q, dS*j, dS*(j+1), &temp);
+						dist_eI(residuo+dS*j,curr_pq->q+dS*j,dS,&temp);
+					} 
 					assert(temp>-1.0);
 					somma += (temp*temp); 
 				}
@@ -901,8 +899,11 @@ void pqnn_index(params* input) {
  */
 void pqnn_search(params* input) {
 	// int i, j;
-	if(input->exaustive==0)
+	if(input->exaustive==0){
+		printf("simmetrica:%d\n",input->symmetric);
 		pqnn_search_non_esaustiva(input);
+	}
+		
 
     //pqnn32_search(input); // Chiamata funzione assembly
 

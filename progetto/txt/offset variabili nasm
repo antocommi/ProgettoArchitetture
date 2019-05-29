@@ -1,3 +1,13 @@
+offset delle variabili in kmeans_data
+source equ 0
+dim_source equ 4
+index equ 8
+dest equ 12
+index_rows equ 16
+index_columns equ 20
+n_centroidi equ 24
+d equ 28
+
 offset delle variabili contenute in params da usare nelle funzioni assembly
 
 per le funzioni assembly x86

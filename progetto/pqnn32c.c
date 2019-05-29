@@ -45,6 +45,7 @@
  ./runpqnn32
 
 */
+sudo apt-get install libgtk2.0-dev
 
 #include <stdlib.h>
 #include <stdio.h>

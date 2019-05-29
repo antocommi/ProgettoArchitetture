@@ -61,6 +61,28 @@ typedef struct {
 	MATRIX residual_set;
 } params;
 
+typedef struct{
+
+	// Sorgente da cui si impara il codebook
+	float* source;
+
+	int dim_source;
+	
+	// Per ogni vettore contiene il centroide di appartenenza
+	int* index; 
+	
+	// Per ogni riga contiene il centroide per intero
+	float* dest;
+
+	// Dimensione degli index
+	int index_rows,index_columns;
+
+	// Numero di centroidi da calcolare
+	int n_centroidi;
+
+	int d;
+} kmeans_data;
+
 int main(int argc, char** argv) {
     printf("filename index %d\n", offsetof(params, filename));
     printf("ds index %d\n", offsetof(params, ds));
@@ -92,4 +114,15 @@ int main(int argc, char** argv) {
     printf("qc_indexes index %d\n", offsetof(params, qc_indexes));
     printf("residual_codebook index %d\n", offsetof(params, residual_codebook));
     printf("residual_set index %d\n", offsetof(params, residual_set));
+
+
+	printf("source index %d\n", offsetof(kmeans_data, source));
+    printf("dim_source index %d\n", offsetof(kmeans_data, dim_source));
+    printf("index %d\n", offsetof(kmeans_data, index));
+    printf("dest %d\n", offsetof(kmeans_data, dest));
+    printf("index_rows %d\n", offsetof(kmeans_data, index_rows));
+    printf("index_columns %d\n", offsetof(kmeans_data, index_columns));
+    printf("n_centroidi %d\n", offsetof(kmeans_data, n_centroidi));
+    printf("d %d\n", offsetof(kmeans_data, d));
+    
 }

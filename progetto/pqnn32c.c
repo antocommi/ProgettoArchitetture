@@ -498,13 +498,13 @@ void calcolaPQ(kmeans_data* data, int start, int end){
 	float min;
 	float temp;
 	float *ind1, *ind2;
-	int* ind=data->index+start/(data->d/data->index_columns);
+	int* ind=data->index+start/((data->d)/(data->index_columns));
 	ind1=data->source+start;
-	for(i=0; i<data->dim_source; i++){
-		min=1.79E+308;
-		ind2=data->dest+start;
-		for(j=0; j<data->n_centroidi; j++){
-			distanza(ind1, ind2, end-start, &temp);
+	for(i=0; i<data->dim_source; i++){// per ogni vettore del dataset
+		min=FLT_MAX; //modificato
+		ind2=data->dest+start;// destinazione
+		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
+			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
 			if(temp<min){ 
 				min=temp;
 				*ind=j;

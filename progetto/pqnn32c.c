@@ -86,7 +86,7 @@ typedef struct {
 	// nns: matrice row major order di interi a 32 bit utilizzata per memorizzare gli ANN
 	// sulla riga i-esima si trovano gli ID (a partire da 0) degli ANN della query i-esima
 	//
-	int* ANN;
+	int* ANN; //dimensione: nq*knn
 	VECTOR vq;
 	int* pq;
 	int* query_pq;
@@ -992,8 +992,11 @@ void pqnn_search_non_esaustiva(params* input){
 		}
 		
 		//A questo punto i knn vicini sono in qp_heap->arr
-				
-
+		printf("inizio ann\n");
+		for(int s=0;s<input->knn;s++){
+			input->ANN[query*input->knn+s] = qp_heap->arr[s].index;
+		}
+		printf("fine ann\n");
 		
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);
@@ -1003,6 +1006,14 @@ void pqnn_search_non_esaustiva(params* input){
 	}
 	// printf("fine2\n");
 	_mm_free(data);
+	// printf("uscito stampa ann\n");
+	// for(int qry=0;qry<input->nq;qry++){
+	// 	printf("query %d: ", qry);
+	// 	for(int ww=0;ww<input->knn;ww++){
+	// 		printf("%d ",input->ANN[qry*input->knn+ww]);
+	// 	}
+	// 	printf("\n");
+	// }
 }
 
 

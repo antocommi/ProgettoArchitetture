@@ -45,7 +45,6 @@
  ./runpqnn32
 
 */
-sudo apt-get install libgtk2.0-dev
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -93,7 +92,6 @@ typedef struct {
 	int* query_pq;
 
 	MATRIX codebook; // per Ex contiene quantizzatori prodotto. Per NotEx contiene quantizzatori grossolani
-	
 	MATRIX distanze_simmetriche;
 	int nDist;
 	MATRIX distanze_asimmetriche;
@@ -427,29 +425,6 @@ void dist_simmetricaI(params* input, float* src, int centroide1, int centroide2,
 	*r=ret;
 }
 
-float* calcola_q(params* input, int query){
-	// Ritorna un puntatore al quantizzatore esteso di q
-	int dStar = input->d/input->m, offset;
-	float dist;
-	int imin=-1;
-	float min=FLT_MAX;
-	float *q=input->qs+query*input->d, *res;
-	res = _mm_malloc(sizeof(float)*input->d,16);
-	for(int i=0;i<input->m;i++){
-		offset = i*dStar;
-		for(int c=0;c<input->k;c++){
-			dist_eI(q+i*dStar, input->residual_codebook+c*input->d+offset,dStar,&dist);
-			if(dist<min){
-				imin=c;
-				min=dist;
-			}
-			// dist = dist_eI(input, data, x, y, i*dStar, (i+1)*dStar);
-		}
-		memcpy(input->residual_codebook+imin*input->d+i*dStar,res,sizeof(float)*dStar);
-	}
-		
-}
-
 
 void creaMatricedistanze(params* input, float* codebook){
 	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
@@ -477,11 +452,6 @@ void creaMatricedistanze(params* input, float* codebook){
 		}
 	}
 }
-
-void dist_simmetrica_ne(params* input){
-	
-}
-
 
 
 float distI(params* input, int* quantizer, int punto, int centroide2, int start, int end){
@@ -522,16 +492,20 @@ int PQ_non_esaustiva(params* input, int x, int start, int end, struct kmeans_dat
     int imin=-1, dStar=input->d/input->m;
     float dist;
 	float *src,*dest;
-	src = data->source+x*input->d+start;
+	src = &data->source[x*input->d+start];
     for(i=0; i<data->n_centroidi; i++){
-		printf("prima dist: %d\n",dist);
-        dist_eI(src,data->dest+i*input->d+start,dStar,&dist);
+		// printf("prima dist: %d\n",dist);
+        dist_eI(src, &data->dest[i*input->d+start], dStar, &dist);
 		assert(dist>=0);
         if(dist<min){ 
             min=dist;
             imin=i;
         }
     }
+	// if(imin==-1){
+	// 	for(i=0;i<input)
+	// 	printf("");
+	// }
 	// printf("trovato c=%d a distanza=%.2f di x=%d \n", imin, min, x);
     return imin;
 }
@@ -790,40 +764,56 @@ void pqnn_search_non_esaustiva(params* input){
 	if(data==NULL) exit(-1);
 	data->source=input->qs;
 	data->dest=input->qc;
+	
 	if(input->symmetric==1){
 		creaMatricedistanze(input, input->residual_codebook);
 	}
 
+	// STAMPA DELLA MATRICE DEGLI INDICI PQ
+	// for(int i=0;i<input->nr;i++){
+	// 	for(int j=0;j<input->m;j++){
+	// 		printf(" %3d,",input->pq[i*input->m+j]);
+	// 		assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
+	// 	}
+	// 	printf("\n");
+	// }
+
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){
 		
-		// if(input->symmetric==0){
-		// 	q_x = calcola_q(input, query);
-		// }else{
-		// }
-		q_x = input->qs+query*input->d;
+		q_x = &input->qs[query*input->d];
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
+
 		//potrei aggiungere un metodo restore su heap?
 		for(int i=0;i<input->kc;i++){
-			// dist = dist_eI(input, data, query, i, 0, input->d);
-			dist_eI(q_x, input->qc+i*input->d, input->d, &dist);
-			insert(qc_heap,dist,i);
+			dist_eI(q_x, &input->qc[i*input->d], input->d, &dist);
+			insert(qc_heap, dist, i);
 		}
+
 		arr = qc_heap->arr;
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
+		
 		for(int i=0; i<input->w; i++){
 			
 			curr_qc = (qc_heap->arr)[i].index;
 			
 			curr_pq = ((input->v)[curr_qc]).next;
+
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
-			for(int j=0; j<input->d;j++){
+			for(int j=0; j<input->d; j++){
 					residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
 			}
+
 			if(input->symmetric==1){
 				data->source=residuo;
 				data->dest=input->residual_codebook;
+				data->n_centroidi=input->k;
+				// printf("stampa residuo: ");
+				// for(int s=0;s<input->d;s++){
+				// 	printf("%3.2f ", residuo[s]);
+				// }
+				// printf("\n");
 				for(int l=0;l<input->m;l++){
 					// printf("prima: %d\n",qp_query[l]);
 					qp_query[l] = PQ_non_esaustiva(input, 0, l*dS, (l+1)*dS, data);
@@ -834,17 +824,21 @@ void pqnn_search_non_esaustiva(params* input){
 				somma=0;
 				for (int j=0; j<input->m; j++){
 					if(input->symmetric==1){
-						if(qp_query[j] < input->pq[input->m*curr_pq->index+j]){
+						assert(input->m*curr_pq->index+j>-1 && input->m*curr_pq->index+j<input->nr*input->m);
+						if(qp_query[j] > input->pq[input->m*curr_pq->index+j]){
 							h = qp_query[j];
-							p = input->pq[input->m*query+j];
+							p = input->pq[input->m*curr_pq->index+j];
 						}
 						else{
+							h = input->pq[input->m*curr_pq->index+j];
 							p = qp_query[j];
-							h = input->pq[input->m*query+j];
 						}
-						printf("--15 p:%d h:%d--\n",p,h);
-						temp = input->distanze_simmetriche[j+calcolaIndice(p,h)*input->m];
-						printf("--16--\n");
+						if(h!=p){
+							assert(j+calcolaIndice(h,p)*input->m>-1 && j+calcolaIndice(h,p)*input->m<input->m*input->k*(input->k-1)/2);
+							temp = input->distanze_simmetriche[j+calcolaIndice(h,p)*input->m];
+						}
+						else
+							temp=0;
 					}
 					else{
 						// Si può aggiungere caching delle dist tra pq e query? Usando pq ed un vettore di bit
@@ -859,10 +853,11 @@ void pqnn_search_non_esaustiva(params* input){
 				curr_pq = curr_pq->next;
 			}
 		}
-		// for(int k=0;k<input->knn;k++){
-		// 		printf("vicino-%d-[%d]:%d\n",k+1,query,qp_heap->arr[k].index);
-		// }
-		// printf("fine0\n");
+		
+		//A questo punto i knn vicini sono in qp_heap->arr
+				
+
+		
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);
 		_mm_free(qp_heap);

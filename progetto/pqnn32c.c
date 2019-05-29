@@ -505,19 +505,14 @@ void calcolaPQ(kmeans_data* data, int start, int end){
 		ind2=data->dest+start;// destinazione
 		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
 			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
-			printf("temp = %f \n",temp);
-			printf("min = %f \n",min);
 			if(temp<min){ 
 				min=temp;
-				*ind=j;//
-				printf("indice assegnato = %d \n",j);
+				*ind=j;
 			}
 			ind2+=data->d;
 		}
-		printf("indice  = %d \n",*ind);
 		ind+=m;
 		ind1+=data->d;
-		exit(-1);
 	}
 }
 

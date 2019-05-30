@@ -412,6 +412,8 @@ void creaMatricedistanze(params* input, float* codebook){
 
 
 void calcolaPQ(kmeans_data* data, int start, int end){
+	// Dei primi input->k ed i primi input->kc già si conosce l'index
+	// Per cui si può evitare di calcolare il più vicino.  
 	int i, j;
 	int m=data->index_columns;
 	float min;
@@ -430,6 +432,7 @@ void calcolaPQ(kmeans_data* data, int start, int end){
 			}
 			ind2+=data->d;
 		}
+		printf("distanza minima trovata: %f\n",min );
 		ind+=m;
 		ind1+=data->d;
 	}
@@ -440,6 +443,20 @@ float absf(float f){
 		return f;
 	}
 	return -f;
+}
+
+void stampaCentroidiGrossolani(params* input){
+	for(int i=0;i<input->nr;i++){
+		if(i!=input->qc_indexes[i])
+			printf("%3d ",input->qc_indexes[i]);
+		else
+		{
+			printf("xXx ");
+		}
+		
+		if(i%8==0 && i!=0) printf("\n");
+		if(i==input->kc+OFFSET) printf("\n-------------------------\n");
+	}
 }
 
 void kmeans(params* input, kmeans_data* data, int start, int end){
@@ -453,14 +470,12 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	int incr, incr2;
 	int m=input->m;
 	int ipart=start/(input->d/input->m);
-
 	calcolaPQ(data, start, end);
-	
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	//	MODIFICATA CONDIZIONE
 	// !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps ))
-	for(t=0; t<input->tmin || (t<input->tmax && absf(fob2-fob1) > input->eps); t++){
+	for(t=0; t<input->tmin || (t<input->tmax && sqrtf(fob1-fob2) > input->eps); t++){
 	// for(t=0; !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps )) > input->eps; t++){
 		ci=data->dest+start;
 		for(i=0; i<data->n_centroidi; i++){
@@ -505,6 +520,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			//
 			ci+=input->d;
 		}
+		// stampaCentroidiGrossolani(input);
 		calcolaPQ(data, start, end);
 		
 		fob1=fob2;
@@ -524,7 +540,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			ind2+=input->d;
 		}
 	}
-	printf("%d\n", t);
+	printf("\n iterazioni: %d\n", t);
 }
 
 // Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
@@ -548,10 +564,10 @@ VECTOR qp_of_r(params* input, int r){
 }
 
 // Aggiunge a input.v la entry new alla posizione i-esima
-void add (struct entry * new, int i, params* input){
+void add(struct entry * new, int i, params* input){
 	struct entry* vett;
 	vett=input->v;
-	if(vett[i].next== NULL){
+	if(vett[i].next==NULL){
 		vett[i].next= new;
 		new->next=NULL;
 	}
@@ -641,7 +657,7 @@ void pqnn_index_non_esaustiva(params* input){
 	if(input->pq==NULL) exit(-1);
 	
 	//nuova aggiunta
-	memcpy(input->qc, input->ds, input->kc*input->d*sizeof(float));
+	memcpy(input->qc, input->ds+OFFSET*input->d, input->kc*input->d*sizeof(float));
 
 	// Settagio parametri k-means
 	data->source = input->ds;
@@ -654,8 +670,16 @@ void pqnn_index_non_esaustiva(params* input){
 	//Nuovi aggiunti
 	data->d=input->d; 
 	data->dim_source = input->nr;
-	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
+
+	// Aggiunte che si possono togliere
+	// printf("\nPrima start:%d,end:%d\n",0,input->d);
+	// stampaCentroidiGrossolani(input);
 	
+	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
+	exit(-1);
+	// printf("\nPrima start:%d,end:%d\n",0,input->d);
+	// stampaCentroidiGrossolani(input);
+
 	calcola_residui(input);
 	
 	//nuova aggiunta
@@ -708,22 +732,22 @@ void pqnn_search_non_esaustiva(params* input){
 	}
 
 	// STAMPA DELLA MATRICE DEGLI INDICI PQ
-	for(int i=0;i<300;i++){
-		if(i==input->k+OFFSET || i==OFFSET) printf("--------------------\n");
-		printf("index[%3d]= ", i);
-		for(int j=0;j<input->m;j++){
-			if(input->pq[i*input->m+j]+OFFSET==i)
-				printf(" %3d,",0);
-			else
-				printf(" %3d,",input->pq[i*input->m+j]+OFFSET);
-			assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
-		}
-		if(input->qc_indexes[i]==i)
-			printf(" | qc_i:XXX,");
-		else
-			printf(" | qc_i:%3d,",input->qc_indexes[i]);
-		printf("\n");
-	}
+	// for(int i=0;i<300;i++){
+	// 	if(i==input->k+OFFSET || i==OFFSET) printf("--------------------\n");
+	// 	printf("index[%3d]= ", i);
+	// 	for(int j=0;j<input->m;j++){
+	// 		if(input->pq[i*input->m+j]+OFFSET==i)
+	// 			printf(" %3d,",0);
+	// 		else
+	// 			printf(" %3d,",input->pq[i*input->m+j]+OFFSET);
+	// 		assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
+	// 	}
+	// 	if(input->qc_indexes[i]==i+OFFSET)
+	// 		printf(" | qc_i:XXX,");
+	// 	else
+	// 		printf(" | qc_i:%3d,",input->qc_indexes[i]);
+	// 	printf("\n");
+	// }
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){

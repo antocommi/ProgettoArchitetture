@@ -58,9 +58,9 @@
 
 #define	MATRIX		float*
 #define	VECTOR		float*
-
 #define DATASET		0
 #define QUERYSET	1
+#define OFFSET 		0
 
 
 typedef struct {
@@ -659,7 +659,7 @@ void pqnn_index_non_esaustiva(params* input){
 	calcola_residui(input);
 	
 	//nuova aggiunta
-	memcpy(input->residual_codebook, input->residual_set, input->k*input->d*sizeof(float));
+	memcpy(input->residual_codebook, input->residual_set+OFFSET*input->d, input->k*input->d*sizeof(float));
 	data->dim_source=input->nr;
 
 	// Settagio parametri k-means
@@ -708,16 +708,22 @@ void pqnn_search_non_esaustiva(params* input){
 	}
 
 	// STAMPA DELLA MATRICE DEGLI INDICI PQ
-	// for(int i=0;i<300;i++){
-	// 	if(i==256) printf("--------------------\n");
-	// 	printf("index[%3d]= ", i);
-	// 	for(int j=0;j<input->m;j++){
-	// 		printf(" %3d,",input->pq[i*input->m+j]);
-	// 		assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
-	// 	}
-	// 	printf(" | qc_i:%3d,",input->qc_indexes[i]);
-	// 	printf("\n");
-	// }
+	for(int i=0;i<300;i++){
+		if(i==input->k+OFFSET || i==OFFSET) printf("--------------------\n");
+		printf("index[%3d]= ", i);
+		for(int j=0;j<input->m;j++){
+			if(input->pq[i*input->m+j]+OFFSET==i)
+				printf(" %3d,",0);
+			else
+				printf(" %3d,",input->pq[i*input->m+j]+OFFSET);
+			assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
+		}
+		if(input->qc_indexes[i]==i)
+			printf(" | qc_i:XXX,");
+		else
+			printf(" | qc_i:%3d,",input->qc_indexes[i]);
+		printf("\n");
+	}
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){

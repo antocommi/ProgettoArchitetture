@@ -695,7 +695,10 @@ void pqnn_search_esaustiva(params* input){
 		if(i==256) printf("--------------------\n");
 		printf("index[%3d]= ", i);
 		for(j=0;j<input->m;j++){
-			printf(" %3d,",input->pq[i*input->m+j]);
+			if(input->pq[i*input->m+j]==i)
+				printf(" %3d,",0);
+			else
+				printf(" %3d,",input->pq[i*input->m+j]);
 		}
 		// printf(" | qc_i:%3d,",input->qc_indexes[i]);
 		printf("\n");

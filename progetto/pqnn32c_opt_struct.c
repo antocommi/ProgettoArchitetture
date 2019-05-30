@@ -47,6 +47,7 @@
 #include <xmmintrin.h>
 #include <limits.h>
 #include <stddef.h>
+#include<assert.h>
 
 #define	MATRIX		float*
 #define	VECTOR		float*
@@ -690,6 +691,16 @@ void pqnn_index_esaustiva(params* input){
 void pqnn_search_esaustiva(params* input){
 	int i, j, c, part;
 	int *ipq, *ind;
+	for(i=0;i<300;i++){
+		if(i==256) printf("--------------------\n");
+		printf("index[%3d]= ", i);
+		for(j=0;j<input->m;j++){
+			printf(" %3d,",input->pq[i*input->m+j]);
+		}
+		// printf(" | qc_i:%3d,",input->qc_indexes[i]);
+		printf("\n");
+	}
+
 	if(input->symmetric==1){
 		//printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);

@@ -641,7 +641,7 @@ void pqnn_index_non_esaustiva(params* input){
 	if(input->pq==NULL) exit(-1);
 	
 	//nuova aggiunta
-	memcpy(input->qc, input->ds+10*input->d, input->kc*input->d*sizeof(float));
+	memcpy(input->qc, input->ds, input->kc*input->d*sizeof(float));
 
 	// Settagio parametri k-means
 	data->source = input->ds;
@@ -708,11 +708,14 @@ void pqnn_search_non_esaustiva(params* input){
 	}
 
 	// STAMPA DELLA MATRICE DEGLI INDICI PQ
-	// for(int i=0;i<input->nr;i++){
+	// for(int i=0;i<300;i++){
+	// 	if(i==256) printf("--------------------\n");
+	// 	printf("index[%3d]= ", i);
 	// 	for(int j=0;j<input->m;j++){
 	// 		printf(" %3d,",input->pq[i*input->m+j]);
 	// 		assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
 	// 	}
+	// 	printf(" | qc_i:%3d,",input->qc_indexes[i]);
 	// 	printf("\n");
 	// }
 

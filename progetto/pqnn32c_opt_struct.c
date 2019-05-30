@@ -733,13 +733,13 @@ void pqnn_search_esaustiva(params* input){
 		_mm_free(data);
 	}
 	// printf("quantizzatori\n");
-	// for(i=0; i<input->nq; i++){
+	// for(i=0; i<input->n; i++){
 	// 	for(int j=0; j<input->m; j++){
-	// 		printf("%d ", input->query_pq[i*input->m+j]);
+	// 		printf("%d ", input->pq[i*input->m+j]);
 	// 	}
 	// 	printf("\n");
 	// }
-	//printf("break1\n");
+	printf("break1\n");
 	for(i=0; i<input->nq; i++){
 		calcolaNN(input, i);
 	}

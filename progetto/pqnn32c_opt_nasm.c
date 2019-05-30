@@ -330,29 +330,30 @@ float absf(float f){
 	return -f;
 }
 
-void calcolaPQ(kmeans_data* data, int start, int end){
-	int i, j;
-	int m=data->index_columns;
-	float min;
-	float temp;
-	float *ind1, *ind2;
-	int* ind=data->index+start/(data->d/data->index_columns);
-	ind1=data->source+start;
-	for(i=0; i<data->dim_source; i++){
-		min=1.79E+308;
-		ind2=data->dest+start;
-		for(j=0; j<data->n_centroidi; j++){
-			distanza(ind1, ind2, end-start, &temp);
-			if(temp<min){ 
-				min=temp;
-				*ind=j;
-			}
-			ind2+=data->d;
-		}
-		ind+=m;
-		ind1+=data->d;
-	}
-}
+extern void calcolaPQ(kmeans_data* data, int start, int end);
+// void calcolaPQ(kmeans_data* data, int start, int end){
+// 	int i, j;
+// 	int m=data->index_columns;
+// 	float min;
+// 	float temp;
+// 	float *ind1, *ind2;
+// 	int* ind=data->index+start/(data->d/data->index_columns);
+// 	ind1=data->source+start;
+// 	for(i=0; i<data->dim_source; i++){
+// 		min=1.79E+308;
+// 		ind2=data->dest+start;
+// 		for(j=0; j<data->n_centroidi; j++){
+// 			distanza(ind1, ind2, end-start, &temp);
+// 			if(temp<min){ 
+// 				min=temp;
+// 				*ind=j;
+// 			}
+// 			ind2+=data->d;
+// 		}
+// 		ind+=m;
+// 		ind1+=data->d;
+// 	}
+// }
 
 void kmeans(params* input, kmeans_data* data, int start, int end){
 	// estremi start incluso ed end escluso
@@ -723,13 +724,13 @@ void pqnn_search_esaustiva(params* input){
 		_mm_free(data);
 	}
 	// printf("quantizzatori\n");
-	// for(i=0; i<input->nq; i++){
+	// for(i=0; i<input->n; i++){
 	// 	for(int j=0; j<input->m; j++){
-	// 		printf("%d ", input->query_pq[i*input->m+j]);
+	// 		printf("%d ", input->pq[i*input->m+j]);
 	// 	}
 	// 	printf("\n");
 	// }
-	//printf("break1\n");
+	printf("break1\n");
 	for(i=0; i<input->nq; i++){
 		calcolaNN(input, i);
 	}

@@ -540,10 +540,10 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			
 			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
 			// fob2+=pow2(temp, 2.0);
-			// ind2+=input->d;
+			
 		
 			distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &distanze[i]); 
-		
+			ind2+=input->d;
 		}
 		printf("a");
 		sse(distanze, data->dim_source, &fob2);

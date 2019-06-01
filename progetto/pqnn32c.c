@@ -432,7 +432,7 @@ void calcolaPQ(kmeans_data* data, int start, int end){
 			}
 			ind2+=data->d;
 		}
-		printf("distanza minima trovata: %f\n",min );
+		// printf("distanza minima trovata: %f\n",min );
 		ind+=m;
 		ind1+=data->d;
 	}
@@ -606,18 +606,18 @@ int qc_index(params* input, int y){
 	return input->qc_indexes[y];
 }
 
-extern void compute_residual(params* input, float* res, int qc_i, int y);
-// void compute_residual(params* input, float* res, int qc_i, int y){
-// 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
-// 	// y 	: indice del punto y appartenente al dataset ds in input
-// 	//
-// 	// -----------------------------------------
-// 	// ritorna un puntatore al residuo r(y)
-// 	int i;
-// 	for(i=0; i<input->d;i++){
-// 		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
-// 	}
-// }
+// extern void compute_residual(params* input, float* res, int qc_i, int y);
+void compute_residual(params* input, float* res, int qc_i, int y){
+	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
+	// y 	: indice del punto y appartenente al dataset ds in input
+	//
+	// -----------------------------------------
+	// ritorna un puntatore al residuo r(y)
+	int i;
+	for(i=0; i<input->d;i++){
+		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
+	}
+}
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
@@ -675,9 +675,11 @@ void pqnn_index_non_esaustiva(params* input){
 	// Aggiunte che si possono togliere
 	// printf("\nPrima start:%d,end:%d\n",0,input->d);
 	// stampaCentroidiGrossolani(input);
-	
+
 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
-	exit(-1);
+
+	
+
 	// printf("\nPrima start:%d,end:%d\n",0,input->d);
 	// stampaCentroidiGrossolani(input);
 
@@ -727,28 +729,14 @@ void pqnn_search_non_esaustiva(params* input){
 	if(data==NULL) exit(-1);
 	data->source=input->qs;
 	data->dest=input->qc;
-	
+	for(int i=0;i<input->nr;i++){
+		printf("%d:%f\n",i,input->residual_set[i*input->d]);
+	}
 	if(input->symmetric==1){
 		creaMatricedistanze(input, input->residual_codebook);
 	}
 
-	// STAMPA DELLA MATRICE DEGLI INDICI PQ
-	// for(int i=0;i<300;i++){
-	// 	if(i==input->k+OFFSET || i==OFFSET) printf("--------------------\n");
-	// 	printf("index[%3d]= ", i);
-	// 	for(int j=0;j<input->m;j++){
-	// 		if(input->pq[i*input->m+j]+OFFSET==i)
-	// 			printf(" %3d,",0);
-	// 		else
-	// 			printf(" %3d,",input->pq[i*input->m+j]+OFFSET);
-	// 		assert(input->pq[i*input->m+j]>=0 && input->pq[i*input->m+j]<input->k);
-	// 	}
-	// 	if(input->qc_indexes[i]==i+OFFSET)
-	// 		printf(" | qc_i:XXX,");
-	// 	else
-	// 		printf(" | qc_i:%3d,",input->qc_indexes[i]);
-	// 	printf("\n");
-	// }
+
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){

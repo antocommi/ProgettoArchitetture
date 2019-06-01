@@ -459,6 +459,8 @@ void stampaCentroidiGrossolani(params* input){
 	}
 }
 
+extern void sse(float* v, int n, float* res);
+
 void kmeans(params* input, kmeans_data* data, int start, int end){
 	// estremi start incluso ed end escluso
 	int i, j, k, t;
@@ -543,7 +545,9 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &distanze[i]); 
 		
 		}
-		fob2 = sse(distanze, data->dim_source, &fob2);
+		printf("a");
+		sse(distanze, data->dim_source, &fob2);
+		printf("f\n");
 	}
 	_mm_free(distanze);
 	printf("\n iterazioni: %d\n", t);
@@ -612,18 +616,17 @@ int qc_index(params* input, int y){
 	return input->qc_indexes[y];
 }
 
-extern void compute_residual_opt(params* input, float* res, int qc_i, int y);
-// void compute_residual(params* input, float* res, int qc_i, int y){
-// 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
-// 	// y 	: indice del punto y appartenente al dataset ds in input
-	
-// 	// -----------------------------------------
-// 	// ritorna un puntatore al residuo r(y)
-// 	int i;
-// 	for(i=0; i<input->d;i++){
-// 		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
-// 	}
-// }
+// extern void compute_residual_opt(params* input, float* res, int qc_i, int y);
+void compute_residual(params* input, float* res, int qc_i, int y){
+	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
+	// y 	: indice del punto y appartenente al dataset ds in input
+	// -----------------------------------------
+	// ritorna un puntatore al residuo r(y)
+	int i;
+	for(i=0; i<input->d;i++){
+		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
+	}
+}
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
@@ -633,7 +636,7 @@ void calcola_residui(params* input){
 	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		ry = input->residual_set+y*input->d;
-		compute_residual_opt(input, ry, *(indexes+y), y); // calcolo del residuo r(y) = y - qc(y)
+		compute_residual(input, ry, *(indexes+y), y); // calcolo del residuo r(y) = y - qc(y)
 	}
 }
 

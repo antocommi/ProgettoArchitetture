@@ -64,6 +64,8 @@ ciclo:  movaps xmm0, [ebx+4*esi]
         cmp esi, eax
         jl ciclo
 
+        movss [edx], xmm4
+
         pop	edi		;fine
 		pop	esi
 		pop	ebx

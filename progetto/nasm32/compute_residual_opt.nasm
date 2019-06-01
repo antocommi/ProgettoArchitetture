@@ -4,7 +4,7 @@ section .data
 section .bss
 section .text
 
-global compute_residual
+global compute_residual_opt
 
 y equ 20
 qc_i equ 16
@@ -16,7 +16,7 @@ qc equ 112
 d equ 16
 
 
-compute_residual:
+compute_residual_opt:
 		push ebp
 		mov	ebp, esp
 		push ebx

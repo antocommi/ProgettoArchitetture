@@ -606,18 +606,18 @@ int qc_index(params* input, int y){
 	return input->qc_indexes[y];
 }
 
-// extern void compute_residual(params* input, float* res, int qc_i, int y);
-void compute_residual(params* input, float* res, int qc_i, int y){
+extern void compute_residual_opt(params* input, float* res, int qc_i, int y);
+//void compute_residual(params* input, float* res, int qc_i, int y){
 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
 	// y 	: indice del punto y appartenente al dataset ds in input
 	//
 	// -----------------------------------------
 	// ritorna un puntatore al residuo r(y)
-	int i;
-	for(i=0; i<input->d;i++){
-		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
-	}
-}
+// 	int i;
+// 	for(i=0; i<input->d;i++){
+// 		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
+// 	}
+// }
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
@@ -627,7 +627,7 @@ void calcola_residui(params* input){
 	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		ry = input->residual_set+y*input->d;
-		compute_residual(input, ry, *(indexes+y), y); // calcolo del residuo r(y) = y - qc(y)
+		compute_residual_opt(input, ry, *(indexes+y), y); // calcolo del residuo r(y) = y - qc(y)
 	}
 }
 

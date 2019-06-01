@@ -25,7 +25,7 @@ compute_residual_opt:
 
         mov eax, [ebp+input]
         mov ebx, [eax+d]
-        mov ecx, ebx
+        mov ecx, ebx 
         imul ebx, [ebp+y]
         imul ebx, 4             ; poi modificare  on shift a sinistra
         add ebx, [eax+dataset]

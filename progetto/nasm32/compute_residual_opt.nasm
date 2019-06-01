@@ -60,11 +60,10 @@ ciclo:  movaps xmm0, [ebx+4*esi]
         addps xmm4,xmm2
         addps xmm4,xmm3
         addps xmm4,xmm0
+        movaps [edx+4*esi], xmm4 ;non so se è giusto
         add esi,16
         cmp esi, eax
         jl ciclo
-
-        movss [edx], xmm4
 
         pop	edi		;fine
 		pop	esi

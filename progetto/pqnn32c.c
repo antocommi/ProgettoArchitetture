@@ -465,7 +465,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	int count;
 	float fob1, fob2;
 	float temp;
-	float *ind, *ind2, *ci;
+	float *ind, *ind2, *ci, *distanze;
 	int* ind3;
 	int incr, incr2;
 	int m=input->m;
@@ -473,6 +473,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	calcolaPQ(data, start, end);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
+	distanze = (float*) _mm_malloc(sizeof(float)*data->dim_source,16);
 	//	MODIFICATA CONDIZIONE
 	// !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps ))
 	for(t=0; t<input->tmin || (t<input->tmax && sqrtf(fob1-fob2) > input->eps); t++){
@@ -528,18 +529,23 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		ind=data->dest+start;
 		ind2=data->source+start;
+		
 		for(i=0; i<data->dim_source; i++){
 			// distanza(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
 			//
 			// MODIFICA FATTA QUI:  (si può modificare anche sopra nelle dichiarazioni di variabile)
 			// vecchio: distanza(ind+data->index[i*m+ipart]*input->d, ind2, end-start, &temp);
-			distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
-			//printf("%f\n", temp);
-			fob2+=pow2(temp, 2.0);
-			//printf("%f\n", fob2);
-			ind2+=input->d;
+			
+			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
+			// fob2+=pow2(temp, 2.0);
+			// ind2+=input->d;
+		
+			distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &distanze[i]); 
+		
 		}
+		fob2 = sse(distanze, data->dim_source, &fob2);
 	}
+	_mm_free(distanze);
 	printf("\n iterazioni: %d\n", t);
 }
 
@@ -607,12 +613,12 @@ int qc_index(params* input, int y){
 }
 
 extern void compute_residual_opt(params* input, float* res, int qc_i, int y);
-//void compute_residual(params* input, float* res, int qc_i, int y){
-	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
-	// y 	: indice del punto y appartenente al dataset ds in input
-	//
-	// -----------------------------------------
-	// ritorna un puntatore al residuo r(y)
+// void compute_residual(params* input, float* res, int qc_i, int y){
+// 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
+// 	// y 	: indice del punto y appartenente al dataset ds in input
+	
+// 	// -----------------------------------------
+// 	// ritorna un puntatore al residuo r(y)
 // 	int i;
 // 	for(i=0; i<input->d;i++){
 // 		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)

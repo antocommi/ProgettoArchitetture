@@ -8,7 +8,7 @@ global sse
 
 fob2 equ 16
 dim_source equ 12
-distanze equ 8
+distanza equ 8
 
 
 

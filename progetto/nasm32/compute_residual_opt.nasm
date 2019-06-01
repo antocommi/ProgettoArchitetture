@@ -51,19 +51,6 @@ ciclo:  movaps xmm0, [ebx+4*esi]
         movaps [edx+4*esi+16], xmm1
         movaps [edx+4*esi+32], xmm2
         movaps [edx+4*esi+48], xmm3
-       ; pslld xmm0,1
-        ;pslld xmm1,1
-        ;pslld xmm2,1
-        ;pslld xmm3,1
-        ;psrld xmm0,1
-        ;psrld xmm1,1
-        ;psrld xmm2,1
-        ;psrld xmm3,1
-        ;addps xmm4,xmm1
-        ;addps xmm4,xmm2
-        ;addps xmm4,xmm3
-        ;addps xmm4,xmm0
-         ;non so se è giusto
         add esi,16
         cmp esi, eax
         jl ciclo

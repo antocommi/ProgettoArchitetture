@@ -19,9 +19,7 @@ d equ 16
 compute_residual_opt:
 		push ebp
 		mov	ebp, esp
-		push ebx
-		push esi
-		push edi    ;inizio
+		pushad    ;inizio
 
         mov eax, [ebp+input]
         mov ebx, [eax+d]
@@ -38,7 +36,8 @@ compute_residual_opt:
 
         xor esi, esi
         mov eax, [eax+d] ;eax=d
-
+        sub eax, 4
+        
 ciclo:  movaps xmm0, [ebx+4*esi]
         movaps xmm1, [ebx+4*esi+16]
         movaps xmm2, [ebx+4*esi+32]
@@ -54,10 +53,17 @@ ciclo:  movaps xmm0, [ebx+4*esi]
         add esi,16
         cmp esi, eax
         jl ciclo
+        
+        add eax, 4
+        
+cicloR: movss xmm0, [ebx+4*esi]
+        subss xmm0, [ecx+4*esi]
+        movss [edx+4*esi], xmm0 
+        inc esi
+        cmp esi, eax
+        jl cicloR
 
-        pop	edi		;fine
-		pop	esi
-		pop	ebx
+fine:   popad
 		mov	esp, ebp
 		pop	ebp
 		ret

@@ -31,6 +31,14 @@ ciclo:  movaps xmm0, [eax+esi*4]
         mulps xmm1, xmm1
         mulps xmm2, xmm2
         mulps xmm3, xmm3
+        pslld xmm0,1
+        pslld xmm1,1
+        pslld xmm2,1
+        pslld xmm3,1
+        psrld xmm0,1
+        psrld xmm1,1
+        psrld xmm2,1
+        psrld xmm3,1
         addps xmm4,xmm1
         addps xmm4,xmm2
         addps xmm4,xmm3

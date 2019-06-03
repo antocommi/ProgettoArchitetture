@@ -113,6 +113,8 @@ typedef struct {
 
 	// Lista di liste (secondo livello dell'inverted index)
 	struct entry* v; 
+
+	float* zero;
 } params;
 
 //Entry della s.d. multilivello
@@ -475,7 +477,9 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	calcolaPQ(data, start, end);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
-	distanze = (float*) _mm_malloc(sizeof(float)*data->dim_source,16);
+	// distanze = (float*) _mm_malloc(sizeof(float)*data->dim_source,16);
+	// if(distanze==NULL) exit(-1);
+	printf("sono entrato in kmeans\n");
 	//	MODIFICATA CONDIZIONE
 	// !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps ))
 	for(t=0; t<input->tmin || (t<input->tmax && sqrtf(fob1-fob2) > input->eps); t++){
@@ -536,20 +540,22 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			// distanza(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
 			//
 			// MODIFICA FATTA QUI:  (si può modificare anche sopra nelle dichiarazioni di variabile)
-			// vecchio: distanza(ind+data->index[i*m+ipart]*input->d, ind2, end-start, &temp);
+			// vecchio: 
+			distanza(ind+data->index[i*m+ipart]*input->d, ind2, end-start, &temp);
 			
-			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
-			// fob2+=pow2(temp, 2.0);
+			distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
+			fob2+=pow2(temp, 2.0);
 			
-		
-			distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &distanze[i]); 
-			ind2+=input->d;
+			// printf("l");
+			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &distanze[i]); 
+			// // printf("m\n");
+			// ind2+=input->d;
 		}
-		printf("a");
-		sse(distanze, data->dim_source, &fob2);
-		printf("f\n");
+		// printf("a");
+		// sse(distanze, data->dim_source, &fob2);
+		// printf("f\n");
 	}
-	_mm_free(distanze);
+	// _mm_free(distanze);
 	printf("\n iterazioni: %d\n", t);
 }
 
@@ -604,6 +610,7 @@ void inizializzaSecLiv(params* input){
 		qc_i = input->qc_indexes[y];
 		assert(qc_i>=0 && qc_i<input->kc);
 		res->index=y;
+		res->next=NULL;
 		res->q = qp_of_r(input, y);// ritorna il quantizzatore del residuo
 		add(res, qc_i, input); 
 		assert(res->index>=0 && res->index<input->nr);
@@ -632,11 +639,11 @@ void compute_residual(params* input, float* res, int qc_i, int y){
 void calcola_residui(params* input){
 	int qc_i; 
 	float *ry;
-	int *indexes=input->qc_indexes; // puntatore al residuo corrente nel residual_codebook
+	// int *indexes=input->qc_indexes; // puntatore al residuo corrente nel residual_codebook
 	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		ry = input->residual_set+y*input->d;
-		compute_residual(input, ry, *(indexes+y), y); // calcolo del residuo r(y) = y - qc(y)
+		compute_residual(input, ry, *(input->qc_indexes+y), y); // calcolo del residuo r(y) = y - qc(y)
 	}
 }
 
@@ -716,7 +723,7 @@ void pqnn_index_non_esaustiva(params* input){
 
 	inizializzaSecLiv(input);
 	_mm_free(data);
-	
+	printf("finito index");
 }
 
 void pqnn_search_non_esaustiva(params* input){
@@ -738,14 +745,12 @@ void pqnn_search_non_esaustiva(params* input){
 	if(data==NULL) exit(-1);
 	data->source=input->qs;
 	data->dest=input->qc;
-	for(int i=0;i<input->nr;i++){
-		printf("%d:%f\n",i,input->residual_set[i*input->d]);
-	}
+
 	if(input->symmetric==1){
 		creaMatricedistanze(input, input->residual_codebook);
 	}
 
-
+	
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){
@@ -763,11 +768,11 @@ void pqnn_search_non_esaustiva(params* input){
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		
-		for(int i=0; i<input->w; i++){
+		for(int i=0; i<qc_heap->count; i++){
 			
 			curr_qc = (qc_heap->arr)[i].index;
-			
-			curr_pq = ((input->v)[curr_qc]).next;
+			assert(curr_qc>=0 && curr_qc<input->kc);
+			curr_pq = (input->v[curr_qc]).next;
 			
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
 			for(int j=0; j<input->d; j++){
@@ -793,9 +798,12 @@ void pqnn_search_non_esaustiva(params* input){
 			}	
 			while(curr_pq!=NULL){
 				somma=0;
+				printf("--1--\n");
 				for (int j=0; j<input->m; j++){
 					if(input->symmetric==1){
-						assert(input->m*curr_pq->index+j>-1 && input->m*curr_pq->index+j<input->nr*input->m);
+						printf("\t--1simmetrica--\n");
+						// assert(input->m*curr_pq->index+j>-1 && input->m*curr_pq->index+j<input->nr*input->m);
+						printf("\t--2 j=%d,curr_index=%p,m=8--\n",j,curr_pq);
 						if(qp_query[j] > input->pq[input->m*curr_pq->index+j]){
 							h = qp_query[j];
 							p = input->pq[input->m*curr_pq->index+j];
@@ -823,13 +831,13 @@ void pqnn_search_non_esaustiva(params* input){
 				curr_pq = curr_pq->next;
 			}
 		}
-		
+		printf("--7--\n");
 		//A questo punto i knn vicini sono in qp_heap->arr
 		for(int s=0;s<input->knn;s++){
 			assert(qp_heap->arr[s].index>=0 && qp_heap->arr[s].index<input->nr);
 			input->ANN[query*input->knn+s] = qp_heap->arr[s].index;
 		}
-		
+		printf("--8--\n");
 		
 
 		_mm_free(qp_heap->arr);
@@ -852,7 +860,7 @@ void pqnn_index(params* input) {
 		printf("ricerca esaustiva disattivata");
 	}else{
 		pqnn_index_non_esaustiva(input);
-		// pqnn_search_non_esaustiva(input);
+		pqnn_search_non_esaustiva(input);
 	}
     
     //pqnn32_index(input); // Chiamata funzione assembly

@@ -8,7 +8,6 @@ progetto/pqnn32c.o
 .vscode/ipch/a199ae427399f8b8/pqnn32c.ipch
 progetto/pqnn32c.o
 .vscode/ipch/a199ae427399f8b8/pqnn32c.ipch
-execute.sh
 .project
 progetto/pqnn32c.o
 progetto/a_opt.out
@@ -20,3 +19,4 @@ progetto/nasm32/dist_eI.o
 progetto/nasm32/dist_simmetricaI.o
 progetto/prova/brute.ann
 progetto/prova/prova.ann
+progetto/nasm32/sse.o

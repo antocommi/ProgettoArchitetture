@@ -617,14 +617,14 @@ int qc_index(params* input, int y){
 }
 
 // extern void compute_residual_opt(params* input, float* res, int qc_i, int y);
-void compute_residual(params* input, float* res, int qc_i, int y){
+void compute_residual(params* input, float* res, int qc_i, int y,float* src){
 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
 	// y 	: indice del punto y appartenente al dataset ds in input
 	// -----------------------------------------
 	// ritorna un puntatore al residuo r(y)
 	int i;
 	for(i=0; i<input->d;i++){
-		res[i]=input->ds[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
+		res[i]=src[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
 	}
 }
 
@@ -636,7 +636,7 @@ void calcola_residui(params* input){
 	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		ry = input->residual_set+y*input->d;
-		compute_residual(input, ry, *(indexes+y), y); // calcolo del residuo r(y) = y - qc(y)
+		compute_residual(input, ry, *(indexes+y), y, input->ds); // calcolo del residuo r(y) = y - qc(y)
 	}
 }
 
@@ -768,11 +768,11 @@ void pqnn_search_non_esaustiva(params* input){
 			curr_qc = (qc_heap->arr)[i].index;
 			
 			curr_pq = ((input->v)[curr_qc]).next;
-			
+			compute_residual(input, residuo, curr_qc, 0, input->qs);
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
-			for(int j=0; j<input->d; j++){
-					residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
-			}
+			// for(int j=0; j<input->d; j++){
+			// 		residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
+			// }
 
 			if(input->symmetric==1){
 				data->source=residuo;

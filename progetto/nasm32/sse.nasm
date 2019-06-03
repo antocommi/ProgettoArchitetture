@@ -23,6 +23,7 @@ sse:
         mov ecx, [ebp+fob2] ;risultato
         xor esi,esi
         xorps xmm4, xmm4
+        sub eax, 4
 ciclo:  movaps xmm0, [eax+esi*4]
         movaps xmm1, [eax+esi*4+16]
         movaps xmm2, [eax+esi*4+32]
@@ -31,21 +32,22 @@ ciclo:  movaps xmm0, [eax+esi*4]
         mulps xmm1, xmm1
         mulps xmm2, xmm2
         mulps xmm3, xmm3
-        pslld xmm0,1
-        pslld xmm1,1
-        pslld xmm2,1
-        pslld xmm3,1
-        psrld xmm0,1
-        psrld xmm1,1
-        psrld xmm2,1
-        psrld xmm3,1
+        addps xmm4,xmm0
         addps xmm4,xmm1
         addps xmm4,xmm2
         addps xmm4,xmm3
-        addps xmm4,xmm0
+        
         add esi,16
         cmp esi, ebx
-        jl ciclo   
+        jl ciclo  
+        add eax, 4
+
+cicloR: movss xmm0, [ebx+4*esi]
+        mulss xmm0, [ecx+4*esi]
+        movss [edx+4*esi], xmm0 
+        inc esi
+        cmp esi, eax
+        jl cicloR
 
         haddps xmm4, xmm4   
         haddps xmm4, xmm4

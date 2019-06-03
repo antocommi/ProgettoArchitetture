@@ -461,7 +461,7 @@ void stampaCentroidiGrossolani(params* input){
 	}
 }
 
-extern void sse(float* v, int n, float* res);
+// extern void sse(float* v, int n, float* res);
 
 void kmeans(params* input, kmeans_data* data, int start, int end){
 	// estremi start incluso ed end escluso
@@ -727,7 +727,7 @@ void pqnn_index_non_esaustiva(params* input){
 }
 
 void pqnn_search_non_esaustiva(params* input){
-	int i, q, p, h;
+	int i, q, p, h, s;
 	int curr_qc;
 	struct entry* curr_pq;
 	Heap* qc_heap, *qp_heap;
@@ -769,11 +769,12 @@ void pqnn_search_non_esaustiva(params* input){
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		
 		for(int i=0; i<qc_heap->count; i++){
-			
+			printf("aaaaaaaaaaaaa");
 			curr_qc = (qc_heap->arr)[i].index;
 			
 			curr_pq = ((input->v)[curr_qc]).next;
 			assert(curr_qc>-1 && curr_qc<input->kc);
+			// printf("provaprova\n");
 			compute_residual(input, residuo, curr_qc, 0, input->qs);
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
 			// for(int j=0; j<input->d; j++){
@@ -799,12 +800,12 @@ void pqnn_search_non_esaustiva(params* input){
 			}	
 			while(curr_pq!=NULL){
 				somma=0;
-				printf("--1--\n");
+				// printf("--1--\n");
 				for (int j=0; j<input->m; j++){
 					if(input->symmetric==1){
-						printf("\t--1simmetrica--\n");
+						// printf("\t--1simmetrica--\n");
 						// assert(input->m*curr_pq->index+j>-1 && input->m*curr_pq->index+j<input->nr*input->m);
-						printf("\t--2 j=%d,curr_index=%p,m=8--\n",j,curr_pq);
+						// printf("\t--2 j=%d,curr_index=%p,m=8--\n",j,curr_pq);
 						if(qp_query[j] > input->pq[input->m*curr_pq->index+j]){
 							h = qp_query[j];
 							p = input->pq[input->m*curr_pq->index+j];
@@ -831,12 +832,17 @@ void pqnn_search_non_esaustiva(params* input){
 				insert(qp_heap, somma, curr_pq->index);
 				curr_pq = curr_pq->next;
 			}
+			printf("ooooooooooooooo\n");
 		}
-		printf("--7--\n");
+
+		
+		
+		// printf("--7aa--\n");
 		//A questo punto i knn vicini sono in qp_heap->arr
-		for(int s=0;s<input->knn;s++){
-			assert(qp_heap->arr[s].index>=0 && qp_heap->arr[s].index<input->nr);
-			input->ANN[query*input->knn+s] = qp_heap->arr[s].index;
+		
+		for(s=0;s<1;s++){
+			printf("\tquery: %d, knn:%d, s:%d",query,input->knn,s);
+			input->ANN[query*input->knn+s] = (qp_heap->arr)[s].index;
 		}
 		printf("--8--\n");
 		
@@ -877,7 +883,7 @@ void pqnn_index(params* input) {
 void pqnn_search(params* input) {
 	// int i, j;
 	if(input->exaustive==0){
-		printf("simmetrica:%d\n",input->symmetric);
+		// printf("simmetrica:%d\n",input->symmetric);
 		pqnn_search_non_esaustiva(input);
 	}
 		

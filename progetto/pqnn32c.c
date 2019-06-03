@@ -479,10 +479,9 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	fob2=0;
 	// distanze = (float*) _mm_malloc(sizeof(float)*data->dim_source,16);
 	// if(distanze==NULL) exit(-1);
-	printf("sono entrato in kmeans\n");
 	//	MODIFICATA CONDIZIONE
 	// !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps ))
-	for(t=0; t<input->tmin || (t<input->tmax && sqrtf(fob1-fob2) > input->eps); t++){
+	for(t=0; t<input->tmin || (t<input->tmax && absf(fob1-fob2) > input->eps); t++){
 	// for(t=0; !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps )) > input->eps; t++){
 		ci=data->dest+start;
 		for(i=0; i<data->n_centroidi; i++){
@@ -543,20 +542,20 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			// vecchio: 
 			distanza(ind+data->index[i*m+ipart]*input->d, ind2, end-start, &temp);
 			
-			distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
+			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
 			fob2+=pow2(temp, 2.0);
 			
 			// printf("l");
 			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &distanze[i]); 
 			// // printf("m\n");
-			// ind2+=input->d;
+			ind2+=input->d;
 		}
 		// printf("a");
 		// sse(distanze, data->dim_source, &fob2);
 		// printf("f\n");
 	}
 	// _mm_free(distanze);
-	printf("\n iterazioni: %d\n", t);
+	// printf("\n iterazioni: %d\n", t);
 }
 
 // Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
@@ -718,12 +717,8 @@ void pqnn_index_non_esaustiva(params* input){
 	for(i=0;i<input->m;i++){
 		kmeans(input, data, i*dStar, (i+1)*dStar);
 	}
-
-
-
 	inizializzaSecLiv(input);
 	_mm_free(data);
-	printf("finito index");
 }
 
 void pqnn_search_non_esaustiva(params* input){
@@ -769,7 +764,6 @@ void pqnn_search_non_esaustiva(params* input){
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		
 		for(int i=0; i<qc_heap->count; i++){
-			printf("aaaaaaaaaaaaa");
 			curr_qc = (qc_heap->arr)[i].index;
 			
 			curr_pq = ((input->v)[curr_qc]).next;
@@ -832,19 +826,15 @@ void pqnn_search_non_esaustiva(params* input){
 				insert(qp_heap, somma, curr_pq->index);
 				curr_pq = curr_pq->next;
 			}
-			printf("ooooooooooooooo\n");
 		}
 
 		
 		
-		// printf("--7aa--\n");
 		//A questo punto i knn vicini sono in qp_heap->arr
 		
 		for(s=0;s<1;s++){
-			printf("\tquery: %d, knn:%d, s:%d",query,input->knn,s);
 			input->ANN[query*input->knn+s] = (qp_heap->arr)[s].index;
 		}
-		printf("--8--\n");
 		
 
 		_mm_free(qp_heap->arr);
@@ -867,7 +857,6 @@ void pqnn_index(params* input) {
 		printf("ricerca esaustiva disattivata");
 	}else{
 		pqnn_index_non_esaustiva(input);
-		pqnn_search_non_esaustiva(input);
 	}
     
     //pqnn32_index(input); // Chiamata funzione assembly
@@ -1058,7 +1047,7 @@ int main(int argc, char** argv) {
 	sprintf(fname, "%s.ds", input->filename);
 	input->ds = load_data(fname, &input->n, &input->d);
 	
-	input->nr = input->n/20;
+	// input->nr = input->n/20;
 
 	sprintf(fname, "%s.qs", input->filename);
 	input->qs = load_data(fname, &input->nq, &input->d);

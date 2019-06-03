@@ -773,6 +773,7 @@ void pqnn_search_non_esaustiva(params* input){
 			curr_qc = (qc_heap->arr)[i].index;
 			
 			curr_pq = ((input->v)[curr_qc]).next;
+			assert(curr_qc>-1 && curr_qc<input->kc);
 			compute_residual(input, residuo, curr_qc, 0, input->qs);
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
 			// for(int j=0; j<input->d; j++){

@@ -750,7 +750,7 @@ void pqnn_search_non_esaustiva(params* input){
 		creaMatricedistanze(input, input->residual_codebook);
 	}
 
-	
+
 
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){

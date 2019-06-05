@@ -6,7 +6,7 @@
  * DISATTIVARE ASSERT
  * DISATTIVARE ASSERT
  * DISATTIVARE ASSERT
- * 
+ *
  * CdL Magistrale in Ingegneria Informatica
  * Corso di Architetture e Programmazione dei Sistemi di Elaborazione - a.a. 2018/19
  * 
@@ -540,9 +540,9 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			//
 			// MODIFICA FATTA QUI:  (si può modificare anche sopra nelle dichiarazioni di variabile)
 			// vecchio: 
-			distanza(ind+data->index[i*m+ipart]*input->d, ind2, end-start, &temp);
+			//distanza(ind+data->index[i*m+ipart]*input->d, ind2, end-start, &temp);
 			
-			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
+			distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
 			fob2+=pow2(temp, 2.0);
 			
 			// printf("l");
@@ -622,17 +622,17 @@ int qc_index(params* input, int y){
 	return input->qc_indexes[y];
 }
 
-// extern void compute_residual_opt(params* input, float* res, int qc_i, int y);
-void compute_residual(params* input, float* res, int qc_i, int y,float* src){
+extern void compute_residual_opt(params* input, float* res, int qc_i, int y,float* src);
+//void compute_residual(params* input, float* res, int qc_i, int y,float* src){
 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
 	// y 	: indice del punto y appartenente al dataset ds in input
 	// -----------------------------------------
 	// ritorna un puntatore al residuo r(y)
-	int i;
-	for(i=0; i<input->d;i++){
-		res[i]=src[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
-	}
-}
+// 	int i;
+// 	for(i=0; i<input->d;i++){
+// 		res[i]=src[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
+// 	}
+// }
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
@@ -642,7 +642,8 @@ void calcola_residui(params* input){
 	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		ry = input->residual_set+y*input->d;
-		compute_residual(input, ry, *(input->qc_indexes+y), y, input->ds); // calcolo del residuo r(y) = y - qc(y)
+		
+		compute_residual_opt(input, ry, *(input->qc_indexes+y), y, input->ds); // calcolo del residuo r(y) = y - qc(y)
 	}
 }
 
@@ -750,16 +751,20 @@ void pqnn_search_non_esaustiva(params* input){
 	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){
 		
-		q_x = &input->qs[query*input->d];
+		q_x = &input->qs[query*input->d]; //prende l indirizzo del vettore di query
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 
 		//potrei aggiungere un metodo restore su heap?
 		for(int i=0;i<input->kc;i++){
-			distanza(q_x, &input->qc[i*input->d], input->d, &dist);
+			distanza(q_x, &input->qc[i*input->d], input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
+		// for(int i=0;i<input->w;i++){
+		// 	printf("distanza %.2f da %d \n", qc_heap->arr[i].dist,qc_heap->arr[i].index);
+		// }
 
 		arr = qc_heap->arr;
+
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		
@@ -768,8 +773,8 @@ void pqnn_search_non_esaustiva(params* input){
 			
 			curr_pq = ((input->v)[curr_qc]).next;
 			assert(curr_qc>-1 && curr_qc<input->kc);
-			// printf("provaprova\n");
-			compute_residual(input, residuo, curr_qc, 0, input->qs);
+			//printf("provaprova\n");
+			compute_residual_opt(input, residuo, curr_qc, 0, input->qs);
 			// Calcolo r(x) rispetto al i-esimo centroide grossolano
 			// for(int j=0; j<input->d; j++){
 			// 		residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)

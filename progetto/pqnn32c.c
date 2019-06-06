@@ -116,7 +116,8 @@ typedef struct {
 
 	float *zero;
 
-	struct entry *celle_voronoi;
+	int* celle_voronoi;
+	int* index_voronoi;
 } params;
 
 //Entry della s.d. multilivello
@@ -591,19 +592,6 @@ void add(struct entry * new, int i, params* input){
 	}
 }
 
-void addToVoronoi(struct entry * new, int i, params* input){
-	struct entry* vett;
-	vett=input->celle_voronoi;
-	if(vett[i].next==NULL){
-		vett[i].next= new;
-		new->next=NULL;
-	}
-	else{
-		new->next = vett[i].next;
-		vett[i].next = new;
-	}
-}
-
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
 void inizializzaSecLiv(params* input){
@@ -660,22 +648,24 @@ void calcola_residui(params* input){
 }
 
 void pqnn_index_non_esaustiva(params* input){
-	int i, j, d, m, knn, dStar, *ind_pq;
+	int i, j, d, m, knn, dStar, *offset;
 	float* tmp;
 	struct kmeans_data* data;
-	struct entry* new, *curr,*voronoi_cells;
-	struct entry* corr;
 	// unsigned short *voronoi_cells, *count, *centroidi_assegnati;
 
 
 	d = input->d;
 	knn = input->knn;
 	m = input->m;
-	printf("k:%d\n",input->k);
-	input->celle_voronoi = _mm_malloc(sizeof(struct entry)*input->k*input->m,16);
-	if(input->celle_voronoi==NULL) exit(-1);
-	printf("k:%d\n",input->k);
 	
+	offset = _mm_malloc(sizeof(int)*input->k,16);
+	if(offset==NULL) exit(-1);
+
+	input->celle_voronoi = _mm_malloc(sizeof(int)*input->n*input->m,16);
+	if(input->celle_voronoi==NULL) exit(-1);
+	
+	input->index_voronoi = _mm_malloc(sizeof(int)*input->k*input->m,16);
+	if(input->index_voronoi==NULL) exit(-1);
 
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	dStar = input->d/input->m;
@@ -755,10 +745,24 @@ void pqnn_index_non_esaustiva(params* input){
 		calcolaPQ(data, i*dStar, (i+1)*dStar);
 	}
 	
+	for(j=0;j<m;j++){
+		pq = input->pq + j;
+
+		for(i=0;i<input->n;i++){
+			pq += 
+			pq += input->m;
+		}
+		calcola_posizioni(input->index_voronoi+j*input->k);
+
+		memset(offset,0,input->k*sizeof(int));
+	}
+	
 
 	addToVoronoi();
 	_mm_free(data);
 }
+
+
 
 void pqnn_search_non_esaustiva(params* input){
 	int i, q, p, h, s;

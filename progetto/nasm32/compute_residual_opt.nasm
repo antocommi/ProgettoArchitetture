@@ -1,6 +1,9 @@
 %include "sseutils.nasm"
 
+extern printf
+
 section .data
+break db 'breakpoint', 10, 0
 section .bss
 section .text
 
@@ -18,16 +21,16 @@ d equ 16
 
 
 compute_residual_opt:
-		push ebp
-		mov	ebp, esp
-		pushad    ;inizio
+	push ebp
+	mov	ebp, esp
+	pushad    ;inizio
 
         mov eax, [ebp+input]
         mov ebx, [eax+d]
         mov ecx, ebx 
         imul ebx, [ebp+y]
         imul ebx, 4             ; poi modificare  on shift a sinistra
-        add ebx, [eax+src]
+        add ebx, [ebp+src]
 
         imul ecx, [ebp+qc_i]
         imul ecx, 4
@@ -37,8 +40,7 @@ compute_residual_opt:
 
         xor esi, esi
         mov eax, [eax+d] ;eax=d
-        sub eax, 16
-        
+        sub eax, 16     
 cicloQ: cmp esi, eax
         jg fineQ
         movaps xmm0, [ebx+4*esi]
@@ -55,6 +57,7 @@ cicloQ: cmp esi, eax
         movaps [edx+4*esi+48], xmm3
         add esi,16
         jmp cicloQ
+       
 fineQ:  add eax, 12
 cicloR1:cmp esi, eax
         jg fineR1
@@ -71,7 +74,10 @@ cicloR2:cmp esi, eax
         movss [edx+4*esi], xmm0 
         inc esi
         jmp cicloR2
+
+       
+
 fine:   popad ;fine
-		mov	esp, ebp
-		pop	ebp
-		ret
+	mov esp, ebp
+	pop ebp
+	ret

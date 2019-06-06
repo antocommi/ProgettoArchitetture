@@ -99,7 +99,7 @@ typedef struct {
 	// Strutture ad-hoc ricerca non esaustiva
 
 	// Vettore contenente alla posizione i l'indice di qc(Y_i) in codebook
-	int * qc_indexes;
+	int *qc_indexes;
 
 	// Coarse q. dim: input.kc x input.d
 	MATRIX qc;
@@ -112,17 +112,22 @@ typedef struct {
 	MATRIX residual_set;
 
 	// Lista di liste (secondo livello dell'inverted index)
-	struct entry* v; 
+	struct entry *v; 
 
-	float* zero;
+	float *zero;
+
+	struct entry *celle_voronoi;
 } params;
 
 //Entry della s.d. multilivello
 struct entry{
 	int index;
+
 	// Residuo q di dimensione d.
 	VECTOR q;
-	VECTOR indexes;
+	
+	// VECTOR indexes;
+	
 	//temporaneo
 	//Serve per gestire liste a dimensione sconosciuta. 
 	struct entry * next;
@@ -176,7 +181,7 @@ void heapify_bottom_top(Heap *h,int index);
 void heapify_top_bottom(Heap *h, int parent_node);
 
 Heap* CreateHeap(int capacity){	
-    Heap *h = (Heap * ) malloc(sizeof(Heap)); //one is number of heap	
+    Heap *h = (Heap * ) _mm_malloc(sizeof(Heap),16); //one is number of heap	
 
      //check if memory allocation is fails	
     if(h == NULL) exit(-1);
@@ -428,6 +433,34 @@ void calcolaPQ(kmeans_data* data, int start, int end){
 		ind2=data->dest+start;// destinazione
 		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
 			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
+			// printf("--2--\n");			
+			if(temp<min){ 
+				min=temp;
+				*ind=j;
+			}
+			ind2+=data->d;
+		}
+		// printf("distanza minima trovata: %f\n",min );
+		ind+=m;
+		ind1+=data->d;
+	}
+}
+
+void calcolaPQVoronoi(kmeans_data* data, int start, int end){
+	// Dei primi input->k ed i primi input->kc già si conosce l'index
+	// Per cui si può evitare di calcolare il più vicino.  
+	int i, j;
+	int m=data->index_columns;
+	float min;
+	float temp;
+	float *ind1, *ind2;
+	int* ind=data->index+start/((data->d)/(data->index_columns));
+	ind1=data->source+start;
+	for(i=0; i<data->dim_source; i++){// per ogni vettore del dataset
+		min=FLT_MAX; //modificato
+		ind2=data->dest+start;// destinazione
+		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
+			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
 			if(temp<min){ 
 				min=temp;
 				*ind=j;
@@ -448,20 +481,13 @@ float absf(float f){
 }
 
 void stampaCentroidiGrossolani(params* input){
-	for(int i=0;i<input->nr;i++){
-		if(i!=input->qc_indexes[i])
-			printf("%3d ",input->qc_indexes[i]);
-		else
-		{
-			printf("xXx ");
-		}
-		
+	int i;
+	for(i=0;i<input->nr;i++){
+		printf("%3d ",input->qc_indexes[i]);
 		if(i%8==0 && i!=0) printf("\n");
-		if(i==input->kc+OFFSET) printf("\n-------------------------\n");
+		if(i==input->kc) printf("\n-------------------------\n");
 	}
 }
-
-// extern void sse(float* v, int n, float* res);
 
 void kmeans(params* input, kmeans_data* data, int start, int end){
 	// estremi start incluso ed end escluso
@@ -472,28 +498,20 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	float *ind, *ind2, *ci, *distanze;
 	int* ind3;
 	int incr, incr2;
-	int m=input->m;
+	int index_col=data->index_columns;
 	int ipart=start/(input->d/input->m);
 	calcolaPQ(data, start, end);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
-	// distanze = (float*) _mm_malloc(sizeof(float)*data->dim_source,16);
-	// if(distanze==NULL) exit(-1);
-	//	MODIFICATA CONDIZIONE
-	// !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps ))
 	for(t=0; t<input->tmin || (t<input->tmax && absf(fob1-fob2) > input->eps); t++){
-	// for(t=0; !( input->tmin<=t && ( input->tmax<t || fob1-fob2 <= input->eps )) > input->eps; t++){
 		ci=data->dest+start;
 		for(i=0; i<data->n_centroidi; i++){
 			count=0;
 			ind=ci;
-			//printf("breakpoint kmeans 0\n");
 			memset(ci, 0, (end-start)*sizeof(float));
-			
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
-			//printf("breakpoint kmeans 1\n");
 			ind3=data->index+ipart;
 			for(j=0; j<data->dim_source; j++){
 				if(*ind3==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
@@ -502,15 +520,11 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 					for(k=start; k<end; k++){
 						*ind+=data->source[j*input->d+k];
 						ind++;
+
 					}
 				}
-				//
-				// MODIFICA FATTA QUI: 
-				// vecchio: ind3+=m
-				ind3+=data->index_columns;
+				ind3+=index_col;
 			}
-			//printf("%f\n", *ci);
-			//printf("breakpoint kmeans 2\n");
 			ind=ci;
 			for(j=start; j<end; j++){
 				if(count!=0){ 
@@ -526,9 +540,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			//
 			ci+=input->d;
 		}
-		// stampaCentroidiGrossolani(input);
 		calcolaPQ(data, start, end);
-		
 		fob1=fob2;
 		fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
@@ -536,26 +548,11 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 		ind2=data->source+start;
 		
 		for(i=0; i<data->dim_source; i++){
-			// distanza(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
-			//
-			// MODIFICA FATTA QUI:  (si può modificare anche sopra nelle dichiarazioni di variabile)
-			// vecchio: 
-			distanza(ind+data->index[i*m+ipart]*input->d, ind2, end-start, &temp);
-			
-			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &temp);
+			distanza(ind+data->index[i*index_col+ipart]*input->d, ind2, end-start, &temp);
 			fob2+=pow2(temp, 2.0);
-			
-			// printf("l");
-			// distanza(ind+data->index[i*data->index_columns+ipart]*input->d, ind2, end-start, &distanze[i]); 
-			// // printf("m\n");
 			ind2+=input->d;
 		}
-		// printf("a");
-		// sse(distanze, data->dim_source, &fob2);
-		// printf("f\n");
 	}
-	// _mm_free(distanze);
-	// printf("\n iterazioni: %d\n", t);
 }
 
 // Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
@@ -592,18 +589,31 @@ void add(struct entry * new, int i, params* input){
 	}
 }
 
+void addToVoronoi(struct entry * new, int i, params* input){
+	struct entry* vett;
+	vett=input->celle_voronoi;
+	if(vett[i].next==NULL){
+		vett[i].next= new;
+		new->next=NULL;
+	}
+	else{
+		new->next = vett[i].next;
+		vett[i].next = new;
+	}
+}
+
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
 void inizializzaSecLiv(params* input){
 	int qc_i, y;//qc_i è l'indice del quantizzatore grossolano associato ad y
 	struct entry *res; //res è il residuo
 	
-	input->v = malloc(sizeof(struct entry)*input->kc);
+	input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
 	if(input->v==NULL) exit(-1);
 
 	for(y=0;y<input->nr;y++){
 		
-		res = malloc(sizeof(struct entry));
+		res = _mm_malloc(sizeof(struct entry),16);
 		if(res==NULL) exit(-1);
 
 		qc_i = input->qc_indexes[y];
@@ -639,7 +649,7 @@ void calcola_residui(params* input){
 	int qc_i; 
 	float *ry;
 	// int *indexes=input->qc_indexes; // puntatore al residuo corrente nel residual_codebook
-	for(int y=0;y<input->nr;y++){ // Per ogni y in Nr (learning-set):
+	for(int y=0;y<input->n;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		ry = input->residual_set+y*input->d;
 		compute_residual(input, ry, *(input->qc_indexes+y), y, input->ds); // calcolo del residuo r(y) = y - qc(y)
@@ -647,16 +657,28 @@ void calcola_residui(params* input){
 }
 
 void pqnn_index_non_esaustiva(params* input){
-	int i, dStar;
+	int i, j, d, m, knn, dStar, *ind_pq;
 	float* tmp;
 	struct kmeans_data* data;
+	struct entry* new, *curr,*voronoi_cells;
+	struct entry* corr;
+	// unsigned short *voronoi_cells, *count, *centroidi_assegnati;
+
+
+	d = input->d;
+	knn = input->knn;
+	m = input->m;
+	printf("k:%d\n",input->k);
+	input->celle_voronoi = _mm_malloc(sizeof(struct entry)*input->k*input->m,16);
+	if(input->celle_voronoi==NULL) exit(-1);
+	printf("k:%d\n",input->k);
+	
 
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	dStar = input->d/input->m;
 
-	//TODO: 
 	//AL momento sceglie i primi nr come elementi del learning set. 
-	input->residual_set = (float*) _mm_malloc(sizeof(float)*input->nr*input->d, 16);
+	input->residual_set = (float*) _mm_malloc(sizeof(float)*input->n*input->d, 16);
 	if(input->residual_set==NULL) exit(-1);
 	
 	input->residual_codebook = (float*) _mm_malloc(sizeof(float)*input->k*input->d, 16);
@@ -666,15 +688,15 @@ void pqnn_index_non_esaustiva(params* input){
 	if(input->qc==NULL) exit(-1);
 
 	//inizializza vettore
-	input->qc_indexes = (int*) _mm_malloc(sizeof(int)*input->nr,16);
+	input->qc_indexes = (int*) _mm_malloc(sizeof(int)*input->n,16);
 	if(input->qc_indexes==NULL) exit(-1);
 
-	input->pq = (int*) _mm_malloc(input->nr*input->m*sizeof(int), 16);
+	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16);
 	if(input->pq==NULL) exit(-1);
 	
 	//nuova aggiunta
-	memcpy(input->qc, input->ds+OFFSET*input->d, input->kc*input->d*sizeof(float));
-
+	memcpy(input->qc, input->ds, input->kc*input->d*sizeof(float));
+	
 	// Settagio parametri k-means
 	data->source = input->ds;
 	data->dest = input->qc;
@@ -682,42 +704,107 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_columns=1;
 	data->index_rows = input->nr;
 	data->n_centroidi = input->kc;
-
-	//Nuovi aggiunti
 	data->d=input->d; 
 	data->dim_source = input->nr;
 
-	// Aggiunte che si possono togliere
-	// printf("\nPrima start:%d,end:%d\n",0,input->d);
-	// stampaCentroidiGrossolani(input);
-
 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
-
 	
-
-	// printf("\nPrima start:%d,end:%d\n",0,input->d);
-	// stampaCentroidiGrossolani(input);
-
+	// Settagio parametri k-means
+	data->source = & input->ds[(input->nr)*input->d];
+	data->dest = input->qc;
+	data->index = &input->qc_indexes[input->nr];
+	data->index_columns=1;
+	data->index_rows = input->n-input->nr;
+	data->n_centroidi = input->kc;
+	data->dim_source = input->n-input->nr;
+	
+	calcolaPQ(data, 0, input->d);
+	
 	calcola_residui(input);
-	
 	//nuova aggiunta
-	memcpy(input->residual_codebook, input->residual_set+OFFSET*input->d, input->k*input->d*sizeof(float));
+	memcpy(input->residual_codebook, input->residual_set, input->k*input->d*sizeof(float));
 	data->dim_source=input->nr;
-
 	// Settagio parametri k-means
 	data->source = input->residual_set;
 	data->dest = input->residual_codebook;
-	// data->dim_source = input->nr; RIMANE INVIARIATO RISPETTO A PRIMA
 	data->index = input->pq;
 	data->index_columns=input->m;
-	data->index_rows = input->nr;
+	data->index_rows =input->nr;
 	data->n_centroidi = input->k;
-	
+
 	// calcolo dei quantizzatori prodotto
 	for(i=0;i<input->m;i++){
 		kmeans(input, data, i*dStar, (i+1)*dStar);
 	}
+
 	inizializzaSecLiv(input);
+
+	// // Aggiunta degli n-nr
+	data->source = input->ds+input->nr*input->d;
+	data->dest = input->residual_codebook;
+	data->dim_source = input->n-input->nr;
+	data->index = input->pq+input->nr*input->m;
+	data->index_columns=input->m;
+	data->index_rows = input->n-input->nr;
+	data->n_centroidi = input->k;
+	
+	for(i=0;i<input->m;i++){
+		calcolaPQ(data, i*dStar, (i+1)*dStar);
+	}
+
+	ind_pq = input->pq;
+
+	printf("inserimento iniziato\n");
+	
+
+	printf("-----------------1a----------------------------\n");
+	for(i=0;i<input->k*input->m;i++){
+		// if(input->celle_voronoi[i].index > 0 && input->celle_voronoi[i].index != (input->celle_voronoi+i)->index ) 
+			printf(" (%p<%d,%d) ",input->celle_voronoi+i,(input->celle_voronoi+i)->index,input->celle_voronoi[i].index);
+	}
+	printf("\n");
+	printf("-----------------fine 1a----------------------------\n");
+
+	for(i=0;i<m;i++){
+		for(j=0;j<input->n;j++){
+			new = _mm_malloc(sizeof(struct entry),16);
+			if(new==NULL) exit(-1);
+			new->index = j;
+			new->next=NULL;
+			new->q = NULL;
+			assert((*ind_pq)>=0 && (*ind_pq)<input->k);
+			addToVoronoi(new,input->k*i+(*ind_pq),input);
+			ind_pq+=m;
+		}
+		ind_pq=input->pq+i;
+		for(j=0;j<5;j++){
+			printf("p=%p ",input->celle_voronoi[j+i*m].next);
+		}
+		printf("\n");
+	}
+	printf("-----------------1----------------------------\n");
+	for(i=0;i<input->k*input->m;i++){
+		if(input->celle_voronoi[i].index > 0 && input->celle_voronoi[i].index != (input->celle_voronoi+i)->index ) 
+			printf(" (%p<%d,%d) ",input->celle_voronoi+i,(input->celle_voronoi+i)->index,input->celle_voronoi[i].index);
+	}
+	printf("\n");
+	printf("-----------------fine 1----------------------------\n");
+
+	// printf("inserimento terminato k:%d, m:%d \n",input->k,input->m);
+	for(i=0;i<input->k*input->m;i++){
+		corr = input->celle_voronoi+i;
+		assert(corr>=input->celle_voronoi && corr<input->celle_voronoi+input->k*input->m);
+		while (corr!=NULL){
+			printf("%d ", corr->index);
+			corr = corr->next;
+			printf("dopo %d ", corr->index);
+		}
+		printf("fine linea\n\n");
+	}
+
+    
+
+	printf("fine:\n");
 	_mm_free(data);
 }
 
@@ -745,9 +832,6 @@ void pqnn_search_non_esaustiva(params* input){
 		creaMatricedistanze(input, input->residual_codebook);
 	}
 
-
-
-	//RIMETTERE IL VALORE INPUT->NQ È SOLO PER PROVA 
 	for(int query=0; query<input->nq; query++){
 		
 		q_x = &input->qs[query*input->d];
@@ -765,15 +849,10 @@ void pqnn_search_non_esaustiva(params* input){
 		
 		for(int i=0; i<qc_heap->count; i++){
 			curr_qc = (qc_heap->arr)[i].index;
-			
 			curr_pq = ((input->v)[curr_qc]).next;
+
 			assert(curr_qc>-1 && curr_qc<input->kc);
-			// printf("provaprova\n");
 			compute_residual(input, residuo, curr_qc, 0, input->qs);
-			// Calcolo r(x) rispetto al i-esimo centroide grossolano
-			// for(int j=0; j<input->d; j++){
-			// 		residuo[j]=input->qs[query*input->d+j] - input->qc[curr_qc*input->d+j]; // r(x) = y - qc(x)
-			// }
 
 			if(input->symmetric==1){
 				data->source=residuo;
@@ -785,21 +864,13 @@ void pqnn_search_non_esaustiva(params* input){
 				data->index_columns = input->m;
 				data->index_rows = 1;
 				for(int l=0;l<input->m;l++){
-					// printf("prima: %d\n",qp_query[l]);
-					// qp_query[l] = PQ_non_esaustiva(input, 0, l*dS, (l+1)*dS, data);
-					// qp_query[l];
 					calcolaPQ(data, l*dS, (l+1)*dS);
-					// printf("dopo: %d\n",qp_query[l]);
 				}
 			}	
 			while(curr_pq!=NULL){
 				somma=0;
-				// printf("--1--\n");
 				for (int j=0; j<input->m; j++){
 					if(input->symmetric==1){
-						// printf("\t--1simmetrica--\n");
-						// assert(input->m*curr_pq->index+j>-1 && input->m*curr_pq->index+j<input->nr*input->m);
-						// printf("\t--2 j=%d,curr_index=%p,m=8--\n",j,curr_pq);
 						if(qp_query[j] > input->pq[input->m*curr_pq->index+j]){
 							h = qp_query[j];
 							p = input->pq[input->m*curr_pq->index+j];
@@ -902,6 +973,7 @@ int main(int argc, char** argv) {
 	input->exaustive = 1;
 	input->symmetric = 1;
 	input->knn = 1;
+	input->nr = input->n/20;
 	input->m = 8;
 	input->k = 256;
 	input->kc = 8192;
@@ -1047,7 +1119,6 @@ int main(int argc, char** argv) {
 	sprintf(fname, "%s.ds", input->filename);
 	input->ds = load_data(fname, &input->n, &input->d);
 	
-	// input->nr = input->n/20;
 
 	sprintf(fname, "%s.qs", input->filename);
 	input->qs = load_data(fname, &input->nq, &input->d);

@@ -591,6 +591,13 @@ void add(struct entry * new, int i, params* input){
 		vett[i].next = new;
 	}
 }
+void addToVoronoi (int* celleVoronoi ,int *posizioni, int *offset, int p, int k ){
+	// dove i inizia la cella di voronoi
+	// offset mi dice quanto si deve spostare da i
+	// devo mettere p in celleVoronoi 
+	*(celleVoronoi+*(posizioni+k)+*(offset+k))=p;
+	offset[k]++;
+}
 
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 

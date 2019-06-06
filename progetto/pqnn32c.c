@@ -593,21 +593,8 @@ void addToVoronoi (int* celleVoronoi ,int *posizioni, int *offset, int p, int k 
 	// offset mi dice quanto si deve spostare da i
 	// devo mettere p in celleVoronoi 
 	*(celleVoronoi+*(posizioni+k)+*(offset+k))=p;
-	*(offset+k)+=1;
+	offset[k]++;
 }
-
-// void addToVoronoi(struct entry * new, int i, params* input){
-// 	struct entry* vett;
-// 	vett=input->celle_voronoi;
-// 	if(vett[i].next==NULL){
-// 		vett[i].next= new;
-// 		new->next=NULL;
-// 	}
-// 	else{
-// 		new->next = vett[i].next;
-// 		vett[i].next = new;
-// 	}
-// }
 
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
@@ -761,6 +748,7 @@ void pqnn_index_non_esaustiva(params* input){
 	}
 
 	ind_pq = input->pq;
+	
 
 	printf("inserimento iniziato\n");
 	

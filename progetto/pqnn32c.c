@@ -176,6 +176,8 @@ Heap* CreateHeap(int capacity);
 
 void insert(Heap *h, float key, int index);	
 
+void addToVoronoi(int *celleVoronoi, int* posizioni, int* offset, int p, int k);
+
 void heapify_bottom_top(Heap *h,int index);
 
 void heapify_top_bottom(Heap *h, int parent_node);
@@ -752,60 +754,9 @@ void pqnn_index_non_esaustiva(params* input){
 	for(i=0;i<input->m;i++){
 		calcolaPQ(data, i*dStar, (i+1)*dStar);
 	}
-
-	ind_pq = input->pq;
-
-	printf("inserimento iniziato\n");
 	
 
-	printf("-----------------1a----------------------------\n");
-	for(i=0;i<input->k*input->m;i++){
-		// if(input->celle_voronoi[i].index > 0 && input->celle_voronoi[i].index != (input->celle_voronoi+i)->index ) 
-			printf(" (%p<%d,%d) ",input->celle_voronoi+i,(input->celle_voronoi+i)->index,input->celle_voronoi[i].index);
-	}
-	printf("\n");
-	printf("-----------------fine 1a----------------------------\n");
-
-	for(i=0;i<m;i++){
-		for(j=0;j<input->n;j++){
-			new = _mm_malloc(sizeof(struct entry),16);
-			if(new==NULL) exit(-1);
-			new->index = j;
-			new->next=NULL;
-			new->q = NULL;
-			assert((*ind_pq)>=0 && (*ind_pq)<input->k);
-			addToVoronoi(new,input->k*i+(*ind_pq),input);
-			ind_pq+=m;
-		}
-		ind_pq=input->pq+i;
-		for(j=0;j<5;j++){
-			printf("p=%p ",input->celle_voronoi[j+i*m].next);
-		}
-		printf("\n");
-	}
-	printf("-----------------1----------------------------\n");
-	for(i=0;i<input->k*input->m;i++){
-		if(input->celle_voronoi[i].index > 0 && input->celle_voronoi[i].index != (input->celle_voronoi+i)->index ) 
-			printf(" (%p<%d,%d) ",input->celle_voronoi+i,(input->celle_voronoi+i)->index,input->celle_voronoi[i].index);
-	}
-	printf("\n");
-	printf("-----------------fine 1----------------------------\n");
-
-	// printf("inserimento terminato k:%d, m:%d \n",input->k,input->m);
-	for(i=0;i<input->k*input->m;i++){
-		corr = input->celle_voronoi+i;
-		assert(corr>=input->celle_voronoi && corr<input->celle_voronoi+input->k*input->m);
-		while (corr!=NULL){
-			printf("%d ", corr->index);
-			corr = corr->next;
-			printf("dopo %d ", corr->index);
-		}
-		printf("fine linea\n\n");
-	}
-
-    
-
-	printf("fine:\n");
+	addToVoronoi();
 	_mm_free(data);
 }
 

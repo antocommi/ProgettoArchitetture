@@ -591,13 +591,6 @@ void add(struct entry * new, int i, params* input){
 		vett[i].next = new;
 	}
 }
-void addToVoronoi (int* celleVoronoi ,int *posizioni, int *offset, int p, int k ){
-	// dove i inizia la cella di voronoi
-	// offset mi dice quanto si deve spostare da i
-	// devo mettere p in celleVoronoi 
-	*(celleVoronoi+*(posizioni+k)+*(offset+k))=p;
-	offset[k]++;
-}
 
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
@@ -748,24 +741,35 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_rows = input->n-input->nr;
 	data->n_centroidi = input->k;
 	
+
 	for(i=0;i<input->m;i++){
 		calcolaPQ(data, i*dStar, (i+1)*dStar);
 	}
 	
 	for(j=0;j<m;j++){
-		pq = input->pq + j;
-
+		//pq= input->pq + j;//p[j];
 		for(i=0;i<input->n;i++){
-			pq += 
-			pq += input->m;
+		
+			indice_centroide =input->pq[ (i*m+j);
+			// column major order
+			input->index_voronoi[indice_centroide*k+j]++;
 		}
+		for(int p=0;p<input->n;p++){
+
+			celle_voronoi[index_voronoi][]
+			*(input->celle_voronoi+*(input->index_voronoi+pq)+*(offset+k))=input->pq[k*m+j];
+			offset[k]++; // dove i inizia la cella di voronoi
+		// offset mi dice quanto si deve spostare da i
+	// // devo mettere p in celleVoronoi 
+		}
+
 		calcola_posizioni(input->index_voronoi+j*input->k);
 
 		memset(offset,0,input->k*sizeof(int));
 	}
 	
-
-	addToVoronoi();
+    
+	_mm_free(offset);
 	_mm_free(data);
 }
 

@@ -749,16 +749,15 @@ void pqnn_index_non_esaustiva(params* input){
 	for(j=0;j<m;j++){
 		//pq= input->pq + j;//p[j];
 		for(i=0;i<input->n;i++){
-		
-			indice_centroide =input->pq[ (i*m+j);
 			// column major order
-			input->index_voronoi[indice_centroide*k+j]++;
+			input->index_voronoi[(input->pq[ (i*m+j)])+input->k*i]++; //+j??  
 		}
-		for(int p=0;p<input->n;p++){
-
-			celle_voronoi[index_voronoi][]
-			*(input->celle_voronoi+*(input->index_voronoi+pq)+*(offset+k))=input->pq[k*m+j];
-			offset[k]++; // dove i inizia la cella di voronoi
+		//void addToVoronoi(int *celleVoronoi, int* posizioni, int* offset, int p, int k);
+		for(int x=0;x<input->n;x++){
+			input->celle_voronoi[input->index_voronoi[];
+			*(input->celle_voronoi+*(input->index_voronoi+pq)+*(offset+input->k))=input->pq[k*m+j];
+			offset[k]++; 
+			// dove i inizia la cella di voronoi
 		// offset mi dice quanto si deve spostare da i
 	// // devo mettere p in celleVoronoi 
 		}

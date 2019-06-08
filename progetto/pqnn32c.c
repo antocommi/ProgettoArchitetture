@@ -754,18 +754,15 @@ void pqnn_index_non_esaustiva(params* input){
 	
 	for(j=0;j<m;j++){
 		pq = input->pq + j;
-
 		for(i=0;i<input->n;i++){
 			pq += 
 			pq += input->m;
 		}
 		calcola_posizioni(input->index_voronoi+j*input->k);
-
+		
 		memset(offset,0,input->k*sizeof(int));
 	}
 	
-
-	addToVoronoi();
 	_mm_free(data);
 }
 
@@ -781,6 +778,7 @@ void pqnn_search_non_esaustiva(params* input){
 	struct entry_heap* arr;
 	float * residuo, *q_x; 
 	float somma=0, temp;
+
 	int dS=((input->d)/(input->m)), *qp_query;
 	qp_query = _mm_malloc(sizeof(int)*input->m,16);
 	if(qp_query==NULL) exit(-1);
@@ -801,13 +799,12 @@ void pqnn_search_non_esaustiva(params* input){
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 
 		//potrei aggiungere un metodo restore su heap?
-		for(int i=0;i<input->kc;i++){
+		for(i=0;i<input->kc;i++){
 			distanza(q_x, &input->qc[i*input->d], input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
-		// for(int i=0;i<input->w;i++){
-		// 	printf("distanza %.2f da %d \n", qc_heap->arr[i].dist,qc_heap->arr[i].index);
-		// }
+		
+		
 
 		arr = qc_heap->arr;
 
@@ -908,9 +905,7 @@ void pqnn_index(params* input) {
  * 	===========
  */
 void pqnn_search(params* input) {
-	// int i, j;
 	if(input->exaustive==0){
-		// printf("simmetrica:%d\n",input->symmetric);
 		pqnn_search_non_esaustiva(input);
 	}
 		

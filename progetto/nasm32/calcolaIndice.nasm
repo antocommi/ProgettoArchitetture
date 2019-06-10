@@ -21,7 +21,7 @@ calcolaIndice:
 		mov ecx, eax		;i
 		dec eax				;i-1
 		imul eax, ecx		;i*(i-1)
-		shr eax, 1			;i*(i-1)/2
+		sar eax, 1			;i*(i-1)/2
 		add eax, ebx		;i*(i-1)/2+j
 
 		pop	edi		;fine

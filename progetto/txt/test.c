@@ -51,7 +51,9 @@ typedef struct {
 	// Strutture ad-hoc ricerca non esaustiva
 
 	// Vettore contenente alla posizione i l'indice di qc(Y_i) in codebook
-	unsigned short * qc_indexes;
+	int * qc_indexes;
+
+	MATRIX qc;
 
 	// Residual product quantizators in non exhaustive search
 	// matrix type: Row-major-order
@@ -59,7 +61,20 @@ typedef struct {
 
 	// Learning set nella ricerca non esastiva. Contiene i residui dei primi nr vettori
 	MATRIX residual_set;
+
+	// Lista di liste (secondo livello dell'inverted index)
+	struct entry* v; 
+
+	float* zero;
 } params;
+
+struct entry{
+	int index;
+	VECTOR q;
+	//temporaneo
+	//Serve per gestire liste a dimensione sconosciuta. 
+	struct entry * next;
+};
 
 typedef struct{
 
@@ -84,45 +99,48 @@ typedef struct{
 } kmeans_data;
 
 int main(int argc, char** argv) {
-    printf("filename index %d\n", offsetof(params, filename));
-    printf("ds index %d\n", offsetof(params, ds));
-    printf("qs index %d\n", offsetof(params, qs));
-    printf("n index %d\n", offsetof(params, n));
-    printf("d index %d\n", offsetof(params, d));
-    printf("nq index %d\n", offsetof(params, nq));
-    printf("knn index %d\n", offsetof(params, knn));
-    printf("m index %d\n", offsetof(params, m));
-    printf("k index %d\n", offsetof(params, k));
-    printf("kc index %d\n", offsetof(params, kc));
-    printf("w index %d\n", offsetof(params, w));
-    printf("nr index %d\n", offsetof(params, nr));
-    printf("eps index %d\n", offsetof(params, eps));
-    printf("tmin index %d\n", offsetof(params, tmin));
-    printf("tmax index %d\n", offsetof(params, tmax));
-    printf("exaustive index %d\n", offsetof(params, exaustive));
-    printf("symmetric index %d\n", offsetof(params, symmetric));
-    printf("silent index %d\n", offsetof(params, silent));
-    printf("display index %d\n", offsetof(params, display));
-    printf("ANN index %d\n", offsetof(params, ANN));
-    printf("vq index %d\n", offsetof(params, vq));
-    printf("pq index %d\n", offsetof(params, pq));
-    printf("query_pq index %d\n", offsetof(params, query_pq));
-    printf("codebook index %d\n", offsetof(params, codebook));
-    printf("distanze_simmetriche index %d\n", offsetof(params, distanze_simmetriche));
-    printf("nDist index %d\n", offsetof(params, nDist));
-    printf("distanze_asimmetriche index %d\n", offsetof(params, distanze_asimmetriche));
-    printf("qc_indexes index %d\n", offsetof(params, qc_indexes));
-    printf("residual_codebook index %d\n", offsetof(params, residual_codebook));
-    printf("residual_set index %d\n", offsetof(params, residual_set));
+    printf("filename equ %ld\n", offsetof(params, filename));
+    printf("ds equ %ld\n", offsetof(params, ds));
+    printf("qs equ %ld\n", offsetof(params, qs));
+    printf("n equ %ld\n", offsetof(params, n));
+    printf("d equ %ld\n", offsetof(params, d));
+    printf("nq equ %ld\n", offsetof(params, nq));
+    printf("knn equ %ld\n", offsetof(params, knn));
+    printf("m equ %ld\n", offsetof(params, m));
+    printf("k equ %ld\n", offsetof(params, k));
+    printf("kc equ %ld\n", offsetof(params, kc));
+    printf("w equ %ld\n", offsetof(params, w));
+    printf("nr equ %ld\n", offsetof(params, nr));
+    printf("eps equ %ld\n", offsetof(params, eps));
+    printf("tmin equ %ld\n", offsetof(params, tmin));
+    printf("tmax equ %ld\n", offsetof(params, tmax));
+    printf("exaustive equ %ld\n", offsetof(params, exaustive));
+    printf("symmetric equ %ld\n", offsetof(params, symmetric));
+    printf("silent equ %ld\n", offsetof(params, silent));
+    printf("display equ %ld\n", offsetof(params, display));
+    printf("ANN equ %ld\n", offsetof(params, ANN));
+    printf("vq equ %ld\n", offsetof(params, vq));
+    printf("pq equ %ld\n", offsetof(params, pq));
+    printf("query_pq equ %ld\n", offsetof(params, query_pq));
+    printf("codebook equ %ld\n", offsetof(params, codebook));
+    printf("distanze_simmetriche equ %ld\n", offsetof(params, distanze_simmetriche));
+    printf("nDist equ %ld\n", offsetof(params, nDist));
+    printf("distanze_asimmetriche equ %ld\n", offsetof(params, distanze_asimmetriche));
+    printf("qc_indexes equ %ld\n", offsetof(params, qc_indexes));
+    printf("qc equ %ld\n", offsetof(params, qc));
+    printf("residual_codebook equ %ld\n", offsetof(params, residual_codebook));
+    printf("residual_set equ %ld\n", offsetof(params, residual_set));
+    printf("v equ %ld\n", offsetof(params, v));
+    printf("zero equ %ld\n", offsetof(params, zero));
 
 
-	printf("source index %d\n", offsetof(kmeans_data, source));
-    printf("dim_source index %d\n", offsetof(kmeans_data, dim_source));
-    printf("index %d\n", offsetof(kmeans_data, index));
-    printf("dest %d\n", offsetof(kmeans_data, dest));
-    printf("index_rows %d\n", offsetof(kmeans_data, index_rows));
-    printf("index_columns %d\n", offsetof(kmeans_data, index_columns));
-    printf("n_centroidi %d\n", offsetof(kmeans_data, n_centroidi));
-    printf("d %d\n", offsetof(kmeans_data, d));
+	printf("source equ %ld\n", offsetof(kmeans_data, source));
+    printf("dim_source equ %ld\n", offsetof(kmeans_data, dim_source));
+    printf("index %ld\n", offsetof(kmeans_data, index));
+    printf("dest %ld\n", offsetof(kmeans_data, dest));
+    printf("index_rows %ld\n", offsetof(kmeans_data, index_rows));
+    printf("index_columns %ld\n", offsetof(kmeans_data, index_columns));
+    printf("n_centroidi %ld\n", offsetof(kmeans_data, n_centroidi));
+    printf("d %ld\n", offsetof(kmeans_data, d));
     
 }

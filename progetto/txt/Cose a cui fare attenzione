@@ -1,0 +1,5 @@
+32 bit
+
+64 bit
+-   evitare di passare più di 6 parametri, i primi 6 vengono passati nei registri, eventuali altri vengono passati nello stack
+-   mettere sempre la V nelle istruzioni che fanno uso di registri xmm e ymm, usarne una sola senza v può raddoppiare il tempo di esecuzione

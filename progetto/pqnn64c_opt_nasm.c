@@ -255,7 +255,6 @@ extern int calcolaIndice(int i, int j);
 
 extern float distanza(float* punto1, float* punto2, int dimensione);
 // float distanza(float* punto1, float* punto2, int dimensione){
-// 	//printf("%d\n%d\n%d\n%d\n", (int)punto1, (int)punto2, dimensione, (int)r);
 // 	int i;
 // 	float ret=0;
 // 	float* ind=punto1;
@@ -273,15 +272,12 @@ float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 	int dStar=input->d/input->m;
 	int* c2=input->pq+punto2*input->m;
 	ind1=set+punto1*input->d;
-	//ind2=input->codebook+dStar;
 	ind2=input->codebook;
 	for(i=0; i<input->m; i++){
-		//dist_asimmetricaI(input, set, punto1, *c2, par, par+input->m, &temp);
 		sum+=pow2(distanza(ind1, ind2+(*c2)*input->d, dStar), 2);
 		ind1+=dStar;
 		ind2+=dStar;
 		c2++;
-		//printf("break\n");
 	}
 	return sum;
 }
@@ -289,16 +285,9 @@ float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 extern float* dist_matrix(params* input, int centroide1, int centroide2, int ipart);
 // float* dist_matrix(params* input, int centroide1, int centroide2, int ipart){
 // 	// estremi start incluso ed end escluso
-// 	//printf("breakpoint Dist %d %d\n", c1, centroide2);
 // 	if(centroide1==centroide2){
 // 		return input->zero;
 // 	}else{
-// 		//row major order-------------------------------------------
-// 	//	if(c1<centroide2){
-// 	//		*r=input->distanze_simmetriche[(input->nDist*start/(input->d/input->m))+calcolaIndice(centroide2, c1)];
-// 	//	}else{
-// 	//		*r=input->distanze_simmetriche[(input->nDist*start/(input->d/input->m))+calcolaIndice(c1, centroide2)];
-// 	//	}
 // 		//column major order-------------------------------------------
 // 		if(centroide1<centroide2){
 // 			return input->distanze_simmetriche+ipart+calcolaIndice(centroide2, centroide1)*input->m;
@@ -315,18 +304,8 @@ extern float dist(params* input, int* quantizer, int punto1, int punto2);
 // 	float sum=0;
 // 	int* c1=quantizer+punto1*input->m;
 // 	int* c2=input->pq+punto2*input->m;
-// 	//printf("%d\n", (int)input->distanze_simmetriche);
-// 	//printf("%d\n", (int)input->distanze_simmetriche+input->k*input->m*(input->k+1)/2);
-// 	//printf("%ld\n", (long)input->distanze_simmetriche);
 // 	for(i=0; i<input->m; i++){
-// 		//printf("%d %d\n", *c1, *c2);
-// 		//printf("%f\n", temp);
-// 		//getchar();
-// 		//printf("prima\n");
-// 		//printf("dopo %f\n", *f);
-// 		//printf("%d\n", (int)f);
 // 		sum+=pow2(*dist_matrix(input, *c1, *c2, i), 2);
-// 		//printf("end dist_matrix\n");
 // 		c2++;
 // 		c1++;
 // 	}
@@ -346,14 +325,7 @@ extern void calcolaPQ(kmeans_data* data, int partition, int start, int end);
 // 		min=1.79E+308;
 // 		ind2=data->dest+start;
 // 		for(j=0; j<data->n_centroidi; j++){
-// 			//printf("prima\n");
-// 			// distanza(ind1, ind2, end-start, &temp);
 // 			temp=distanza(ind1, ind2, end-start);
-// 			//printf("%f ", temp);
-// 			//temp=distanza1(ind1, ind2, end-start);
-// 			//printf("%f \n", temp);
-// 			//getchar();
-// 			//printf("dopo\n");
 // 			if(temp<min){ 
 // 				min=temp;
 // 				*ind=j;
@@ -372,10 +344,7 @@ extern float calcolaFob(params* input, kmeans_data* data, int ipart, int start, 
 // 	float* ind2=data->source+start;
 // 	float ret=0;
 // 	for(i=0; i<data->dim_source; i++){
-// 		//distanza(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
-// 		//printf("%f\n", temp);
 // 		ret+=pow2(distanza1(ind+data->index[i*input->m+ipart]*data->d, ind2, end-start), 2.0);
-// 		//printf("%f\n", fob2);
 // 		ind2+=data->d;
 // 	}
 // 	return ret;
@@ -403,9 +372,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	int m=input->m;
 	int ipart=start/(input->d/input->m);
 
-	//printf("%d\n", (int)data->index);
 	calcolaPQ(data, ipart, start, end);
-	//printf("fine CalcolaPQ\n");
 	
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
@@ -414,12 +381,10 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 		for(i=0; i<data->n_centroidi; i++){
 			count=0;
 			ind=ci;
-			//printf("breakpoint kmeans 0\n");
 			memset(ci, 0, (end-start)*sizeof(float));
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
-			//printf("breakpoint kmeans 1\n");
 			ind3=data->index+ipart;
 			ind=data->source+start;
 			for(j=0; j<data->dim_source; j++){
@@ -431,8 +396,6 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 				ind+=input->d;
 			}
 
-			//printf("%f\n", *ci);
-			//printf("breakpoint kmeans 2\n");
 			ind=ci;
 			for(j=start; j<end; j++){
 				if(count!=0){ 
@@ -449,23 +412,12 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			ci+=input->d;
 		}
 		
-		//printf("chiamata CalcolaPQ\n");
 		calcolaPQ(data, ipart, start, end);
-		//printf("fine CalcolaPQ\n");
 		
 		fob1=fob2;
 		fob11=fob22;
-		//fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
-		//printf("prima calcolo\n");
-		//printf("%d\n%d\n\n%d\n%d\n\n", (int)input->ds, (int)(input->ds+input->n*input->d*4), (int)input->codebook, (int)(input->codebook+input->k*input->d*4));
-		//printf("end:%d\n", end);
 		fob2=calcolaFob(input, data, ipart, start, end);
-		//printf("C:\t\t%f\tdelta:\t%f\n", fob2, fabs(fob1-fob2));
-		//fob22=calcolaFob(input, data, ipart, start, end);
-		//printf("Assembly:\t%f\tdelta:\t%f\n", fob22, fabs(fob11-fob22));
-		//getchar();
-		//printf("dopo calcolo %f\n", fob2);
 	}
 	//printf("%d\n", t);
 }
@@ -479,28 +431,12 @@ extern void creaMatriceDistanze(params* input, float* codebook);
 // 	int d=input->d;
 // 	float *ind1, *ind2;
 // 	int count=0;
-// 	// for(i=1; i<input->k; i++){
-// 	// 	ind2=codebook;
-// 	// 	for(j=0; j<i; j++){
-// 	// 		ind1=codebook+i*d;
-// 	// 		//ind2=codebook+j*d;
-// 	// 		for(k=0; k<input->m; k++){
-// 	// 			//input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=distanza(ind1, ind2, dStar);
-// 	// 			input->distanze_simmetriche[k+count*input->m]=distanza(ind1, ind2, dStar);
-// 	// 			ind1+=dStar;
-// 	// 			ind2+=dStar;
-// 	// 		}
-// 	// 		count++;
-// 	// 	}
-// 	// }
-
+//
 // 	for(i=1; i<input->k; i++){
 // 		ind2=codebook;
 // 		for(j=0; j<i; j++){
 // 			ind1=codebook+i*d;
-// 			//ind2=codebook+j*d;
 // 			for(k=0; k<input->m; k++){
-// 				//input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=distanza(ind1, ind2, dStar);
 // 				input->distanze_simmetriche[count]=distanza(ind1, ind2, dStar);
 // 				ind1+=dStar;
 // 				ind2+=dStar;
@@ -597,13 +533,7 @@ typedef struct{
 extern void calcolaSimmetriche(params* input, float* ind, int query);
 // void calcolaSimmetriche(params* input, float* ind, int query){
 // 	for(int i=0; i<input->n; i++){
-// 		//printf("\nbefore %f\n\n", temp);
-// 		//printf("\nmiddle %f\n\n", temp);
-// 		//printf("before %d\n", i);
 // 		*ind=dist(input, input->query_pq, query, i);
-// 		//printf("after\n");
-// 		//printf("after\n");
-// 		//getchar();
 // 		ind++;
 // 	}
 // }
@@ -615,80 +545,44 @@ void calcolaNN(params* input, int query, VECTOR m){
 	float* ind=distanze;
 	int* ind2;
 	float* ind3;
-	//-----
-	//printf("breakpoint NN 1\n");
-	//printf("ind %d %d\n", (int)input->distanze_simmetriche, (int)input->distanze_simmetriche+input->m*input->k*(input->k+1)*2);
-	
+
 	if(input->knn<4500){
 		if(input->symmetric==0){
 			for(i=0; i<input->n; i++){
 				*ind++=dist_asimmetrica(input, input->qs, query, i);
 			}
 		}else{
-			//printf("prima \n");
 			calcolaSimmetriche(input, distanze, query);
-			//printf("dopo\n");
-			// for(i=0; i<input->n; i++){
-			// 	//printf("\nbefore %f\n\n", temp);
-			// 	//printf("\nmiddle %f\n\n", temp);
-			// 	//printf("before %d\n", i);
-			// 	*ind=dist(input, input->query_pq, query, i);
-			// 	//printf("after\n");
-			// 	//printf("after\n");
-			// 	//getchar();
-			// 	ind++;
-			// }
-			// for(int i=0; i<input->n; i++){
-			// 	printf("%f ", distanze[i]);
-			// 	getchar();
-			// }
 		}
 
-		//printf("breakpoint NN 2\n");
-
 		ind=m;
-		//ind2=input->ANN+query*input->knn;
 		
-		//printf("breakpoint NN 3\n");
 		for(i=0; i<input->knn; i++){
 			*ind++=1.79E+308;
-			//*ind2++=-1;
 		}
 		
 		ind3=distanze;
-		//printf("breakpoint NN 4\n");
 		for(i=0; i<input->n; i++){
 			ind=m;
 			ind2=input->ANN+query*input->knn;
 			for(j=0; j<input->knn; j++){
-				//printf("breakpoint 0.1\n");
 				if(*ind3<*ind){
-					//printf("breakpoint 0.2\n");
 					for(k=input->knn-1; k>j; k--){
 						if(m[k-1]!=-1){
-							//printf("breakpoint 1.1\n");
 							input->ANN[query*input->knn+k]=input->ANN[query*input->knn+k-1];
-							//printf("breakpoint 1.2\n");
 							m[k]=m[k-1];
-							//printf("breakpoint 1.3\n");
 						}
 					}
-					//printf("breakpoint 2.1\n");
 					*ind2=i;
-					//printf("breakpoint 2.2\n");
 					*ind=*ind3;
-					//printf("breakpoint 2.3\n");
-					//printf("%d %d", i, j);
 					break;
 				}
-				//printf("breakpoint 0.3\n");
 				ind++;
 				ind2++;
 			}
 			ind3++;
 		}
 	}else{
-		//modificare anche questa parte con i puntatori
 		di=(int*) _mm_malloc(input->n*sizeof(int), 32);
 		// //printf("breakpoint 1\n");
 		// if(input->symmetric==0){
@@ -710,7 +604,6 @@ void calcolaNN(params* input, int query, VECTOR m){
 		_mm_free(di);
 	}
 	
-	//printf("breakpoint NN 5\n");
 	dealloc_matrix(distanze);
 }
 
@@ -724,16 +617,8 @@ void pqnn_index_esaustiva(params* input){
 	dStar=input->d/input->m;
 	input->codebook = alloc_matrix(input->k, input->d); // row-major-order?
 	if(input->codebook==NULL) exit(-1);
-	//printf("before kmeans\n");
 	ind1=input->codebook;
 	ind2=input->ds;
-	//inizializzazione codebook
-	// for(i=0; i<input->k*input->d; i++){
-	// 	*ind1=*ind2;
-	// 	ind1++;
-	// 	ind2++;
-	// }
-	//confrontare
 	memcpy(input->codebook, input->ds, input->k*input->d*sizeof(float));
 	kmeans_data* data=_mm_malloc(sizeof(kmeans_data), 32);
 	data->source=input->ds;
@@ -744,48 +629,17 @@ void pqnn_index_esaustiva(params* input){
 	data->index_columns=input->m;
 	data->n_centroidi=input->k;
 	data->d=input->d;
-	// printf("%ld\n%ld\n", (long)input->ds, (long)(input->ds+input->n*input->d*4));
-	// printf("%ld\n%ld\n", (long)input->codebook, (long)(input->codebook+input->k*input->d*4));
-	// getchar();
-	// calcolaPQ(data, 0, 0, 16);
-	// printf("quantizzatori\n");
-	// for(i=0; i<input->n; i++){
-	// 	printf("%d ", input->pq[i*input->m+j]);
-	// }
-	// calcolaPQ1(data, 0, 0, 16);
-	// printf("quantizzatori\n");
-	// for(i=0; i<input->n; i++){
-	// 	printf("%d ", input->pq[i*input->m+j]);
-	// }
-	// getchar();
 	for(i=0; i<input->m; i++){
 		//printf("d2:%d d22:%d dStar:%d\n", d2, d2+dStar, dStar);
 		kmeans(input, data, d2, d2+dStar);
 		d2+=dStar;
 	}
-	//printf("after kmeans\n");
-//	printf("quantizzatori\n");
-//	for(i=0; i<input->n; i++){
-//		for(int j=0; j<input->m; j++){
-//			printf("%d ", input->pq[i*input->m+j]);
-//		}
-//		printf("\n");
-//	}
-//	printf("codebook\n");
-//	for(i=0; i<input->k; i++){
-//		for(int j=0; j<input->n; j++){
-//			printf("%f ", input->codebook[i*input->d+j]);
-//		}
-//		printf("\n");
-//	}
 
 	if(input->symmetric==1){
 		input->nDist=input->k*(input->k+1)/2;
 		input->distanze_simmetriche = (float*) alloc_matrix(input->m, input->nDist);
 		if(input->distanze_simmetriche==NULL) exit(-1);
-		//printf("prima\n");
 		creaMatriceDistanze(input, input->codebook);
-		//printf("dopo\n");
 	}
 	_mm_free(data);
 }
@@ -794,19 +648,9 @@ void pqnn_search_esaustiva(params* input){
 	int i, j, c, part;
 	int *ipq, *ind;
 	if(input->symmetric==1){
-		//printf("break0\n");
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 32);
 		if(input->query_pq==NULL) exit(-1);
 		c=input->d/input->m;
-		//printf("break0.1\n");
-	//	ipq=input->query_pq;
-	//	for(i=0; i<input->nq; i++){
-	//		ind=ipq;
-	//		for(j=0; j<input->m; j++){
-	//			*ind++=calcolaQueryPQ(input, i, j*c, (j+1)*c);
-	//		}
-	//		ipq+=input->m;
-	//	}
 		kmeans_data* data=_mm_malloc(sizeof(kmeans_data), 32);
 		data->source=input->qs;
 		data->dim_source=input->nq;
@@ -818,28 +662,16 @@ void pqnn_search_esaustiva(params* input){
 		data->d=input->d;
 		part=0;
 		for(j=0; j<input->m; j++){
-			//printf("chiamata CalcolaPQ\n");
 			calcolaPQ(data, j, part, part+c);
-			//printf("fine CalcolaPQ\n");
-			//calcolaQueryPQ(input, part, part+c);
 			part+=c;
 		}
 		_mm_free(data);
 	}
-	// printf("quantizzatori\n");
-	// for(i=0; i<input->n; i++){
-	// 	for(int j=0; j<input->m; j++){
-	// 		printf("%d ", input->pq[i*input->m+j]);
-	// 	}
-	// 	printf("\n");
-	// }
-	// printf("break1\n");
 	VECTOR m=(VECTOR) _mm_malloc(input->knn*sizeof(float),32);
 	for(i=0; i<input->nq; i++){
 		calcolaNN(input, i, m);
 	}
 	_mm_free(m);
-	//printf("break2\n");
 	_mm_free(input->codebook);
 	_mm_free(input->pq);
 	if(input->symmetric==1){

@@ -273,7 +273,7 @@ float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
 	int dStar=input->d/input->m;
 	int* c2=input->pq+punto2*input->m;
 	ind1=set+punto1*input->d;
-	ind2=input->codebook+dStar;
+	ind2=input->codebook;
 	for(i=0; i<input->m; i++){
 		//dist_asimmetricaI(input, set, punto1, *c2, par, par+input->m, &temp);
 		distanza(ind1, ind2+(*c2)*input->d, dStar, &temp);
@@ -580,14 +580,17 @@ void calcolaNN(params* input, int query){
 	if(input->knn<4500){
 		if(input->symmetric==0){
 			for(i=0; i<input->n; i++){
-				*ind++=dist_asimmetrica(input, input->qs, query, i);
+				*ind=dist_asimmetrica(input, input->qs, query, i);
+				// printf("%f\n", *ind);
+				// getchar();
+				ind++;
 			}
 		}else{
 			for(i=0; i<input->n; i++){
 				//printf("\nbefore %f\n\n", temp);
-				dist(input, input->query_pq, query, i, &temp);
+				dist(input, input->query_pq, query, i, ind);
 				//printf("\nmiddle %f\n\n", temp);
-				*ind++=temp;
+				ind++;
 				//printf("after\n");
 				//getchar();
 				

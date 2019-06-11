@@ -1,5 +1,4 @@
 /**************************************************************************************
-<<<<<<< HEAD
  *
  * CdL Magistrale in Ingegneria Informatica
  * Corso di Architetture e Programmazione dei Sistemi di Elaborazione - a.a. 2018/19
@@ -13,33 +12,13 @@
 
 /*
 
-=======
- * 
- * CdL Magistrale in Ingegneria Informatica
- * Corso di Architetture e Programmazione dei Sistemi di Elaborazione - a.a. 2018/19
- * 
- * Progetto dell'algoritmo di Product Quantization for Nearest Neighbor Search
- * in linguaggio assembly x86-32 + SSE
- * 
- * Fabrizio Angiulli, aprile 2019
- * 
- **************************************************************************************/
-
-/*
- 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
  Software necessario per l'esecuzione:
 
      NASM (www.nasm.us)
      GCC (gcc.gnu.org)
 
-<<<<<<< HEAD
  entrambi sono disponibili come pacchetti software
  installabili mediante il packaging tool del sistema
-=======
- entrambi sono disponibili come pacchetti software 
- installabili mediante il packaging tool del sistema 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
  operativo; per esempio, su Ubuntu, mediante i comandi:
 
      sudo apt-get install nasm
@@ -53,15 +32,9 @@
  Per generare il file eseguibile:
 
  nasm -f elf32 pqnn32.nasm && gcc -O0 -m32 -msse pqnn32.o pqnn32c.c -o pqnn32c && ./pqnn32c
-<<<<<<< HEAD
 
  oppure
 
-=======
- 
- oppure
- 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
  ./runpqnn32
 
 */
@@ -84,11 +57,7 @@
 
 typedef struct {
 	char* filename; //
-<<<<<<< HEAD
 	MATRIX ds; // data set
-=======
-	MATRIX ds; // data set 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	MATRIX qs; // query set
 	int n; // numero di punti del data set
 	int d; // numero di dimensioni del data/query set
@@ -99,11 +68,7 @@ typedef struct {
 	int kc; // numero di centroidi del quantizzatore coarse
 	int w; // numero di centroidi del quantizzatore coarse da selezionare per la ricerca non esaustiva
 	int nr; // dimensione del campione dei residui nel caso di ricerca non esaustiva
-<<<<<<< HEAD
 	float eps; //
-=======
-	float eps; // 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	int tmin; //
 	int tmax; //
 	int exaustive; // tipo di ricerca: (0=)non esaustiva o (1=)esaustiva
@@ -119,11 +84,6 @@ typedef struct {
 	int* query_pq;
 
 	MATRIX codebook; // per E. contiene quantizzatori prodotto. Per N.E. contiene quantizzatori grossolani
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	MATRIX distanze_simmetriche;
 	int nDist;
 	MATRIX distanze_asimmetriche;
@@ -143,11 +103,7 @@ typedef struct {
 	MATRIX residual_set;
 
 	// Lista di liste (secondo livello dell'inverted index)
-<<<<<<< HEAD
 	struct entry* v;
-=======
-	struct entry* v; 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 
 	float* zero;
 } params;
@@ -157,11 +113,7 @@ struct entry{
 	int index;
 	VECTOR q;
 	//temporaneo
-<<<<<<< HEAD
 	//Serve per gestire liste a dimensione sconosciuta.
-=======
-	//Serve per gestire liste a dimensione sconosciuta. 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	struct entry * next;
 };
 
@@ -171,17 +123,10 @@ typedef struct{
 	float* source;
 
 	int dim_source;
-<<<<<<< HEAD
 
 	// Per ogni vettore contiene il centroide di appartenenza
 	int* index;
 
-=======
-	
-	// Per ogni vettore contiene il centroide di appartenenza
-	int* index; 
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	// Per ogni riga contiene il centroide per intero
 	float* dest;
 
@@ -197,26 +142,16 @@ typedef struct{
 
 
 /*
-<<<<<<< HEAD
  *
  *	Le funzioni sono state scritte assumento che le matrici siano memorizzate
  * 	mediante un array (float*), in modo da occupare un unico blocco
  * 	di memoria, ma a scelta del candidato possono essere
  * 	memorizzate mediante array di array (float**).
  *
-=======
- * 
- *	Le funzioni sono state scritte assumento che le matrici siano memorizzate 
- * 	mediante un array (float*), in modo da occupare un unico blocco
- * 	di memoria, ma a scelta del candidato possono essere 
- * 	memorizzate mediante array di array (float**).
- * 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
  * 	In entrambi i casi il candidato dovrà inoltre scegliere se memorizzare le
  * 	matrici per righe (row-major order) o per colonne (column major-order).
  *
  * 	L'assunzione corrente è che le matrici siano in row-major order.
-<<<<<<< HEAD
  *
  */
 
@@ -227,18 +162,6 @@ void* get_block(int size, int elements) {
 
 
 void free_block(void* p) {
-=======
- * 
- */
-
-
-void* get_block(int size, int elements) { 
-	return _mm_malloc(elements*size,32); 
-}
-
-
-void free_block(void* p) { 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	_mm_free(p);
 }
 
@@ -254,7 +177,6 @@ void dealloc_matrix(MATRIX mat) {
 
 
 /*
-<<<<<<< HEAD
  *
  * 	load_data
  * 	=========
@@ -262,20 +184,10 @@ void dealloc_matrix(MATRIX mat) {
  *	Legge da file una matrice di N righe
  * 	e M colonne e la memorizza in un array lineare in row-major order
  *
-=======
- * 
- * 	load_data
- * 	=========
- * 
- *	Legge da file una matrice di N righe
- * 	e M colonne e la memorizza in un array lineare in row-major order
- * 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
  * 	Codifica del file:
  * 	primi 4 byte: numero di righe (N) --> numero intero a 32 bit
  * 	successivi 4 byte: numero di colonne (M) --> numero intero a 32 bit
  * 	successivi N*M*4 byte: matrix data in row-major order --> numeri floating-point a precisione doppia
-<<<<<<< HEAD
  *
  *****************************************************************************
  *	Se lo si ritiene opportuno, è possibile cambiare la codifica in memoria
@@ -289,26 +201,10 @@ MATRIX load_data(char* filename, int *n, int *d) {
 
 	fp = fopen(filename, "rb");
 
-=======
- * 
- *****************************************************************************
- *	Se lo si ritiene opportuno, è possibile cambiare la codifica in memoria
- * 	della matrice. 
- *****************************************************************************
- * 
- */
-MATRIX load_data(char* filename, int *n, int *d) {	
-	FILE* fp;
-	int rows, cols, status, i;
-	
-	fp = fopen(filename, "rb");
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	if (fp == NULL) {
 		printf("'%s' : bad data file name!\n", filename);
 		exit(0);
 	}
-<<<<<<< HEAD
 
 	status = fread(&cols, sizeof(int), 1, fp);
 	status = fread(&rows, sizeof(int), 1, fp);
@@ -320,36 +216,15 @@ MATRIX load_data(char* filename, int *n, int *d) {
 	*n = rows;
 	*d = cols;
 
-=======
-	
-	status = fread(&cols, sizeof(int), 1, fp);
-	status = fread(&rows, sizeof(int), 1, fp);
-		
-	MATRIX data = alloc_matrix(rows,cols);
-	status = fread(data, sizeof(float), rows*cols, fp);
-	fclose(fp);
-	
-	*n = rows;
-	*d = cols;
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	return data;
 }
 
 
-<<<<<<< HEAD
 void save_ANN(char* filename, int* ANN, int nq, int knn) {
 	FILE* fp;
 	int i, j;
 	char fpath[256];
 
-=======
-void save_ANN(char* filename, int* ANN, int nq, int knn) {	
-	FILE* fp;
-	int i, j;
-	char fpath[256];
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	sprintf(fpath, "%s.ann", filename);
 	fp = fopen(fpath, "w");
 	for (i = 0; i < nq; i++) {
@@ -449,15 +324,10 @@ extern void calcolaPQ(kmeans_data* data, int partition, int start, int end);
 // 		min=1.79E+308;
 // 		ind2=data->dest+start;
 // 		for(j=0; j<data->n_centroidi; j++){
-<<<<<<< HEAD
 // 			if(start>0)	printf("calcolapq %d %d\n", i, j);
 // 			temp=distanza(ind1, ind2, end-start);
 // 			if(start>0)	printf("calcolapq %d %d\n", i, j);
 // 			if(temp<min){
-=======
-// 			temp=distanza(ind1, ind2, end-start);
-// 			if(temp<min){ 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 // 				min=temp;
 // 				*ind=j;
 // 			}
@@ -475,18 +345,13 @@ extern float calcolaFob(params* input, kmeans_data* data, int ipart, int start, 
 // 	float* ind2=data->source+start;
 // 	float ret=0;
 // 	for(i=0; i<data->dim_source; i++){
-<<<<<<< HEAD
 // 		ret+=pow2(distanza(ind+data->index[i*input->m+ipart]*data->d, ind2, end-start), 2.0);
-=======
-// 		ret+=pow2(distanza1(ind+data->index[i*input->m+ipart]*data->d, ind2, end-start), 2.0);
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 // 		ind2+=data->d;
 // 	}
 // 	return ret;
 // }
 
 extern void somma(float* source, float* dest, int dim);
-<<<<<<< HEAD
 void sommaC(float* source, float* dest, int dim){
 	for(int i=0; i<dim; i++){
 		*dest+=*source;
@@ -494,15 +359,6 @@ void sommaC(float* source, float* dest, int dim){
 		source++;
 	}
 }
-=======
-// void somma(float* source, float* dest, int dim){
-// 	for(int i=0; i<dim; i++){
-// 		*dest+=*source;
-// 		dest++;
-// 		source++;
-// 	}
-// }
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 
 void kmeans(params* input, kmeans_data* data, int start, int end){
 	// estremi start incluso ed end escluso
@@ -515,7 +371,6 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	int* ind3;
 	int incr, incr2;
 	int m=input->m;
-<<<<<<< HEAD
 	int ipart=start/(input->d/m);
 	//printf("prima calcolapq %ld %d %d %d\n", (long)data, ipart, start, end);
 	//printf("%ld %ld\n", (long)data->source, (long)data->dest);
@@ -526,15 +381,6 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && fabs(fob1-fob2)/fob1 > input->eps); t++){
 		//printf("kmeans interation %d\n", t);
-=======
-	int ipart=start/(input->d/input->m);
-
-	calcolaPQ(data, ipart, start, end);
-	
-	fob1=0; //Valori della funzione obiettivo
-	fob2=0;
-	for(t=0; t<input->tmin || (t<input->tmax && fabs(fob2-fob1) > input->eps); t++){
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 		ci=data->dest+start;
 		for(i=0; i<data->n_centroidi; i++){
 			count=0;
@@ -543,7 +389,6 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
-<<<<<<< HEAD
 			//printf("it:%d centr:%d 0\n", t, i);
 			ind3=data->index+ipart;
 			//printf("it:%d centr:%d 0.0\n", t, i);
@@ -565,40 +410,19 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			ind=ci;
 			for(j=start; j<end; j++){
 				if(count!=0){
-=======
-			ind3=data->index+ipart;
-			ind=data->source+start;
-			for(j=0; j<data->dim_source; j++){
-				if(*ind3==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
-					count++;
-					somma(ind, ci, end-start);
-				}
-				ind3+=m;
-				ind+=input->d;
-			}
-
-			ind=ci;
-			for(j=start; j<end; j++){
-				if(count!=0){ 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 					// Alcune partizioni potrebbero essere vuote
 					// Specie se ci sono degli outliers
 					*ind=*ind/count;
 				}
 				ind++;
 			}
-<<<<<<< HEAD
 			//printf("it:%d centr:%d 2\n", t, i);
 
-=======
-			
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 			//
 			// FINE: RICALCOLO NUOVI CENTROIDI
 			//
 			ci+=input->d;
 		}
-<<<<<<< HEAD
 		//printf("breakpoint\n");
 		calcolaPQ(data, ipart, start, end);
 
@@ -610,26 +434,11 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 		//getchar();
 	}
 	printf("%d\n", t);
-=======
-		
-		calcolaPQ(data, ipart, start, end);
-		
-		fob1=fob2;
-		fob11=fob22;
-		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
-		fob2=calcolaFob(input, data, ipart, start, end);
-	}
-	//printf("%d\n", t);
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 }
 
 extern void creaMatriceDistanze(params* input, float* codebook);
 // void creaMatriceDistanze(params* input, float* codebook){
-<<<<<<< HEAD
 // 	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta
-=======
-// 	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 // 	// puntatore alla src dei centroidi
 // 	int i, j, k;
 // 	int dStar=input->d/input->m;
@@ -651,7 +460,6 @@ extern void creaMatriceDistanze(params* input, float* codebook);
 // 	}
 // }
 
-<<<<<<< HEAD
 void bubbleSort(VECTOR arr, int* arr2, int n, int nit){
 	int i, j, t1;
 	float t2;
@@ -659,15 +467,6 @@ void bubbleSort(VECTOR arr, int* arr2, int n, int nit){
 	for (i = 0; i < nit && scambi==1; i++){
 		scambi=0;
     	for (j = n-2; j > i-1; j--)
-=======
-void bubbleSort(VECTOR arr, int* arr2, int n, int nit){ 
-	int i, j, t1;
-	float t2;
-	int scambi=1; 
-	for (i = 0; i < nit && scambi==1; i++){
-		scambi=0;
-    	for (j = n-2; j > i-1; j--)  
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
         	if (arr[j] > arr[j+1]){
 				t2=arr[j];
 				arr[j]=arr[j+1];
@@ -771,19 +570,11 @@ void calcolaNN(params* input, int query, VECTOR m){
 		}
 
 		ind=m;
-<<<<<<< HEAD
 
 		for(i=0; i<input->knn; i++){
 			*ind++=1.79E+308;
 		}
 
-=======
-		
-		for(i=0; i<input->knn; i++){
-			*ind++=1.79E+308;
-		}
-		
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 		ind3=distanze;
 		for(i=0; i<input->n; i++){
 			ind=m;
@@ -826,11 +617,6 @@ void calcolaNN(params* input, int query, VECTOR m){
 		// }
 		_mm_free(di);
 	}
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	dealloc_matrix(distanze);
 }
 
@@ -840,12 +626,8 @@ void pqnn_index_esaustiva(params* input){
 	input->zero=_mm_malloc(sizeof(float), 32);
 	*input->zero=0;
 	float *ind1, *ind2;
-<<<<<<< HEAD
 	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 32);
 	if(input->pq==NULL) exit(-1);
-=======
-	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 32); 
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	dStar=input->d/input->m;
 	input->codebook = alloc_matrix(input->k, input->d); // row-major-order?
 	if(input->codebook==NULL) exit(-1);
@@ -853,10 +635,7 @@ void pqnn_index_esaustiva(params* input){
 	ind2=input->ds;
 	memcpy(input->codebook, input->ds, input->k*input->d*sizeof(float));
 	kmeans_data* data=_mm_malloc(sizeof(kmeans_data), 32);
-<<<<<<< HEAD
 	if(data==NULL) exit(-1);
-=======
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	data->source=input->ds;
 	data->dim_source=input->n;
 	data->index=input->pq;
@@ -865,7 +644,6 @@ void pqnn_index_esaustiva(params* input){
 	data->index_columns=input->m;
 	data->n_centroidi=input->k;
 	data->d=input->d;
-<<<<<<< HEAD
 	//printf("prima kmeans\n");
 	for(i=0; i<input->m; i++){
 		//printf("prima kmeans %d\n", i);
@@ -875,13 +653,6 @@ void pqnn_index_esaustiva(params* input){
 	}
 	//printf("fine kmeans\n");
 
-=======
-	for(i=0; i<input->m; i++){
-		//printf("d2:%d d22:%d dStar:%d\n", d2, d2+dStar, dStar);
-		kmeans(input, data, d2, d2+dStar);
-		d2+=dStar;
-	}
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 
 	if(input->symmetric==1){
 		input->nDist=input->k*(input->k+1)/2;
@@ -941,11 +712,6 @@ void pqnn_index(params* input) {
 	}else{
 		//pqnn_index_non_esaustiva(input);
 	}
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
     //pqnn32_index(input); // Chiamata funzione assembly
 
     // -------------------------------------------------
@@ -977,11 +743,6 @@ void pqnn_search(params* input) {
 int main(int argc, char** argv) {
 	char fname[256];
 	int i, j;
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	//
 	// Imposta i valori di default dei parametri
 	//
@@ -1104,11 +865,6 @@ int main(int argc, char** argv) {
 		} else
 			par++;
 	}
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	//
 	// Visualizza la sintassi del passaggio dei parametri da riga comandi
 	//
@@ -1128,34 +884,19 @@ int main(int argc, char** argv) {
 		printf("\t-tmax: max k-means iterations\n");
 		printf("\n");
 	}
-<<<<<<< HEAD
 
 	//
 	// Legge il data set ed il query set
 	//
 
-=======
-	
-	//
-	// Legge il data set ed il query set
-	//
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	if (input->filename == NULL || strlen(input->filename) == 0) {
 		printf("Missing input file name!\n");
 		exit(1);
 	}
-<<<<<<< HEAD
 
 	sprintf(fname, "%s.ds", input->filename);
 	input->ds = load_data(fname, &input->n, &input->d);
 
-=======
-	
-	sprintf(fname, "%s.ds", input->filename);
-	input->ds = load_data(fname, &input->n, &input->d);
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	input->nr = input->n/20;
 
 	sprintf(fname, "%s.qs", input->filename);
@@ -1164,11 +905,6 @@ int main(int argc, char** argv) {
 	//
 	// Visualizza il valore dei parametri
 	//
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	if (!input->silent) {
 		printf("Input file name: '%s'\n", input->filename);
 		printf("Data set size [n]: %d\n", input->n);
@@ -1184,22 +920,12 @@ int main(int argc, char** argv) {
 		}
 		printf("K-means parameters: eps = %.4f, tmin = %d, tmax = %d\n", input->eps, input->tmin, input->tmax);
 	}
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	//
 	// Costruisce i quantizzatori
 	//
 	clock_t t = clock();
 	pqnn_index(input);
 	t = clock() - t;
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	if (!input->silent)
 		printf("\nIndexing time = %.3f secs\n", ((float)t)/CLOCKS_PER_SEC);
 	else
@@ -1208,38 +934,20 @@ int main(int argc, char** argv) {
 	//
 	// Determina gli ANN
 	//
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	input->ANN = calloc(input->nq*input->knn,sizeof(int));
 
 	t = clock();
 	pqnn_search(input);
 	t = clock() - t;
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	if (!input->silent)
 		printf("\nSearching time = %.3f secs\n", ((float)t)/CLOCKS_PER_SEC);
 	else
 		printf("%.3f\n", ((float)t)/CLOCKS_PER_SEC);
-<<<<<<< HEAD
 
 	//
 	// Salva gli ANN
 	//
 
-=======
-	
-	//
-	// Salva gli ANN
-	//
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
  	if (input->ANN != NULL)
  	{
  		if (!input->silent && input->display) {
@@ -1253,11 +961,6 @@ int main(int argc, char** argv) {
  		}
  		save_ANN(input->filename, input->ANN, input->nq, input->knn);
 	}
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 	if (!input->silent)
 		printf("\nDone.\n");
 

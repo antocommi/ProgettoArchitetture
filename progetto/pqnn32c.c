@@ -112,12 +112,15 @@ typedef struct {
 	MATRIX residual_set;
 
 	// Lista di liste (secondo livello dell'inverted index)
-	struct entry *v; 
+	// struct entry *v; 
 
 	float *zero;
 
 	int* celle_voronoi;
 	int* index_voronoi;
+
+	int* index_entry;
+	int* celle_entry;
 } params;
 
 //Entry della s.d. multilivello
@@ -580,47 +583,66 @@ VECTOR qp_of_r(params* input, int r){
 
 // Aggiunge a input.v la entry new alla posizione i-esima
 void add(struct entry * new, int i, params* input){
-	struct entry* vett;
-	vett=input->v;
-	if(vett[i].next==NULL){
-		vett[i].next= new;
-		new->next=NULL;
-	}
-	else{
-		new->next = vett[i].next;
-		vett[i].next = new;
-	}
+// 	struct entry* vett;
+// 	vett=input->v;
+// 	if(vett[i].next==NULL){
+// 		vett[i].next= new;
+// 		new->next=NULL;
+// 	}
+// 	else{
+// 		new->next = vett[i].next;
+// 		vett[i].next = new;
+// 	}
 }
 
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
 void inizializzaSecLiv(params* input){
-	int qc_i, y;//qc_i è l'indice del quantizzatore grossolano associato ad y
+	int qc_i, y, *offset;//qc_i è l'indice del quantizzatore grossolano associato ad y
 	struct entry *res; //res è il residuo
 	
-	input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
-	if(input->v==NULL) exit(-1);
+	offset = _mm_malloc(sizeof(int)*input->n,16);
+	if(offset==NULL) exit(-1);
 
-	for(y=0;y<input->nr;y++){
+	// for(j=0;j<m;j++){
+	// 	jk = j*k;
+	// 	memset(offset,0,input->k*sizeof(int));
+	// 	for(i=0;i<n;i++){
+	// 		// column major order
+	// 		input->index_voronoi[jk + input->pq[i*m+j] ]++; 
+	// 	}
+	// 	for(l=1;l<k;l++){
+	// 		input->index_voronoi[jk+l]+=input->index_voronoi[jk+l-1];
+	// 	}
+	// 	for(int i=0;i<input->n;i++){
+	// 		x = i*m+j;
+	// 		c = input->pq[x];
+	// 		l = n*j + input->index_voronoi[jk+c] + (offset[c]++);
+	// 		input->celle_voronoi[ l ] = x;
+	// 	}
+	// }
+
+	// input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
+	// if(input->v==NULL) exit(-1);
+
+	// for(y=0;y<input->nr;y++){
 		
-		res = _mm_malloc(sizeof(struct entry),16);
-		if(res==NULL) exit(-1);
+	// 	res = _mm_malloc(sizeof(struct entry),16);
+	// 	if(res==NULL) exit(-1);
 
-		qc_i = input->qc_indexes[y];
-		assert(qc_i>=0 && qc_i<input->kc);
-		res->index=y;
-		res->next=NULL;
-		res->q = qp_of_r(input, y);// ritorna il quantizzatore del residuo
-		add(res, qc_i, input); 
-		assert(res->index>=0 && res->index<input->nr);
-	}
+	// 	qc_i = input->qc_indexes[y];
+	// 	assert(qc_i>=0 && qc_i<input->kc);
+	// 	res->index=y;
+	// 	res->next=NULL;
+	// 	// res->q = qp_of_r(input, y);// ritorna il quantizzatore del residuo
+	// 	add(res, qc_i, input); 
+	// 	assert(res->index>=0 && res->index<input->nr);
+	// }
+
+	_mm_free(offset);
 }
 
 
-// Calcola il centroide grossolano associato ad y.
-int qc_index(params* input, int y){ 
-	return input->qc_indexes[y];
-}
 
 // extern void compute_residual_opt(params* input, float* res, int qc_i, int y,float* src);
 void compute_residual(params* input, float* res, int qc_i, int y,float* src){
@@ -641,6 +663,7 @@ void calcola_residui(params* input){
 	// int *indexes=input->qc_indexes; // puntatore al residuo corrente nel residual_codebook
 	for(int y=0;y<input->n;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
+		// OTTIMIZZABILE
 		ry = input->residual_set+y*input->d;
 		
 		compute_residual(input, ry, *(input->qc_indexes+y), y, input->ds); // calcolo del residuo r(y) = y - qc(y)
@@ -649,10 +672,8 @@ void calcola_residui(params* input){
 
 void pqnn_index_non_esaustiva(params* input){
 	int i, j, l, d, m, knn, dStar, *offset, n;
-	int c, k, *index;
-	float* tmp;
+	int c, k, x, jk, *index, tmp;
 	struct kmeans_data* data;
-	// unsigned short *voronoi_cells, *count, *centroidi_assegnati;
 
 	k=input->k;
 	d = input->d;
@@ -663,11 +684,18 @@ void pqnn_index_non_esaustiva(params* input){
 	offset = _mm_malloc(sizeof(int)*input->k,16);
 	if(offset==NULL) exit(-1);
 
+	input->index_entry = _mm_malloc(sizeof(int)*input->kc,16);
+	if(input->index_entry==NULL) exit(-1);
+
+	input->celle_entry = _mm_malloc(sizeof(int)*input->n,16);
+	if(input->celle_entry==NULL) exit(-1);
+
 	input->celle_voronoi = _mm_malloc(sizeof(int)*input->n*input->m,16);
 	if(input->celle_voronoi==NULL) exit(-1);
 	
 	input->index_voronoi = _mm_malloc(sizeof(int)*input->k*input->m,16);
 	if(input->index_voronoi==NULL) exit(-1);
+	memset(input->index_voronoi,0,sizeof(int)*input->k*input->m);
 
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	dStar = input->d/input->m;
@@ -713,10 +741,9 @@ void pqnn_index_non_esaustiva(params* input){
 	
 	calcolaPQ(data, 0, input->d);
 	calcola_residui(input);
-	//nuova aggiunta
+
 	memcpy(input->residual_codebook, input->residual_set, input->k*input->d*sizeof(float));
 	data->dim_source=input->nr;
-	// Settagio parametri k-means
 	data->source = input->residual_set;
 	data->dest = input->residual_codebook;
 	data->index = input->pq;
@@ -727,7 +754,7 @@ void pqnn_index_non_esaustiva(params* input){
 	for(i=0;i<input->m;i++){
 		kmeans(input, data, i*dStar, (i+1)*dStar);
 	}
-	inizializzaSecLiv(input);
+
 	// // Aggiunta degli n-nr
 	data->source = input->ds+input->nr*input->d;
 	data->dest = input->residual_codebook;
@@ -741,29 +768,69 @@ void pqnn_index_non_esaustiva(params* input){
 		calcolaPQ(data, i*dStar, (i+1)*dStar);
 	}
 	
+
 	for(j=0;j<m;j++){
-		//pq= input->pq + j;//p[j];
-		for(i=0;i<input->n;i++){
-			// column major order
-			input->index_voronoi[(input->pq[(i*m+j)])+input->k*j]++; //+j??  
-		}
-
-		//void addToVoronoi(int *celleVoronoi, int* index voronoi, int* offset, int p, int k);
-		for(int x=0;x<input->n;x++){
-			input->celle_voronoi[input->index_voronoi[x+n*j];
-			//*(input->celle_voronoi+*(input->index_voronoi+pq)+*(offset+input->k))=p];
-			offset[x]++; 
-			// dove i inizia la cella di voronoi
-		// offset mi dice quanto si deve spostare da i
-	// // devo mettere p in celleVoronoi 
-		}
-
-		calcola_posizioni(input->index_voronoi+j*input->k);
-
+		jk = j*k;
 		memset(offset,0,input->k*sizeof(int));
+		for(i=0;i<n;i++){
+			// column major order
+			input->index_voronoi[jk + input->pq[i*m+j] ]++; 
+		}
+		x = input->index_voronoi[jk];
+		input->index_voronoi[jk] = 0;
+		for(l=1;l<k;l++){
+			tmp = input->index_voronoi[jk+l];
+			input->index_voronoi[jk+l] = input->index_voronoi[jk+l-1] + x;
+			x = tmp;
+		}
+		for(int i=0;i<n;i++){
+			x = i*m+j;
+			c = input->pq[x];
+			assert(c>=0 && c<k);
+			l = n*j + input->index_voronoi[jk+c] + offset[c]++;
+			assert(l>=n*j && l<n*j+n);
+			input->celle_voronoi[l] = i;
+		}
 	}
+	_mm_free(offset);
+
+	// TOLTO INIZIALIZZASECLIV
+
+	offset = _mm_malloc(sizeof(int)*input->kc,16);
+	if(offset==NULL) exit(-1);
+	memset(offset,0,input->kc*sizeof(int));
+	memset(input->index_entry,0,input->kc*sizeof(int));
+
+	printf("inizio\n");
 	
-    
+	for(i=0;i<n;i++){
+		printf("a\n");
+		input->index_entry[input->qc_indexes[i]]++;
+		printf("b\n");
+	}
+	x = input->index_entry[0];
+	input->index_entry[0] = 0;
+	for(l=1;l<k;l++){
+		printf("c\n");
+		tmp = input->index_entry[l];
+		printf("d\n");
+		input->index_entry[l] = input->index_entry[l-1] + x;
+		printf("e\n");
+		x = tmp;
+		printf("f\n");
+	}
+	for(int i=0;i<n;i++){
+		printf("g\n");
+		c = input->qc_indexes[i];
+		printf("h\n");
+		l = input->index_entry[c] + offset[c]++;
+		printf("i\n");
+		assert(l>=0);
+		input->celle_entry[l] = i;
+		printf("f\n");
+	}
+	printf("fine\n");
+
 	_mm_free(offset);
 	_mm_free(data);
 }
@@ -815,7 +882,7 @@ void pqnn_search_non_esaustiva(params* input){
 		
 		for(int i=0; i<qc_heap->count; i++){
 			curr_qc = (qc_heap->arr)[i].index;
-			curr_pq = ((input->v)[curr_qc]).next;
+			// curr_pq = ((input->v)[curr_qc]).next;
 
 			assert(curr_qc>-1 && curr_qc<input->kc);
 			compute_residual(input, residuo, curr_qc, 0, input->qs);
@@ -852,10 +919,7 @@ void pqnn_search_non_esaustiva(params* input){
 							temp=0;
 					}
 					else{
-						// Si può aggiungere caching delle dist tra pq e query? Usando pq ed un vettore di bit
-						// Sarebbe una matrice k*m*sizeof(float) più vettore/matrice k*m*sizeof(bit)  
-						// dist_asimmetrica_ne(input, residuo, curr_pq->q, dS*j, dS*(j+1), &temp);
-						distanza(residuo+dS*j,curr_pq->q+dS*j,dS,&temp);
+						// distanza(residuo+dS*j,curr_pq->q+dS*j,dS,&temp);
 					} 
 					assert(temp>-1.0);
 					somma += (temp*temp); 
@@ -908,7 +972,8 @@ void pqnn_index(params* input) {
  */
 void pqnn_search(params* input) {
 	if(input->exaustive==0){
-		pqnn_search_non_esaustiva(input);
+		// pqnn_search_non_esaustiva(input);
+		printf("ricerca non esastiva disattivata - rimettere qui\n");
 	}
 		
 

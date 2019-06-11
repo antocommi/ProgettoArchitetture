@@ -839,7 +839,7 @@ void pqnn_search_non_esaustiva(params* input){
 		arr = qp_heap->arr;
 		for(s=0;s<input->knn;s++){
 			input->ANN[query*input->knn+s] = arr[s].index;
-			printf("%d: %d - %.2f\n", query, arr[s].index, sqrtf(arr[s].dist));
+			printf("%d: %d - %.2f\n", query, arr[s].index, arr[s].dist);
 		}
 		
 		_mm_free(qp_heap->arr);

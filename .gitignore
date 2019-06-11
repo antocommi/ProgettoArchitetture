@@ -1,3 +1,4 @@
+progetto/prova/prova.ann
 progetto/compilati*
 progetto/.vscode/*
 progetto/pqnn32c
@@ -9,3 +10,4 @@ progetto/pqnn32c
 *.ANN
 *.o
 *.out
+

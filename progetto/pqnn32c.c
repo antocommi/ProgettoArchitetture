@@ -740,13 +740,12 @@ void pqnn_index_non_esaustiva(params* input){
 
 void pqnn_search_non_esaustiva(params* input){
 	int i, q, p, h, s;
-	int curr_qc;
-	struct entry* curr_pq;
+	int curr_qc, curr_pq;
 	Heap* qc_heap, *qp_heap;
 	struct kmeans_data* data;
 	float dist;
 	struct entry_heap* arr;
-	float * residuo, *q_x; 
+	float *residuo, *q_x; 
 	float somma=0, temp;
 
 	int dS=((input->d)/(input->m)), *qp_query;
@@ -773,8 +772,6 @@ void pqnn_search_non_esaustiva(params* input){
 			distanza(q_x, &input->qc[i*input->d], input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
-		
-		
 
 		arr = qc_heap->arr;
 
@@ -783,41 +780,40 @@ void pqnn_search_non_esaustiva(params* input){
 		
 		for(int i=0; i<qc_heap->count; i++){
 			curr_qc = (qc_heap->arr)[i].index;
-			// curr_pq = ((input->v)[curr_qc]).next;
-
-			assert(curr_qc>-1 && curr_qc<input->kc);
-			compute_residual(input, residuo, curr_qc, 0, input->qs);
-
+			curr_pq = input->index_entry[curr_qc];
+			compute_residual(input, residuo, curr_qc, query, input->qs);
 			if(input->symmetric==1){
-				data->source=residuo;
-				data->dim_source=1;
-				data->dest=input->residual_codebook;
-				data->n_centroidi=input->k;
-				data->index = qp_query;
-				data->d = input->d;
-				data->index_columns = input->m;
-				data->index_rows = 1;
-				for(int l=0;l<input->m;l++){
-					calcolaPQ(data, l*dS, (l+1)*dS);
-				}
+				printf("simmetricaDisattivata\n");
+				// data->source=residuo;
+				// data->dim_source=1;
+				// data->dest=input->residual_codebook;
+				// data->n_centroidi=input->k;
+				// data->index = qp_query;
+				// data->d = input->d;
+				// data->index_columns = input->m;
+				// data->index_rows = 1;
+				// for(int l=0;l<input->m;l++){
+				// 	calcolaPQ(data, l*dS, (l+1)*dS);
+				// }
 			}	
-			while(curr_pq!=NULL){
+			while(curr_pq<input->index_entry[curr_qc]){
 				somma=0;
 				for (int j=0; j<input->m; j++){
 					if(input->symmetric==1){
-						if(qp_query[j] > input->pq[input->m*curr_pq->index+j]){
-							h = qp_query[j];
-							p = input->pq[input->m*curr_pq->index+j];
-						}else{
-							h = input->pq[input->m*curr_pq->index+j];
-							p = qp_query[j];
-						}
-						if(h!=p){
-							assert(j+calcolaIndice(h,p)*input->m>-1 && j+calcolaIndice(h,p)*input->m<input->m*input->k*(input->k-1)/2);
-							temp = input->distanze_simmetriche[j+calcolaIndice(h,p)*input->m];
-						}
-						else
-							temp=0;
+						printf("simmetricaDisattivata\n");
+						// if(qp_query[j] > input->pq[input->m*curr_pq->index+j]){
+						// 	h = qp_query[j];
+						// 	p = input->pq[input->m*curr_pq->index+j];
+						// }else{
+						// 	h = input->pq[input->m*curr_pq->index+j];
+						// 	p = qp_query[j];
+						// }
+						// if(h!=p){
+						// 	assert(j+calcolaIndice(h,p)*input->m>-1 && j+calcolaIndice(h,p)*input->m<input->m*input->k*(input->k-1)/2);
+						// 	temp = input->distanze_simmetriche[j+calcolaIndice(h,p)*input->m];
+						// }
+						// else
+						// 	temp=0;
 					}
 					else{
 						// distanza(residuo+dS*j,curr_pq->q+dS*j,dS,&temp);
@@ -825,8 +821,8 @@ void pqnn_search_non_esaustiva(params* input){
 					assert(temp>-1.0);
 					somma += (temp*temp); 
 				}
-				insert(qp_heap, somma, curr_pq->index);
-				curr_pq = curr_pq->next;
+				insert(qp_heap, somma, curr_pq);
+				curr_pq = curr_pq+1;
 			}
 		}
 
@@ -873,9 +869,7 @@ void pqnn_index(params* input) {
  */
 void pqnn_search(params* input) {
 	if(input->exaustive==0){
-		// pqnn_search_non_esaustiva(input);
-		printf("ricerca non esastiva disattivata - rimettere qui\n");
-		exit(-1);
+		pqnn_search_non_esaustiva(input);
 	}
 		
 

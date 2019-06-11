@@ -125,7 +125,7 @@ struct entry{
 	int index;
 
 	// Residuo q di dimensione d.
-	VECTOR q;
+	// VECTOR q;
 	
 	// VECTOR indexes;
 	
@@ -591,13 +591,6 @@ void add(struct entry * new, int i, params* input){
 		vett[i].next = new;
 	}
 }
-void addToVoronoi (int* celleVoronoi ,int *posizioni, int *offset, int p, int k ){
-	// dove i inizia la cella di voronoi
-	// offset mi dice quanto si deve spostare da i
-	// devo mettere p in celleVoronoi 
-	*(celleVoronoi+*(posizioni+k)+*(offset+k))=p;
-	offset[k]++;
-}
 
 // Inizializza il vettore di entry v in modo tale da avere una lista di liste
 // 
@@ -650,21 +643,23 @@ void calcola_residui(params* input){
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		ry = input->residual_set+y*input->d;
 		
-		compute_residual_opt(input, ry, *(input->qc_indexes+y), y, input->ds); // calcolo del residuo r(y) = y - qc(y)
+		compute_residual(input, ry, *(input->qc_indexes+y), y, input->ds); // calcolo del residuo r(y) = y - qc(y)
 	}
 }
 
 void pqnn_index_non_esaustiva(params* input){
-	int i, j, d, m, knn, dStar, *offset;
+	int i, j, l, d, m, knn, dStar, *offset, n;
+	int c, k, *index;
 	float* tmp;
 	struct kmeans_data* data;
 	// unsigned short *voronoi_cells, *count, *centroidi_assegnati;
 
-
+	k=input->k;
 	d = input->d;
 	knn = input->knn;
 	m = input->m;
-	
+	n = input->n;
+
 	offset = _mm_malloc(sizeof(int)*input->k,16);
 	if(offset==NULL) exit(-1);
 
@@ -706,9 +701,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->n_centroidi = input->kc;
 	data->d=input->d; 
 	data->dim_source = input->nr;
-
 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
-	
 	// Settagio parametri k-means
 	data->source = & input->ds[(input->nr)*input->d];
 	data->dest = input->qc;
@@ -719,7 +712,6 @@ void pqnn_index_non_esaustiva(params* input){
 	data->dim_source = input->n-input->nr;
 	
 	calcolaPQ(data, 0, input->d);
-	
 	calcola_residui(input);
 	//nuova aggiunta
 	memcpy(input->residual_codebook, input->residual_set, input->k*input->d*sizeof(float));
@@ -731,14 +723,11 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_columns=input->m;
 	data->index_rows =input->nr;
 	data->n_centroidi = input->k;
-
 	// calcolo dei quantizzatori prodotto
 	for(i=0;i<input->m;i++){
 		kmeans(input, data, i*dStar, (i+1)*dStar);
 	}
-
 	inizializzaSecLiv(input);
-
 	// // Aggiunta degli n-nr
 	data->source = input->ds+input->nr*input->d;
 	data->dest = input->residual_codebook;
@@ -752,17 +741,8 @@ void pqnn_index_non_esaustiva(params* input){
 		calcolaPQ(data, i*dStar, (i+1)*dStar);
 	}
 	
-	for(j=0;j<m;j++){
-		pq = input->pq + j;
-		for(i=0;i<input->n;i++){
-			pq += 
-			pq += input->m;
-		}
-		calcola_posizioni(input->index_voronoi+j*input->k);
-		
-		memset(offset,0,input->k*sizeof(int));
-	}
-	
+    
+	_mm_free(offset);
 	_mm_free(data);
 }
 

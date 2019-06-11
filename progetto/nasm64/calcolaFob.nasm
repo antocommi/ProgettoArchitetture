@@ -1,7 +1,10 @@
 %include "sseutils64.nasm"
 
 extern distanza
+<<<<<<< HEAD
+=======
 extern printf
+>>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 
 section .data
 d1 db '%d ', 10, 0

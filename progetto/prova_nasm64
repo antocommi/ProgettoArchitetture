@@ -10,4 +10,9 @@ nasm -f elf64 somma.nasm
 nasm -f elf64 creaMatriceDistanze.nasm
 cd ..
 gcc -O3 -m64 -no-pie -mavx ./nasm64/calcolaIndice.o ./nasm64/distanza.o ./nasm64/dist_matrix.o ./nasm64/dist.o ./nasm64/calcolaFob.o ./nasm64/calcolaPQ.o ./nasm64/calcolaSimmetriche.o ./nasm64/somma.o ./nasm64/creaMatriceDistanze.o pqnn64c_opt_nasm.c -lm -o a_opt.out
+<<<<<<< HEAD
 ./a_opt.out ./prova/prova $1 $2 $3
+#./a_opt.out ./prova/deta $1 $2 $3
+=======
+./a_opt.out ./prova/prova $1 $2 $3
+>>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61

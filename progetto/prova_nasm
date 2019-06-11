@@ -7,4 +7,9 @@ nasm -f elf32 dist.nasm
 nasm -f elf32 calcolaFob.nasm
 cd ..
 gcc -O3 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/distanza.o ./nasm32/calcolaPQ.o ./nasm32/dist_matrix.o ./nasm32/dist.o ./nasm32/calcolaFob.o pqnn32c_opt_nasm.c -lm -o a_opt.out
+<<<<<<< HEAD
+#./a_opt.out ./prova/prova $1 $2 $3
+./a_opt.out ./prova/deta $1 $2 $3
+=======
 ./a_opt.out ./prova/prova $1 $2 $3
+>>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61

@@ -683,27 +683,28 @@ void pqnn_index_non_esaustiva(params* input){
 	// Aggiunta dei punti y del dataset in celle_voronoi 
 	// secondo index_voronoi[i] che indica l'inizio della i-esima cella 
 	// sul vettore celle_voronoi rispetto ad ogni sotto-gruppo
-	for(j=0;j<m;j++){
-		jk = j*k;
-		memset(offset,0,input->k*sizeof(int));
-		for(i=0;i<n;i++){
-			// column major order
-			input->index_voronoi[jk + input->pq[i*m+j] ]++; 
-		}
-		x = input->index_voronoi[jk];
-		input->index_voronoi[jk] = 0;
-		for(l=1;l<k;l++){
-			tmp = input->index_voronoi[jk+l];
-			input->index_voronoi[jk+l] = input->index_voronoi[jk+l-1] + x;
-			x = tmp;
-		}
-		for(int i=0;i<n;i++){
-			x = i*m+j;
-			c = input->pq[x];
-			l = n*j + input->index_voronoi[jk+c] + offset[c]++;
-			input->celle_voronoi[l] = i;
-		}
-	}
+	
+	// for(j=0;j<m;j++){
+	// 	jk = j*k;
+	// 	memset(offset,0,input->k*sizeof(int));
+	// 	for(i=0;i<n;i++){
+	// 		// column major order
+	// 		input->index_voronoi[jk + input->pq[i*m+j] ]++; 
+	// 	}
+	// 	x = input->index_voronoi[jk];
+	// 	input->index_voronoi[jk] = 0;
+	// 	for(l=1;l<k;l++){
+	// 		tmp = input->index_voronoi[jk+l];
+	// 		input->index_voronoi[jk+l] = input->index_voronoi[jk+l-1] + x;
+	// 		x = tmp;
+	// 	}
+	// 	for(int i=0;i<n;i++){
+	// 		x = i*m+j;
+	// 		c = input->pq[x];
+	// 		l = n*j + input->index_voronoi[jk+c] + offset[c]++;
+	// 		input->celle_voronoi[l] = i;
+	// 	}
+	// }
 	_mm_free(offset);
 
 	// TOLTO inizializzaSecLiv
@@ -736,10 +737,26 @@ void pqnn_index_non_esaustiva(params* input){
 	_mm_free(data);
 }
 
-
+void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
+	int i, j, l, dStar;
+	float *rx, *ry, *res;
+	dStar=input->d/input->m;
+	res = input->distanze_asimmetriche;
+	rx = residuo;
+	ry = input->residual_codebook;
+	for(j=0;j<input->m;j++){
+		for(i=0;i<input->k;i++){
+			distanza(residuo,ry,dStar,res);
+			*res *= (*res++);
+			ry += input->d;
+		}
+		residuo+=dStar;
+		ry=j*dStar + input->residual_codebook;
+	}
+}
 
 void pqnn_search_non_esaustiva(params* input){
-	int i, q, p, h, s;
+	int i, q, query, j, p, h, s, residui_da_visitare, curr_residual, *ind_centroide;
 	int curr_qc, curr_pq;
 	Heap* qc_heap, *qp_heap;
 	struct kmeans_data* data;
@@ -755,15 +772,20 @@ void pqnn_search_non_esaustiva(params* input){
 	if(residuo==NULL) exit(-1);
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	if(data==NULL) exit(-1);
+
+	
+
 	data->source=input->qs;
 	data->dest=input->qc;
 
 	if(input->symmetric==1){
 		creaMatricedistanze(input, input->residual_codebook);
+	}else{
+		input->distanze_asimmetriche = _mm_malloc(sizeof(float)*input->k*input->m,16);
+		if(input->distanze_asimmetriche==NULL) exit(-1);
 	}
 
-	for(int query=0; query<input->nq; query++){
-		
+	for(query=0; query<input->nq; query++){
 		q_x = &input->qs[query*input->d]; //prende l indirizzo del vettore di query
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 
@@ -782,47 +804,25 @@ void pqnn_search_non_esaustiva(params* input){
 			curr_qc = (qc_heap->arr)[i].index;
 			curr_pq = input->index_entry[curr_qc];
 			compute_residual(input, residuo, curr_qc, query, input->qs);
-			if(input->symmetric==1){
-				printf("simmetricaDisattivata\n");
-				// data->source=residuo;
-				// data->dim_source=1;
-				// data->dest=input->residual_codebook;
-				// data->n_centroidi=input->k;
-				// data->index = qp_query;
-				// data->d = input->d;
-				// data->index_columns = input->m;
-				// data->index_rows = 1;
-				// for(int l=0;l<input->m;l++){
-				// 	calcolaPQ(data, l*dS, (l+1)*dS);
-				// }
-			}	
-			while(curr_pq<input->index_entry[curr_qc]){
-				somma=0;
-				for (int j=0; j<input->m; j++){
-					if(input->symmetric==1){
-						printf("simmetricaDisattivata\n");
-						// if(qp_query[j] > input->pq[input->m*curr_pq->index+j]){
-						// 	h = qp_query[j];
-						// 	p = input->pq[input->m*curr_pq->index+j];
-						// }else{
-						// 	h = input->pq[input->m*curr_pq->index+j];
-						// 	p = qp_query[j];
-						// }
-						// if(h!=p){
-						// 	assert(j+calcolaIndice(h,p)*input->m>-1 && j+calcolaIndice(h,p)*input->m<input->m*input->k*(input->k-1)/2);
-						// 	temp = input->distanze_simmetriche[j+calcolaIndice(h,p)*input->m];
-						// }
-						// else
-						// 	temp=0;
-					}
-					else{
-						// distanza(residuo+dS*j,curr_pq->q+dS*j,dS,&temp);
-					} 
-					assert(temp>-1.0);
-					somma += (temp*temp); 
+			
+			if(input->symmetric==0){
+				creaMatricedistanzeAsimmetriche(input,residuo);
+			}
+
+			if(curr_qc==input->kc-1) 
+				residui_da_visitare=input->n;
+			else 
+				residui_da_visitare = input->index_entry[curr_qc+1];
+			
+			while(curr_pq<residui_da_visitare){
+				curr_residual=input->celle_entry[curr_pq];
+				ind_centroide = input->pq+curr_residual*input->m;
+				for(s=0;s>input->m;s++){
+					somma += input->distanze_asimmetriche[ s*input->k + (*ind_centroide++)];
 				}
 				insert(qp_heap, somma, curr_pq);
-				curr_pq = curr_pq+1;
+				somma=0;
+				curr_pq++;
 			}
 		}
 
@@ -830,7 +830,7 @@ void pqnn_search_non_esaustiva(params* input){
 		
 		//A questo punto i knn vicini sono in qp_heap->arr
 		
-		for(s=0;s<1;s++){
+		for(s=0;s<input->knn;s++){
 			input->ANN[query*input->knn+s] = (qp_heap->arr)[s].index;
 		}
 		

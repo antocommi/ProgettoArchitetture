@@ -1,4 +1,6 @@
-offset delle variabili in kmeans_data
+offset delle variabili in kmeans_data 
+
+x86
 source equ 0
 dim_source equ 4
 index equ 8
@@ -7,6 +9,16 @@ index_rows equ 16
 index_columns equ 20
 n_centroidi equ 24
 d equ 28
+
+x86_64
+source equ 0
+dim_source equ 8
+index 16
+dest 24
+index_rows 32
+index_columns 36
+n_centroidi 40
+d equ 44
 
 offset delle variabili contenute in params da usare nelle funzioni assembly
 
@@ -38,9 +50,12 @@ codebook equ 92
 distanze_simmetriche equ 96
 nDist equ 100
 distanze_asimmetriche equ 104
-qc_eques equ 108
-residual_codebook equ 112
-residual_set equ 116
+qc_indexes equ 108
+qc equ 112
+residual_codebook equ 116
+residual_set equ 120
+v equ 124
+zero equ 128
 
 
 
@@ -72,6 +87,9 @@ codebook equ 120
 distanze_simmetriche equ 128
 nDist equ 136
 distanze_asimmetriche equ 144
-qc_eques equ 152
-residual_codebook equ 160
-residual_set equ 168
+qc_indexes equ 152
+qc equ 160
+residual_codebook equ 168
+residual_set equ 176
+v equ 184
+zero equ 192

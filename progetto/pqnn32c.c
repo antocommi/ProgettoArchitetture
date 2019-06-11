@@ -741,6 +741,28 @@ void pqnn_index_non_esaustiva(params* input){
 		calcolaPQ(data, i*dStar, (i+1)*dStar);
 	}
 	
+	for(j=0;j<m;j++){
+		//pq= input->pq + j;//p[j];
+		for(i=0;i<input->n;i++){
+			// column major order
+			input->index_voronoi[(input->pq[(i*m+j)])+input->k*j]++; //+j??  
+		}
+
+		//void addToVoronoi(int *celleVoronoi, int* index voronoi, int* offset, int p, int k);
+		for(int x=0;x<input->n;x++){
+			input->celle_voronoi[input->index_voronoi[x+n*j];
+			//*(input->celle_voronoi+*(input->index_voronoi+pq)+*(offset+input->k))=p];
+			offset[x]++; 
+			// dove i inizia la cella di voronoi
+		// offset mi dice quanto si deve spostare da i
+	// // devo mettere p in celleVoronoi 
+		}
+
+		calcola_posizioni(input->index_voronoi+j*input->k);
+
+		memset(offset,0,input->k*sizeof(int));
+	}
+	
     
 	_mm_free(offset);
 	_mm_free(data);

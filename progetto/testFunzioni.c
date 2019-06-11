@@ -58,13 +58,35 @@ typedef struct {
 	MATRIX residual_set;
 } params;
 
+typedef struct{
+
+	// Sorgente da cui si impara il codebook
+	float* source;
+
+	int dim_source;
+	
+	// Per ogni vettore contiene il centroide di appartenenza
+	int* index; 
+	
+	// Per ogni riga contiene il centroide per intero
+	float* dest;
+
+	// Dimensione degli index
+	int index_rows,index_columns;
+
+	// Numero di centroidi da calcolare
+	int n_centroidi;
+
+	int d;
+} kmeans_data;
+
 //funzioni necessarie--------------------
 float pow2(float f, float e){
 	return f*f;
 }
 //---------------------------------------
 
-// extern int calcolaIndice(int i, int j);
+extern int calcolaIndice(int i, int j);
 int calcolaIndice2(int i, int j){
 	return i*(i-1)/2+j;
 }
@@ -72,7 +94,7 @@ void calcolaIndice_Test(){
 	int a, b;
 	for(int i=1; i<10; i++){
 		for(int j=0; j<i; j++){
-			//a=calcolaIndice(i, j);
+			a=calcolaIndice(i, j);
 			b=calcolaIndice2(i, j);
 			printf("%d %d\nnasm:%d\n   c:%d\n", i, j, a, b);
 		}
@@ -165,12 +187,82 @@ void calcolaIndice_Test(){
 // 	printf("%f\n", f);
 // }
 
+//extern void distanza(float* punto1, float* punto2, int dimensione, float* r);
+//extern void calcolaFob(params* input, kmeans_data* data, int ipart, int start, int end, float* r);
+// void calcolaFob1(params* input, kmeans_data* data, int ipart, int start, int end, float* r){
+// 	int i;
+// 	float* ind=data->dest+start;
+// 	float* ind2=data->source+start;
+// 	float ret=0;
+// 	float temp;
+// 	for(i=0; i<data->dim_source; i++){
+// 		//distanza(input, input->codebook, input->pq[i*m+ipart], i, start, end, &temp);
+// 		distanza(ind+data->index[i*input->m+ipart]*data->d, ind2, end-start, &temp);
+// 		//printf("%f\n", temp);
+// 		printf("%f\n", temp);
+// 		ret+=pow2(temp, 2.0);
+// 		//printf("%f\n", fob2);
+// 		ind2+=data->d;
+// 	}
+// 	*r=ret;
+// }
+// void calcolaFob_Test(){
+// 	params* input=_mm_malloc(sizeof(params), 16);
+// 	kmeans_data* data=_mm_malloc(sizeof(kmeans_data), 16);
+// 	data->d=16;
+// 	input->m=4;
+// 	int sx=10;
+// 	int sy=data->d;
+// 	int dx=10;
+// 	int dy=data->d;
+// 	int ix=sx;
+// 	int iy=input->m;
+// 	data->source=_mm_malloc(sx*sy*sizeof(double), 16);
+// 	data->dest=_mm_malloc(dx*dy*sizeof(double), 16);
+// 	data->dim_source=sx;
+// 	data->index=_mm_malloc(ix*iy*sizeof(int), 16);
+// 	printf("source\n");
+// 	for(int i=0; i<sx; i++){
+// 		for(int j=0; j<sy; j++){
+// 			data->source[i*sy+j]=(float)rand()/(float)RAND_MAX;
+// 			printf("%f ", data->source[i*sy+j]);
+// 		}
+// 		printf("\n");
+// 	}
+// 	printf("\ndest\n");
+// 	for(int i=0; i<dx; i++){
+// 		for(int j=0; j<dy; j++){
+// 			data->dest[i*dy+j]=(float)rand()/(float)RAND_MAX;
+// 			printf("%f ", data->dest[i*dy+j]);
+// 		}
+// 		printf("\n");
+// 	}
+// 	printf("\nindex\n");
+// 	for(int i=0; i<ix; i++){
+// 		for(int j=0; j<iy; j++){
+// 			data->index[i*iy+j]=i;
+// 			printf("%d ", data->index[i*iy+j]);
+// 		}
+// 		printf("\n");
+// 	}
+// 	int ipart=1;
+// 	int dm=data->d/input->m;
+// 	float t1;
+// 	float t2;
+// 	printf("prima c\n");
+// 	calcolaFob1(input, data, ipart, ipart*dm, (ipart+1)*dm, &t1);
+// 	printf("dopo c\nprima assembly\n");
+// 	calcolaFob(input, data, ipart, ipart*dm, (ipart+1)*dm, &t2);
+// 	printf("dopo assembly\n");
+// 	printf("C:\t\t%f\nAssembly:\t%f\n", t1, t2);
+// }
 
-extern void testdiv(int n);
+//extern void testdiv(int n);
 int main(int argc, char** argv) {
-	//calcolaIndice_Test();
+	calcolaIndice_Test();
 	//dist_eI_Test();
 	//dist_simmetricaI_Test();
-	testdiv(2);
+	//testdiv(2);
+	//calcolaFob_Test();
 	return 0;
 }

@@ -1,0 +1,122 @@
+extern distanza
+extern printf
+
+section .data
+;d1 db '%d ', 10, 0
+f db '%f ', 10, 0
+;break db 'breakpoint', 10, 0
+
+section .bss
+temp: resd 1
+
+section .text
+
+global calcolaFob
+
+
+r equ 28
+end equ 24
+start equ 20
+ipart equ 16
+data equ 12
+input equ 8
+
+;params
+m equ 28
+
+;kmeans_data
+source equ 0
+dim_source equ 4
+index equ 8
+dest equ 12
+d equ 28
+
+punto1 equ -48
+punto2 equ -44
+dimensione equ -40
+cr equ -36
+
+
+calcolaFob:
+		push ebp
+		mov	ebp, esp
+		pushad		;inizio
+		sub esp, 16
+
+		; pushad
+		; push temp
+		; push f
+		; call printf
+		; add esp, 8
+		; popad
+
+		mov dword [ebp+cr], temp			;primo parametro distanza
+		mov eax, [ebp+end]
+		mov ebx, [ebp+start]
+		sub eax, ebx
+		mov [ebp+dimensione], eax			;secondo parametro distanza
+		mov ecx, [ebp+data]					;ecx=data
+		mov edx, [ebp+input]				;edx=input
+		imul ebx, 4							;solito problema
+		
+		;imul ebx, 4			;boh
+		mov eax, ebx
+		add ebx, [ecx+source]
+		mov [ebp+punto2], ebx				;terzo parametro distanza
+		mov esi, [ecx+dim_source]			;ciclo
+
+		mov ebx, [ebp+ipart]
+		imul ebx, 4
+		add ebx, [ecx+index]				;ebx=index[ipart]
+		add eax, [ecx+dest]					;eax=dest+start
+
+		mov edx, [edx+m]					;edx=m
+		imul edx, 4
+		mov ecx, [ecx+d]					;ecx=d
+		imul ecx, 4
+		xorps xmm7, xmm7
+		
+		mov edi, [ebx]
+		imul edi, ecx
+		add edi, eax
+		mov [ebp+punto1], edi
+
+ciclo:	cmp esi, 0
+		jle fine
+
+		; pushad
+		; push esi
+		; push d1
+		; call printf
+		; add esp, 8
+		; popad
+
+		call distanza
+		movss xmm0, [temp]	;non necessaria, il valore è già in xmm0
+		mulss xmm0, xmm0
+
+		; pushad
+		; push esi
+		; push d1
+		; call printf
+		; add esp, 8
+		; popad
+		
+		addss xmm7, xmm0
+		add [ebp+punto2], edx		;aggiornamento terzo parametro
+
+		add ebx, edx
+		mov edi, [ebx]
+		imul edi, ecx
+		add edi, eax
+		mov [ebp+punto1], edi		;aggiornamento quarto parametro
+
+		dec esi
+		jmp ciclo
+fine:	mov eax, [ebp+r]
+		movss [eax], xmm7
+		add esp, 16
+		popad		;fine
+		mov	esp, ebp
+		pop	ebp
+		ret

@@ -58,7 +58,7 @@ cicloQ: cmp esi, eax
         add esi,16
         jmp cicloQ
        
-fineQ:  add eax, 12
+fineQ:  add eax, 16
 cicloR1:cmp esi, eax
         jg fineR1
         movaps xmm0, [ebx+4*esi]

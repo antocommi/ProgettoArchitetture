@@ -1,11 +1,11 @@
 extern distanza
-
 extern printf
 
 section .data
 max dd 1.79E+308
-d1 db '%d '
-;d2 db '%d %d '
+;f db '%f ', 10, 0
+d1 db '%d ', 10, 0
+d2 db 'i%d j%d ', 10, 0
 ;break db 'breakpoint', 10, 0
 
 section .bss
@@ -15,8 +15,9 @@ section .text
 
 global calcolaPQ
 
-end equ 16
-startt equ 12
+end equ 20
+startt equ 16
+partition equ 12
 data equ 8
 
 source equ 0
@@ -28,91 +29,111 @@ index_columns equ 20
 n_centroidi equ 24
 d equ 28
 
+; punto1 equ -28
+; punto2 equ -24
+; dimensione equ -20
+; r equ -16
+
+punto1 equ -48
+punto2 equ -44
+dimensione equ -40
+r equ -36
+
 calcolaPQ:
 		push ebp
 		mov	ebp, esp
-		push ebx
-		push esi
-		push edi	;inizio
-		
+		pushad		;inizio
+		sub esp, 16
 		mov edx, [ebp+data]				;edx=data
-		mov eax, [ebp+startt]			;ind=start
-		imul eax, [edx+index_columns]	;ind=start*index_columns
-		mov ecx, dword [edx+d]
-		cdq
-		idiv ecx				;ind=start*index_columns/d
-		mov edx, [ebp+data]				;edx=data
-		imul eax, 4						; solito problema  poi modificare con shift
-		add eax, [edx+index] 			;ind=start*index_columns/d+index
 
-		push temp						;  primo parametro funzione dist
-		mov ecx, [ebp+end]
-		sub ecx, [ebp+startt]
-		push ecx						;  secondo parametro funzione dist
-		mov ecx, [ebp+startt]			;ind1=start
-		imul ecx, 4						; solito problema  poi modificare con shift
-		add ecx, [edx+source]			;ind1=start+source
-		push ecx						;  terzo parametro funzione dist
+		mov ecx, [ebp+partition]		;ind=partition
+		sal ecx, 2						; solito problema
+		add ecx, [edx+index]			;ind=partition+data->index
+
+		;push temp						;  primo parametro funzione dist
+		mov dword [ebp+r], temp
+
+
+		mov eax, [ebp+end]
+		sub eax, [ebp+startt]
+
+		;push eax						;  secondo parametro funzione dist
+		mov [ebp+dimensione], eax
+
+		mov eax, [ebp+startt]			;ind1=start
+		sal eax, 2						; solito problema  poi modificare con shift
+		add eax, [edx+source]			;ind1=start+source
+
+		;push eax						;  terzo parametro funzione dist
+		mov [ebp+punto2], eax
+
 		mov ebx, [edx+d]
-		imul ebx, 4
+		sal ebx, 2
 
-		mov esi, [edx+dim_source]		;end loop i
-forI:	cmp esi, 0
-		jle endI						;controllare condizione
-		movss xmm0, [max]
-		mov ecx, [ebp+startt]			;ind2=start
-		imul ecx, 4						; solito problema  poi modificare con shift
-		add ecx, [edx+dest]				;ind2=start+dest
-		push ecx						;  quarto parametro funzione dist
+		xor esi, esi		;end loop i
+forI:	cmp esi, [edx+dim_source]
+		jge endI						;controllare condizione
+		movss xmm5, [max]
+		mov eax, [ebp+startt]			;ind2=start
+		sal eax, 2						; solito problema  poi modificare con shift
+		add eax, [edx+dest]				;ind2=start+dest
 
-		pushad							;inizio stampa
-		push esi
-		push dword d1
-		call printf
-		add esp, 12
-		popad
+		;push eax						;  quarto parametro funzione dist
+		mov [ebp+punto1], eax
 
 		xor edi, edi
 forJ:	cmp edi, [edx+n_centroidi]
 		jge endJ						;controllare condizione
 
-		pushad							;inizio stampa
-		push edi
-		push dword d1
-		call printf
-		add esp, 12
-		popad							;fine stampa
+		; pushad
+		; push edi
+		; push esi
+		; push dword d2
+		; call printf
+		; add esp, 12
+		; popad
 
 		call distanza
-		movss xmm1, [temp]
-		comiss xmm1, xmm0
-		jge endif
-		movss xmm0, xmm1
-		mov [eax], edi
-endif:	pop ecx
-		add ecx, ebx
-		push ecx
+		;movss xmm0, [temp]		;istruzione non necessaria, la funzione distanza ha già messo il risultato in xmm0
+		
+		comiss xmm0, xmm5
+		jae endif
+		movss xmm5, xmm0
+
+		mov [ecx], edi
+
+endif:	;pop eax
+		;add eax, ebx
+		;push eax
+		add [ebp+punto1], ebx
+
+		inc edi
 		jmp forJ
-endJ:	pop ecx
-		pop ecx
-		add ecx, ebx
-		push ecx
-		mov ecx, [edx+index_columns]
-		imul ecx, 4
-		add eax, ecx
+endJ:
+
+		;pop eax
+		;add esp, 4	;sostituisce pop eax, forse è meglio
+		;pop eax
+		;add eax, ebx
+		;push eax
+		add [ebp+punto2], ebx
+
+		mov eax, [edx+index_columns]
+		sal eax, 2
+		add ecx, eax
+
+		inc esi
 		jmp forI
-endI:	pop	edi		;fine
-		pop	esi
-		pop	ebx
+endI:	add esp, 16
+		popad		;fine
 		mov	esp, ebp
 		pop	ebp
 		ret
 
 
-;eax ind
-;ebx endj
-;ecx temporaneo puntatori
+;ecx ind
+;ebx 4*d
+;eax temporaneo puntatori e minimo
 ;edx data
 ;esi i
 ;edi j
-

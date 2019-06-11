@@ -671,7 +671,7 @@ void calcola_residui(params* input){
 }
 
 void pqnn_index_non_esaustiva(params* input){
-	int i, j, l, d, m, knn, dStar, *offset, n;
+	int i, j, l, d, m, knn, dStar, *offset, *offset2, n;
 	int c, k, x, jk, *index, tmp;
 	struct kmeans_data* data;
 
@@ -786,9 +786,7 @@ void pqnn_index_non_esaustiva(params* input){
 		for(int i=0;i<n;i++){
 			x = i*m+j;
 			c = input->pq[x];
-			assert(c>=0 && c<k);
 			l = n*j + input->index_voronoi[jk+c] + offset[c]++;
-			assert(l>=n*j && l<n*j+n);
 			input->celle_voronoi[l] = i;
 		}
 	}
@@ -796,42 +794,27 @@ void pqnn_index_non_esaustiva(params* input){
 
 	// TOLTO INIZIALIZZASECLIV
 
-	offset = _mm_malloc(sizeof(int)*input->kc,16);
-	if(offset==NULL) exit(-1);
-	memset(offset,0,input->kc*sizeof(int));
+	offset2 = _mm_malloc(sizeof(int)*input->kc,16);
+	if(offset2==NULL) exit(-1);
+	memset(offset2,0,input->kc*sizeof(int));
 	memset(input->index_entry,0,input->kc*sizeof(int));
-
-	printf("inizio\n");
-	
 	for(i=0;i<n;i++){
-		printf("a\n");
 		input->index_entry[input->qc_indexes[i]]++;
-		printf("b\n");
 	}
 	x = input->index_entry[0];
 	input->index_entry[0] = 0;
-	for(l=1;l<k;l++){
-		printf("c\n");
+	for(l=1;l<input->kc;l++){
 		tmp = input->index_entry[l];
-		printf("d\n");
 		input->index_entry[l] = input->index_entry[l-1] + x;
-		printf("e\n");
 		x = tmp;
-		printf("f\n");
 	}
 	for(int i=0;i<n;i++){
-		printf("g\n");
 		c = input->qc_indexes[i];
-		printf("h\n");
-		l = input->index_entry[c] + offset[c]++;
-		printf("i\n");
-		assert(l>=0);
+		l = input->index_entry[c] + offset2[c]++;
 		input->celle_entry[l] = i;
-		printf("f\n");
 	}
-	printf("fine\n");
 
-	_mm_free(offset);
+	_mm_free(offset2);
 	_mm_free(data);
 }
 
@@ -974,6 +957,7 @@ void pqnn_search(params* input) {
 	if(input->exaustive==0){
 		// pqnn_search_non_esaustiva(input);
 		printf("ricerca non esastiva disattivata - rimettere qui\n");
+		exit(-1);
 	}
 		
 

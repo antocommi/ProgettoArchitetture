@@ -739,18 +739,19 @@ void pqnn_index_non_esaustiva(params* input){
 
 void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 	int i, j, l, dStar;
-	float *rx, *ry, *res;
+	float *rx, *ry, *res, tmp;
 	dStar=input->d/input->m;
 	res = input->distanze_asimmetriche;
 	rx = residuo;
 	ry = input->residual_codebook;
 	for(j=0;j<input->m;j++){
 		for(i=0;i<input->k;i++){
-			distanza(residuo,ry,dStar,res);
-			*res *= (*res++);
+			distanza(rx,ry,dStar,&tmp);
+			*res = tmp*tmp;
+			res++;
 			ry += input->d;
 		}
-		residuo+=dStar;
+		rx += dStar;
 		ry=j*dStar + input->residual_codebook;
 	}
 }
@@ -789,7 +790,8 @@ void pqnn_search_non_esaustiva(params* input){
 
 		//potrei aggiungere un metodo restore su heap?
 		for(i=0;i<input->kc;i++){
-			distanza(q_x, &input->qc[i*input->d], input->d, &dist); //distanza tra la query e il centroide grossolano
+			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
+			// printf("dist: %.2f\n",dist);
 			insert(qc_heap, dist, i);
 		}
 		
@@ -798,15 +800,22 @@ void pqnn_search_non_esaustiva(params* input){
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		
-		for(int i=0; i<qc_heap->count; i++){
-			curr_qc = (qc_heap->arr)[i].index;
+		for(int i=0; i<input->w; i++){
+			curr_qc = arr[i].index;
 			curr_pq = input->index_entry[curr_qc];
 			compute_residual(input, residuo, curr_qc, query, input->qs);
-			
+
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
 			}
 
+			// for(s=0;s<input->m*input->k;s++){
+			// 	if(s==input->k)
+			// 		exit(-1);
+			// 	printf(" %.2f", input->distanze_asimmetriche[s]);
+			// }
+
+			// exit(-1);
 			if(curr_qc==input->kc-1) 
 				residui_da_visitare=input->n;
 			else 
@@ -815,29 +824,30 @@ void pqnn_search_non_esaustiva(params* input){
 			while(curr_pq<residui_da_visitare){
 				curr_residual=input->celle_entry[curr_pq];
 				ind_centroide = input->pq+curr_residual*input->m;
-				for(s=0;s>input->m;s++){
-					somma += input->distanze_asimmetriche[ s*input->k + (*ind_centroide++)];
+				for(s=0;s<input->m;s++){
+					somma += input->distanze_asimmetriche[s*input->k+(*ind_centroide)];
+					ind_centroide++;
 				}
+				// printf("prima dist: %.2f index: %d \n",qp_heap->arr[0].dist,qp_heap->arr[0].index);
 				insert(qp_heap, somma, curr_pq);
+				// printf("dopo dist: %.2f index: %d \n",qp_heap->arr[0].dist,qp_heap->arr[0].index);
 				somma=0;
 				curr_pq++;
 			}
 		}
-
-		
-		
 		//A questo punto i knn vicini sono in qp_heap->arr
-		
+		arr = qp_heap->arr;
 		for(s=0;s<input->knn;s++){
-			input->ANN[query*input->knn+s] = (qp_heap->arr)[s].index;
+			input->ANN[query*input->knn+s] = arr[s].index;
+			printf("%d: %d - %.2f\n", query, arr[s].index, sqrtf(arr[s].dist));
 		}
 		
-
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);
 		_mm_free(qp_heap);
 		_mm_free(qc_heap);
 	}
+	_mm_free(residuo);
 	_mm_free(data);
 }
 

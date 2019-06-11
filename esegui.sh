@@ -6,5 +6,5 @@
 # cd ..
 
 # VALGRIND
-gcc -g -O1 -m32 ./progetto/pqnn32c.c -o ./progetto/pqnn32c2
-valgrind --leak-check=yes -v ./progetto/pqnn32c2 ./progetto/prova/prova -noexaustive -kc 100 -nr 400
+gcc -g -O1 -m32 ./progetto/pqnn32c.c -o ./progetto/pqnn32c
+valgrind --leak-check=yes -v ./progetto/pqnn32c ./progetto/prova/prova -noexaustive -kc 100 -nr 400

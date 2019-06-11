@@ -114,7 +114,7 @@ typedef struct {
 	// Lista di liste (secondo livello dell'inverted index)
 	// struct entry *v; 
 
-	float *zero;
+	float *zero; //SERVE?
 
 	int* celle_voronoi;
 	int* index_voronoi;
@@ -123,7 +123,8 @@ typedef struct {
 	int* celle_entry;
 } params;
 
-//Entry della s.d. multilivello
+//Entry della s.d. multilivello 
+// DA ELIMINARE NON SERVE PIÙ
 struct entry{
 	int index;
 
@@ -179,8 +180,6 @@ typedef struct Heap Heap;
 Heap* CreateHeap(int capacity);	
 
 void insert(Heap *h, float key, int index);	
-
-void addToVoronoi(int *celleVoronoi, int* posizioni, int* offset, int p, int k);
 
 void heapify_bottom_top(Heap *h,int index);
 
@@ -452,33 +451,6 @@ void calcolaPQ(kmeans_data* data, int start, int end){
 	}
 }
 
-void calcolaPQVoronoi(kmeans_data* data, int start, int end){
-	// Dei primi input->k ed i primi input->kc già si conosce l'index
-	// Per cui si può evitare di calcolare il più vicino.  
-	int i, j;
-	int m=data->index_columns;
-	float min;
-	float temp;
-	float *ind1, *ind2;
-	int* ind=data->index+start/((data->d)/(data->index_columns));
-	ind1=data->source+start;
-	for(i=0; i<data->dim_source; i++){// per ogni vettore del dataset
-		min=FLT_MAX; //modificato
-		ind2=data->dest+start;// destinazione
-		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
-			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
-			if(temp<min){ 
-				min=temp;
-				*ind=j;
-			}
-			ind2+=data->d;
-		}
-		// printf("distanza minima trovata: %f\n",min );
-		ind+=m;
-		ind1+=data->d;
-	}
-}
-
 float absf(float f){
 	if(f>0){
 		return f;
@@ -509,7 +481,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	calcolaPQ(data, start, end);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
-	for(t=0; t<input->tmin || (t<input->tmax && absf(fob1-fob2) > input->eps); t++){
+	for(t=0; t<input->tmin || (t<input->tmax && absf(fob1-fob2)/fob1 > input->eps); t++){
 		ci=data->dest+start;
 		for(i=0; i<data->n_centroidi; i++){
 			count=0;
@@ -581,68 +553,6 @@ VECTOR qp_of_r(params* input, int r){
 	return res;
 }
 
-// Aggiunge a input.v la entry new alla posizione i-esima
-void add(struct entry * new, int i, params* input){
-// 	struct entry* vett;
-// 	vett=input->v;
-// 	if(vett[i].next==NULL){
-// 		vett[i].next= new;
-// 		new->next=NULL;
-// 	}
-// 	else{
-// 		new->next = vett[i].next;
-// 		vett[i].next = new;
-// 	}
-}
-
-// Inizializza il vettore di entry v in modo tale da avere una lista di liste
-// 
-void inizializzaSecLiv(params* input){
-	int qc_i, y, *offset;//qc_i è l'indice del quantizzatore grossolano associato ad y
-	struct entry *res; //res è il residuo
-	
-	offset = _mm_malloc(sizeof(int)*input->n,16);
-	if(offset==NULL) exit(-1);
-
-	// for(j=0;j<m;j++){
-	// 	jk = j*k;
-	// 	memset(offset,0,input->k*sizeof(int));
-	// 	for(i=0;i<n;i++){
-	// 		// column major order
-	// 		input->index_voronoi[jk + input->pq[i*m+j] ]++; 
-	// 	}
-	// 	for(l=1;l<k;l++){
-	// 		input->index_voronoi[jk+l]+=input->index_voronoi[jk+l-1];
-	// 	}
-	// 	for(int i=0;i<input->n;i++){
-	// 		x = i*m+j;
-	// 		c = input->pq[x];
-	// 		l = n*j + input->index_voronoi[jk+c] + (offset[c]++);
-	// 		input->celle_voronoi[ l ] = x;
-	// 	}
-	// }
-
-	// input->v = _mm_malloc(sizeof(struct entry)*input->kc,16);
-	// if(input->v==NULL) exit(-1);
-
-	// for(y=0;y<input->nr;y++){
-		
-	// 	res = _mm_malloc(sizeof(struct entry),16);
-	// 	if(res==NULL) exit(-1);
-
-	// 	qc_i = input->qc_indexes[y];
-	// 	assert(qc_i>=0 && qc_i<input->kc);
-	// 	res->index=y;
-	// 	res->next=NULL;
-	// 	// res->q = qp_of_r(input, y);// ritorna il quantizzatore del residuo
-	// 	add(res, qc_i, input); 
-	// 	assert(res->index>=0 && res->index<input->nr);
-	// }
-
-	_mm_free(offset);
-}
-
-
 
 // extern void compute_residual_opt(params* input, float* res, int qc_i, int y,float* src);
 void compute_residual(params* input, float* res, int qc_i, int y,float* src){
@@ -686,6 +596,7 @@ void pqnn_index_non_esaustiva(params* input){
 
 	input->index_entry = _mm_malloc(sizeof(int)*input->kc,16);
 	if(input->index_entry==NULL) exit(-1);
+	memset(input->index_entry,0,input->kc*sizeof(int));
 
 	input->celle_entry = _mm_malloc(sizeof(int)*input->n,16);
 	if(input->celle_entry==NULL) exit(-1);
@@ -730,6 +641,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->d=input->d; 
 	data->dim_source = input->nr;
 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
+	
 	// Settagio parametri k-means
 	data->source = & input->ds[(input->nr)*input->d];
 	data->dest = input->qc;
@@ -738,7 +650,6 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_rows = input->n-input->nr;
 	data->n_centroidi = input->kc;
 	data->dim_source = input->n-input->nr;
-	
 	calcolaPQ(data, 0, input->d);
 	calcola_residui(input);
 
@@ -750,6 +661,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_columns=input->m;
 	data->index_rows =input->nr;
 	data->n_centroidi = input->k;
+
 	// calcolo dei quantizzatori prodotto
 	for(i=0;i<input->m;i++){
 		kmeans(input, data, i*dStar, (i+1)*dStar);
@@ -768,7 +680,9 @@ void pqnn_index_non_esaustiva(params* input){
 		calcolaPQ(data, i*dStar, (i+1)*dStar);
 	}
 	
-
+	// Aggiunta dei punti y del dataset in celle_voronoi 
+	// secondo index_voronoi[i] che indica l'inizio della i-esima cella 
+	// sul vettore celle_voronoi rispetto ad ogni sotto-gruppo
 	for(j=0;j<m;j++){
 		jk = j*k;
 		memset(offset,0,input->k*sizeof(int));
@@ -792,12 +706,14 @@ void pqnn_index_non_esaustiva(params* input){
 	}
 	_mm_free(offset);
 
-	// TOLTO INIZIALIZZASECLIV
+	// TOLTO inizializzaSecLiv
+	// Aggiunta dei punti r(y) del residual_set in celle_entry 
+	// secondo index_entry[i] che indica l'inizio della i-esima cella 
+	// sul vettore celle_entry.
+	offset = _mm_malloc(sizeof(int)*input->kc,16);
+	if(offset==NULL) exit(-1);
+	memset(offset,0,input->kc*sizeof(int));
 
-	offset2 = _mm_malloc(sizeof(int)*input->kc,16);
-	if(offset2==NULL) exit(-1);
-	memset(offset2,0,input->kc*sizeof(int));
-	memset(input->index_entry,0,input->kc*sizeof(int));
 	for(i=0;i<n;i++){
 		input->index_entry[input->qc_indexes[i]]++;
 	}
@@ -810,11 +726,13 @@ void pqnn_index_non_esaustiva(params* input){
 	}
 	for(int i=0;i<n;i++){
 		c = input->qc_indexes[i];
-		l = input->index_entry[c] + offset2[c]++;
+		l = input->index_entry[c] + offset[c]++;
 		input->celle_entry[l] = i;
 	}
 
-	_mm_free(offset2);
+	
+
+	_mm_free(offset);
 	_mm_free(data);
 }
 

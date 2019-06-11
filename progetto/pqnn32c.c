@@ -765,9 +765,7 @@ void pqnn_search_non_esaustiva(params* input){
 	float *residuo, *q_x; 
 	float somma=0, temp;
 
-	int dS=((input->d)/(input->m)), *qp_query;
-	qp_query = _mm_malloc(sizeof(int)*input->m,16);
-	if(qp_query==NULL) exit(-1);
+	int dS=((input->d)/(input->m));
 	residuo= _mm_malloc(sizeof(float)*input->d,16);
 	if(residuo==NULL) exit(-1);
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
@@ -794,7 +792,7 @@ void pqnn_search_non_esaustiva(params* input){
 			distanza(q_x, &input->qc[i*input->d], input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
-
+		
 		arr = qc_heap->arr;
 
 		qp_heap = CreateHeap(input->knn);

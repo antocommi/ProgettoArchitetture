@@ -5,11 +5,7 @@ extern distanza
 section .data
 max dd 1.79E+308
 ;f db '%f ', 10, 0
-<<<<<<< HEAD
 d1 db '%ld ';, 10, 0
-=======
-;d1 db '%d ', 10, 0
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 d2 db 'i%ld j%ld ', 10, 0
 d3 db '%ld %ld %ld ', 10, 0
 d4 db '%ld %ld %ld %ld ', 10, 0
@@ -79,7 +75,6 @@ forI:	cmp rcx, 0
 		mov rsi, r11
 		sal rsi, 2
 		add rsi, [r9+dest];ind2=dest+start
-<<<<<<< HEAD
 
 ; 		pushaq
 ;  		cmp r11, 0
@@ -88,14 +83,11 @@ forI:	cmp rcx, 0
 ;  		mov rdi, d1
 ;  		call printf
 ; boh:	popaq
-=======
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 		
 		vmovss xmm5, xmm6	;max
 		xor rax, rax
 forJ:	cmp rax, r8
 		jge endJ
-<<<<<<< HEAD
 		
 ;  		pushaq
 ;  		cmp r11, 0
@@ -121,31 +113,20 @@ forJ:	cmp rax, r8
 		vcomiss xmm0, xmm5
 		jae endif
 
-=======
-
-		call distanza
-
-		vcomiss xmm0, xmm5
-		jae endif
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 		vmovss xmm5, xmm0
 		mov [r10], eax
 endif:	add rsi, r12
 		inc rax
-<<<<<<< HEAD
 
 		; pushaq
 		; mov edi, break
 		; call printf
 		; popaq
 
-=======
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 		jmp forJ
 endJ:	add r10, rbx
 		add rdi, r12
 		dec rcx
-<<<<<<< HEAD
 
 ; 		pushaq
 ;  		cmp r11, 0
@@ -155,8 +136,6 @@ endJ:	add r10, rbx
 ;  		call printf
 ; boh1:	popaq
 
-=======
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 		jmp forI
 endI:	;popad		;fine
 		;popaq

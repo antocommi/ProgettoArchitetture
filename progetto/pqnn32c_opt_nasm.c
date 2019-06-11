@@ -371,7 +371,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
-	for(t=0; t<input->tmin || (t<input->tmax && fabs(fob2-fob1) > input->eps); t++){
+	for(t=0; t<input->tmin || (t<input->tmax && fabs(fob2-fob1)/fob1 > input->eps); t++){
 		ci=data->dest+start;
 		for(i=0; i<data->n_centroidi; i++){
 			count=0;

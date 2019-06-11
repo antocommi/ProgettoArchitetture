@@ -75,7 +75,7 @@ cicloQ:	cmp rcx, rax
 		vperm2f128 ymm13, ymm11, ymm12, 00100000b
 		;vperm2f128 ymm11, ymm11, ymm13, 00100000b
 
-		vmovaps [r8+4*rcx-32], ymm13
+		vmovups [r8+4*rcx-32], ymm13
 
 		jmp cicloQ
 endQ:	add rax, 4
@@ -96,7 +96,7 @@ cicloQ2:cmp rcx, rax
 		vinsertps xmm11, xmm0, 00110000b
 		inc rcx
 
-		vmovaps [r8+4*rcx-16], xmm11
+		vmovups [r8+4*rcx-16], xmm11
 
 		jmp cicloQ2
 endQ2:	add rax, 4

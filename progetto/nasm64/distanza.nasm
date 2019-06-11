@@ -24,19 +24,15 @@ distanza:
 
 		vxorps ymm0, ymm0
 		xor rbx, rbx
-<<<<<<< HEAD
-		jmp cicloR
+		;jmp cicloR
 		sub rdx, 16
-=======
-		sub rdx, 16				;i=0
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 cicloQ:	cmp rbx, rdx				;i < end-start
 		jg endQ
 
-		vmovaps ymm1, [rdi+4*rbx]
-		vmovaps ymm3, [rdi+4*rbx+32]
-		vmovaps ymm2, [rsi+4*rbx]
-		vmovaps ymm4, [rsi+4*rbx+32]
+		vmovups ymm1, [rdi+4*rbx]
+		vmovups ymm3, [rdi+4*rbx+32]
+		vmovups ymm2, [rsi+4*rbx]
+		vmovups ymm4, [rsi+4*rbx+32]
 
 		vsubps ymm1, ymm2
 		vsubps ymm3, ymm4
@@ -51,8 +47,8 @@ endQ:	add rdx, 8
 		cmp rbx, rdx
 		jg somme
 
-		vmovaps ymm1, [rdi+4*rbx]
-		vmovaps ymm2, [rsi+4*rbx]
+		vmovups ymm1, [rdi+4*rbx]
+		vmovups ymm2, [rsi+4*rbx]
 
 		vsubps ymm1, ymm2
 		vmulps ymm1, ymm1
@@ -67,10 +63,6 @@ somme:	add rdx, 8
 		
 cicloR:	cmp rbx, rdx
 		jge endloop
-<<<<<<< HEAD
-
-=======
->>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 		vmovss xmm1, [rdi+4*rbx]
 		vsubss xmm1, [rsi+4*rbx]
 		vmulss xmm1, xmm1

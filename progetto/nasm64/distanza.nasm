@@ -24,7 +24,12 @@ distanza:
 
 		vxorps ymm0, ymm0
 		xor rbx, rbx
+<<<<<<< HEAD
+		jmp cicloR
+		sub rdx, 16
+=======
 		sub rdx, 16				;i=0
+>>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 cicloQ:	cmp rbx, rdx				;i < end-start
 		jg endQ
 
@@ -62,6 +67,10 @@ somme:	add rdx, 8
 		
 cicloR:	cmp rbx, rdx
 		jge endloop
+<<<<<<< HEAD
+
+=======
+>>>>>>> 7409d2b8a25360b6831cc8a233aae675d7771b61
 		vmovss xmm1, [rdi+4*rbx]
 		vsubss xmm1, [rsi+4*rbx]
 		vmulss xmm1, xmm1

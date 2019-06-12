@@ -367,6 +367,20 @@ void save_ANN(char* filename, int* ANN, int nq, int knn) {
 	fclose(fp);
 }
 
+void save_ANN_float(char* filename, float* ANN, int nq, int knn) {	
+	FILE* fp;
+	int i, j;
+	char fpath[256];
+	
+	sprintf(fpath, "%s.ann", filename);
+	fp = fopen(fpath, "w");
+	for (i = 0; i < nq; i++) {
+		for (j = 0; j < knn; j++)
+			fprintf(fp, "%.2f ", ANN[i*knn+j]);
+		fprintf(fp, "\n");
+	}
+	fclose(fp);
+}
 
 extern void pqnn32_index(params* input);
 extern int* pqnn32_search(params* input);
@@ -785,9 +799,9 @@ void pqnn_search_non_esaustiva(params* input){
 	if(residuo==NULL) exit(-1);
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	if(data==NULL) exit(-1);
-
-	
-
+	printf("uno\n");
+	save_ANN_float("./progetto/prova/qc",input->qc,input->kc,input->d);
+	printf("uno\n");
 	data->source=input->qs;
 	data->dest=input->qc;
 
@@ -802,6 +816,8 @@ void pqnn_search_non_esaustiva(params* input){
 		q_x = &input->qs[query*input->d]; //prende l indirizzo del vettore di query
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 
+		
+
 		//potrei aggiungere un metodo restore su heap?
 		for(i=0;i<input->kc;i++){
 			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
@@ -809,6 +825,13 @@ void pqnn_search_non_esaustiva(params* input){
 		}
 		
 		arr = qc_heap->arr;
+		printf("query %d: ",query);
+		for(int i=0; i<input->w; i++){
+			printf("%d ", arr[i].index);
+		}
+		printf("\n");
+
+		
 
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 

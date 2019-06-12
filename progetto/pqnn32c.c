@@ -716,8 +716,15 @@ void pqnn_index_non_esaustiva(params* input){
 	memset(offset,0,input->kc*sizeof(int));
 
 	for(i=0;i<n;i++){
-		input->index_entry[input->qc_indexes[i]]++;
+		c = input->qc_indexes[i];
+		input->index_entry[c]++;
 	}
+	printf("\n");
+	for(i=0;i<5;i++){
+		printf(" %d", input->index_entry[i]);
+	}
+	printf("\n");
+
 	x = input->index_entry[0];
 	input->index_entry[0] = 0;
 	for(l=1;l<input->kc;l++){
@@ -725,6 +732,13 @@ void pqnn_index_non_esaustiva(params* input){
 		input->index_entry[l] = input->index_entry[l-1] + x;
 		x = tmp;
 	}
+
+	printf("\n");
+	for(i=0;i<5;i++){
+		printf(" %d", input->index_entry[i]);
+	}
+	printf("\n");
+
 	for(int i=0;i<n;i++){
 		c = input->qc_indexes[i];
 		l = input->index_entry[c] + offset[c]++;
@@ -791,7 +805,6 @@ void pqnn_search_non_esaustiva(params* input){
 		//potrei aggiungere un metodo restore su heap?
 		for(i=0;i<input->kc;i++){
 			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
-			// printf("dist: %.2f\n",dist);
 			insert(qc_heap, dist, i);
 		}
 		
@@ -828,9 +841,7 @@ void pqnn_search_non_esaustiva(params* input){
 					somma += input->distanze_asimmetriche[s*input->k+(*ind_centroide)];
 					ind_centroide++;
 				}
-				// printf("prima dist: %.2f index: %d \n",qp_heap->arr[0].dist,qp_heap->arr[0].index);
 				insert(qp_heap, somma, curr_pq);
-				// printf("dopo dist: %.2f index: %d \n",qp_heap->arr[0].dist,qp_heap->arr[0].index);
 				somma=0;
 				curr_pq++;
 			}
@@ -839,7 +850,7 @@ void pqnn_search_non_esaustiva(params* input){
 		arr = qp_heap->arr;
 		for(s=0;s<input->knn;s++){
 			input->ANN[query*input->knn+s] = arr[s].index;
-			printf("%d: %d - %.2f\n", query, arr[s].index, arr[s].dist);
+			// printf("%d: %d - %.2f\n", query, arr[s].index, arr[s].dist);
 		}
 		
 		_mm_free(qp_heap->arr);

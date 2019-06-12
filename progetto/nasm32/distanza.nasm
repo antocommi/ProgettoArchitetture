@@ -28,10 +28,10 @@ distanza:
 cicloQ:	cmp esi, ebx				;i < end-start
 		jg somme
 		
-		movaps xmm1, [ecx+4*esi]
-		movaps xmm2, [edx+4*esi]
-		movaps xmm3, [ecx+4*esi+16]
-		movaps xmm4, [edx+4*esi+16]
+		movups xmm1, [ecx+4*esi]
+		movups xmm2, [edx+4*esi]
+		movups xmm3, [ecx+4*esi+16]
+		movups xmm4, [edx+4*esi+16]
 
 		subps xmm1, xmm2
 		subps xmm3, xmm4

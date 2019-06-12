@@ -1,6 +1,8 @@
 %include "sseutils64.nasm"
 
 section .data
+d1 db 'indice %ld ', 10, 0
+ini db 'inizio somma', 10, 0
 section .bss
 section .text
 
@@ -15,20 +17,40 @@ somma:
 		mov	rbp, rsp
 		;pushaq
 
+        ; pushaq
+        ; mov rdi, ini
+        ; call printf
+        ; popaq
+
         xor rcx, rcx
+        ;jmp cicloR
         sub rdx, 4
 cicloQ: cmp rcx, rdx
         jg endQ
-        vmovaps xmm0, [rsi+4*rcx]
-        vmovaps xmm1, [rdi+4*rcx]
+
+        ; pushaq
+        ; mov rsi, rcx
+        ; mov rdi, d1
+        ; call printf
+        ; popaq
+
+        vmovups xmm0, [rsi+4*rcx]
+        vmovups xmm1, [rdi+4*rcx]
         vaddps xmm0, xmm1
-        vmovaps [rsi+4*rcx], xmm0
+        vmovups [rsi+4*rcx], xmm0
         add rcx, 4
         jmp cicloQ
 endQ:   add rdx, 4
 
 cicloR: cmp rcx, rdx
         jge endR
+
+        ; pushaq
+        ; mov rsi, rcx
+        ; mov rdi, d1
+        ; call printf
+        ; popaq
+
         vmovss xmm0, [rsi+4*rcx]
         vmovss xmm1, [rdi+4*rcx]
         vaddss xmm0, xmm1

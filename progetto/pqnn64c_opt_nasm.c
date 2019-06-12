@@ -399,7 +399,8 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 				//printf("it:%d centr:%d 0.1.1 %d\n", t, i, j);
 				if(*ind3==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
-					sommaC(ind, ci, end-start);
+					//printf("prima somma\n");
+					somma(ind, ci, end-start);
 				}
 				//if(start>0)
 				//printf("it:%d centr:%d 0.2 %d\n", t, i, j);

@@ -88,7 +88,7 @@ forKQ:  cmp r12, rcx
         add rdi, r15
         vinsertps xmm11, xmm0, 00110000b
         
-        vmovaps [r14+4*r13], xmm11
+        vmovups [r14+4*r13], xmm11
         
         add r13, 4;count
         add r12, 4

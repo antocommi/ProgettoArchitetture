@@ -93,7 +93,7 @@ ciclo:	cmp esi, 0
 
 		call distanza
 		movss xmm0, [temp]	;non necessaria, il valore è già in xmm0
-		mulss xmm0, xmm0
+		;mulss xmm0, xmm0
 
 		; pushad
 		; push esi

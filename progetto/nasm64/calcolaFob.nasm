@@ -124,7 +124,7 @@ cicloQ:	cmp rbx, 0
 		add r13, rcx
 		vinsertps xmm11, xmm0, 00110000b
 
-		vmulps xmm11, xmm11
+		;vmulps xmm11, xmm11
 		vaddps xmm10, xmm11
 
 		sub rbx, 4
@@ -140,7 +140,7 @@ cicloR:	cmp rbx, 0
 		add rsi, rax
 		add r13, rcx
 
-		vmulss xmm0, xmm0
+		;vmulss xmm0, xmm0
 		vaddss xmm10, xmm0
 
 		dec rbx

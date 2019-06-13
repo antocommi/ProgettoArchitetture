@@ -17,22 +17,11 @@ somma:
 		mov	rbp, rsp
 		;pushaq
 
-        ; pushaq
-        ; mov rdi, ini
-        ; call printf
-        ; popaq
-
         xor rcx, rcx
         ;jmp cicloR
         sub rdx, 4
 cicloQ: cmp rcx, rdx
         jg endQ
-
-        ; pushaq
-        ; mov rsi, rcx
-        ; mov rdi, d1
-        ; call printf
-        ; popaq
 
         vmovups xmm0, [rsi+4*rcx]
         vmovups xmm1, [rdi+4*rcx]
@@ -44,12 +33,6 @@ endQ:   add rdx, 4
 
 cicloR: cmp rcx, rdx
         jge endR
-
-        ; pushaq
-        ; mov rsi, rcx
-        ; mov rdi, d1
-        ; call printf
-        ; popaq
 
         vmovss xmm0, [rsi+4*rcx]
         vmovss xmm1, [rdi+4*rcx]

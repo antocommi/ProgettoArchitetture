@@ -834,7 +834,7 @@ void pqnn_search_non_esaustiva(params* input){
 			curr_qc = arr[i].index;
 			curr_pq = input->index_entry[curr_qc];
 			compute_residual(input, residuo, curr_qc, query, input->qs);
-
+			//controllare qui
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
 			}

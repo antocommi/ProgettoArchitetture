@@ -334,17 +334,17 @@ extern void calcolaPQ(kmeans_data* data, int partition, int start, int end);
 // }
 
 extern float calcolaFob(params* input, kmeans_data* data, int ipart, int start, int end);
-float calcolaFob1(params* input, kmeans_data* data, int ipart, int start, int end){
-	int i;
-	float* ind=data->dest+start;
-	float* ind2=data->source+start;
-	float ret=0;
-	for(i=0; i<data->dim_source; i++){
-		ret+=distanza(ind+data->index[i*input->m+ipart]*data->d, ind2, end-start);
-		ind2+=data->d;
-	}
-	return ret;
-}
+// float calcolaFob(params* input, kmeans_data* data, int ipart, int start, int end){
+// 	int i;
+// 	float* ind=data->dest+start;
+// 	float* ind2=data->source+start;
+// 	float ret=0;
+// 	for(i=0; i<data->dim_source; i++){
+// 		ret+=distanza(ind+data->index[i*input->m+ipart]*data->d, ind2, end-start);
+// 		ind2+=data->d;
+// 	}
+// 	return ret;
+// }
 
 extern void somma(float* source, float* dest, int dim);
 // void somma(float* source, float* dest, int dim){
@@ -425,11 +425,11 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 		fob1=fob2;
 		//fob11=fob22;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
-		fob2=calcolaFob1(input, data, ipart, start, end);
+		fob2=calcolaFob(input, data, ipart, start, end);
 		//printf("fob1:%f fob2:%f d:%f dn:%f", fob1, fob2, fabs(fob1-fob2), fabs(fob1-fob2)/fob1);
 		//getchar();
 	}
-	printf("%d\n", t);
+	//printf("%d\n", t);
 }
 
 extern void creaMatriceDistanze(params* input, float* codebook);
@@ -661,7 +661,6 @@ void pqnn_index_esaustiva(params* input){
 		d2+=dStar;
 	}
 	//printf("fine kmeans\n");
-
 
 	if(input->symmetric==1){
 		input->nDist=input->k*(input->k+1)/2;

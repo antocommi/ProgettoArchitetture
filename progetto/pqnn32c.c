@@ -754,13 +754,13 @@ void pqnn_index_non_esaustiva(params* input){
 	// for(i=input->n/10;i<input->n;i++)
 	// 	printf("%d \n",input->qc_indexes[i]);
 
-	for(i=0;i<10;i++){
-		printf("<------------->\n");
-		for(j=0;j<input->d;j++){
-			printf(" %.2f",input->residual_set[i*input->d+j]);
-		}
-		printf("\n");
-	}
+	// for(i=0;i<10;i++){
+	// 	printf("<------------->\n");
+	// 	for(j=0;j<input->d;j++){
+	// 		printf(" %.2f",input->residual_set[i*input->d+j]);
+	// 	}
+	// 	printf("\n");
+	// }
 
 	_mm_free(input->residual_set);
 	_mm_free(offset);

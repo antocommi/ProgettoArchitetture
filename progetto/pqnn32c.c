@@ -368,6 +368,7 @@ void save_ANN(char* filename, int* ANN, int nq, int knn) {
 }
 
 
+
 extern void pqnn32_index(params* input);
 extern int* pqnn32_search(params* input);
 
@@ -561,23 +562,31 @@ void compute_residual(params* input, float* res, int qc_i, int y,float* src){
 	// -----------------------------------------
 	// ritorna un puntatore al residuo r(y)
 	int i;
+	float *p_src,*p_qc,*p_res;
+	p_src = src+y*input->d;
+	p_qc = input->qc+qc_i*input->d;
+	p_res = res;
 	for(i=0; i<input->d;i++){
-		res[i]=src[y*input->d+i] - input->qc[qc_i*input->d+i]; // r(y) = y - qc(y)
+		*res=*p_src++ - *p_qc++; // r(y) = y - qc(y)
+		res++;
 	}
 }
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
-	int qc_i; 
+	int *qc_i; 
 	float *ry;
+	ry = input->residual_set;
+	qc_i=input->qc_indexes;
 	// int *indexes=input->qc_indexes; // puntatore al residuo corrente nel residual_codebook
 	for(int y=0;y<input->n;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		// OTTIMIZZABILE
-		ry = input->residual_set+y*input->d;
-		
-		compute_residual(input, ry, *(input->qc_indexes+y), y, input->ds); // calcolo del residuo r(y) = y - qc(y)
+		compute_residual(input, ry, *qc_i++, y, input->ds); // calcolo del residuo r(y) = y - qc(y)
+		ry += input->d;
 	}
+
+	
 }
 
 void pqnn_index_non_esaustiva(params* input){
@@ -591,8 +600,8 @@ void pqnn_index_non_esaustiva(params* input){
 	m = input->m;
 	n = input->n;
 
-	offset = _mm_malloc(sizeof(int)*input->k,16);
-	if(offset==NULL) exit(-1);
+	// offset = _mm_malloc(sizeof(int)*input->k,16);
+	// if(offset==NULL) exit(-1);
 
 	input->index_entry = _mm_malloc(sizeof(int)*input->kc,16);
 	if(input->index_entry==NULL) exit(-1);
@@ -625,6 +634,7 @@ void pqnn_index_non_esaustiva(params* input){
 	input->qc_indexes = (int*) _mm_malloc(sizeof(int)*input->n,16);
 	if(input->qc_indexes==NULL) exit(-1);
 
+	// short ??
 	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16);
 	if(input->pq==NULL) exit(-1);
 	
@@ -650,7 +660,9 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_rows = input->n-input->nr;
 	data->n_centroidi = input->kc;
 	data->dim_source = input->n-input->nr;
+
 	calcolaPQ(data, 0, input->d);
+	
 	calcola_residui(input);
 
 	memcpy(input->residual_codebook, input->residual_set, input->k*input->d*sizeof(float));
@@ -705,7 +717,7 @@ void pqnn_index_non_esaustiva(params* input){
 	// 		input->celle_voronoi[l] = i;
 	// 	}
 	// }
-	_mm_free(offset);
+	// _mm_free(offset);
 
 	// TOLTO inizializzaSecLiv
 	// Aggiunta dei punti r(y) del residual_set in celle_entry 
@@ -716,8 +728,15 @@ void pqnn_index_non_esaustiva(params* input){
 	memset(offset,0,input->kc*sizeof(int));
 
 	for(i=0;i<n;i++){
-		input->index_entry[input->qc_indexes[i]]++;
+		c = input->qc_indexes[i];
+		input->index_entry[c]++;
 	}
+	// printf("\n");
+	// for(i=0;i<5;i++){
+	// 	printf(" %d", input->index_entry[i]);
+	// }
+	// printf("\n");
+
 	x = input->index_entry[0];
 	input->index_entry[0] = 0;
 	for(l=1;l<input->kc;l++){
@@ -725,45 +744,58 @@ void pqnn_index_non_esaustiva(params* input){
 		input->index_entry[l] = input->index_entry[l-1] + x;
 		x = tmp;
 	}
+
 	for(int i=0;i<n;i++){
 		c = input->qc_indexes[i];
 		l = input->index_entry[c] + offset[c]++;
 		input->celle_entry[l] = i;
 	}
 
-	
+	// for(i=input->n/10;i<input->n;i++)
+	// 	printf("%d \n",input->qc_indexes[i]);
 
+	// for(i=0;i<10;i++){
+	// 	printf("<------------->\n");
+	// 	for(j=0;j<input->d;j++){
+	// 		printf(" %.2f",input->residual_set[i*input->d+j]);
+	// 	}
+	// 	printf("\n");
+	// }
+
+	_mm_free(input->residual_set);
 	_mm_free(offset);
 	_mm_free(data);
 }
 
 void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 	int i, j, l, dStar;
-	float *rx, *ry, *res, tmp;
-	dStar=input->d/input->m;
-	res = input->distanze_asimmetriche;
+	float *rx, *ry, *result, tmp;
+	dStar = input->d/input->m;
+	result = input->distanze_asimmetriche;
 	rx = residuo;
 	ry = input->residual_codebook;
 	for(j=0;j<input->m;j++){
 		for(i=0;i<input->k;i++){
-			distanza(rx,ry,dStar,&tmp);
-			*res = tmp*tmp;
-			res++;
+			distanza(rx,ry,dStar,result);
+			// *result = tmp;
+			result++;
+			assert(result>=input->distanze_asimmetriche);
+			assert(result<=input->distanze_asimmetriche+input->m*input->k);
 			ry += input->d;
 		}
 		rx += dStar;
-		ry=j*dStar + input->residual_codebook;
+		ry = j*dStar + input->residual_codebook;
 	}
 }
 
 void pqnn_search_non_esaustiva(params* input){
 	int i, q, query, j, p, h, s, residui_da_visitare, curr_residual, *ind_centroide;
-	int curr_qc, curr_pq;
+	int curr_qc, curr_pq, *prova;
 	Heap* qc_heap, *qp_heap;
 	struct kmeans_data* data;
 	float dist;
 	struct entry_heap* arr;
-	float *residuo, *q_x; 
+	float *residuo, *q_x, *dista; 
 	float somma=0, temp;
 
 	int dS=((input->d)/(input->m));
@@ -771,9 +803,6 @@ void pqnn_search_non_esaustiva(params* input){
 	if(residuo==NULL) exit(-1);
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	if(data==NULL) exit(-1);
-
-	
-
 	data->source=input->qs;
 	data->dest=input->qc;
 
@@ -783,19 +812,20 @@ void pqnn_search_non_esaustiva(params* input){
 		input->distanze_asimmetriche = _mm_malloc(sizeof(float)*input->k*input->m,16);
 		if(input->distanze_asimmetriche==NULL) exit(-1);
 	}
+	
+
 
 	for(query=0; query<input->nq; query++){
 		q_x = &input->qs[query*input->d]; //prende l indirizzo del vettore di query
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 
-		//potrei aggiungere un metodo restore su heap?
 		for(i=0;i<input->kc;i++){
 			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
-			// printf("dist: %.2f\n",dist);
 			insert(qc_heap, dist, i);
 		}
-		
 		arr = qc_heap->arr;
+
+		
 
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
@@ -828,19 +858,20 @@ void pqnn_search_non_esaustiva(params* input){
 					somma += input->distanze_asimmetriche[s*input->k+(*ind_centroide)];
 					ind_centroide++;
 				}
-				// printf("prima dist: %.2f index: %d \n",qp_heap->arr[0].dist,qp_heap->arr[0].index);
 				insert(qp_heap, somma, curr_pq);
-				// printf("dopo dist: %.2f index: %d \n",qp_heap->arr[0].dist,qp_heap->arr[0].index);
 				somma=0;
 				curr_pq++;
 			}
 		}
+		
 		//A questo punto i knn vicini sono in qp_heap->arr
 		arr = qp_heap->arr;
 		for(s=0;s<input->knn;s++){
 			input->ANN[query*input->knn+s] = arr[s].index;
-			printf("%d: %d - %.2f\n", query, arr[s].index, arr[s].dist);
+			printf(" %d", arr[s].index);
 		}
+		printf("\n");
+
 		
 		_mm_free(qp_heap->arr);
 		_mm_free(qc_heap->arr);

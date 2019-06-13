@@ -391,7 +391,7 @@ void distanza(float* punto1, float* punto2, int dimensione, float* r){
 	float* ind=punto1;
 	float* ind2=punto2;
 	for(i=0; i<dimensione; i++){
-		ret+=pow2(*ind++ - *ind2++, 2.0);
+		ret+=pow2(*(ind++) - *(ind2++), 2.0);
 	}
 	*r=ret;
 }
@@ -823,7 +823,7 @@ void pqnn_search_non_esaustiva(params* input){
 			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
-		arr = qc_heap->arr;
+		arr = qc_heap->arr; 
 
 		
 
@@ -838,14 +838,11 @@ void pqnn_search_non_esaustiva(params* input){
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
 			}
-
-			// for(s=0;s<input->m*input->k;s++){
-			// 	if(s==input->k)
-			// 		exit(-1);
-			// 	printf(" %.2f", input->distanze_asimmetriche[s]);
+			// for(int l=0;l<input->d;l++){
+			// 	printf("%.2f ",input->qc[curr_qc*input->d+l]);
 			// }
-
-			// exit(-1);
+			// printf("\n");
+			
 			if(curr_qc==input->kc-1) 
 				residui_da_visitare=input->n;
 			else 

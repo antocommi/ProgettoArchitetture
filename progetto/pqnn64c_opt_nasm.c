@@ -352,13 +352,13 @@ extern float calcolaFob(params* input, kmeans_data* data, int ipart, int start, 
 // }
 
 extern void somma(float* source, float* dest, int dim);
-void sommaC(float* source, float* dest, int dim){
-	for(int i=0; i<dim; i++){
-		*dest+=*source;
-		dest++;
-		source++;
-	}
-}
+// void somma(float* source, float* dest, int dim){
+// 	for(int i=0; i<dim; i++){
+// 		*dest+=*source;
+// 		dest++;
+// 		source++;
+// 	}
+// }
 
 void kmeans(params* input, kmeans_data* data, int start, int end){
 	// estremi start incluso ed end escluso

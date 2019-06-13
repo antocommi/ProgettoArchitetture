@@ -81,7 +81,7 @@ cicloQ:	cmp rcx, rbx
 		vpinsrd xmm1, [rax], 3
 		inc rcx
 
-		vmulps xmm1, xmm1
+		;vmulps xmm1, xmm1
 		vaddps xmm0, xmm1
 
 		jmp cicloQ
@@ -94,9 +94,13 @@ cicloR:	cmp rcx, rbx
 		mov esi, [r9+4*rcx]
 		mov edx, [r10+4*rcx]
 		call dist_matrix
-		vmovss xmm1, [rax]
-		vmulss xmm1, xmm1
-		vaddss xmm0, xmm1
+		
+		vaddss xmm0, [rax]
+
+		;vmovss xmm1, [rax]
+		;vmulss xmm1, xmm1
+		;vaddss xmm0, xmm1
+
 		inc rcx
 		jmp cicloR
 

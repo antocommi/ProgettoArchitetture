@@ -264,20 +264,13 @@ extern void distanza(float* punto1, float* punto2, int dimensione, float* r);
 // 	*r=ret;
 // }
 
-float dist_asimmetrica(params* input, MATRIX set, int punto1, int punto2){
+float dist_asimmetrica(params* input, int punto2){
 	int i;
 	float sum=0;
-	float temp;
-	float *ind1, *ind2;
-	int dStar=input->d/input->m;
 	int* c2=input->pq+punto2*input->m;
-	ind1=set+punto1*input->d;
-	ind2=input->codebook;
 	for(i=0; i<input->m; i++){
-		distanza(ind1, ind2+(*c2)*input->d, dStar, &temp);
-		sum+=pow2(temp, 2);
-		ind1+=dStar;
-		ind2+=dStar;
+		//sum+=distanza(ind1, ind2+(*c2)*input->d, dStar);
+		sum+=input->distanze_asimmetriche[(*c2)*input->m+i];
 		c2++;
 	}
 	return sum;
@@ -308,7 +301,7 @@ extern void dist(params* input, int* quantizer, int punto1, int punto2, float *r
 // 	float* f;
 // 	for(i=0; i<input->m; i++){
 // 		f=dist_matrix(input, *c1, *c2, i);
-// 		sum+=pow2(*f, 2);
+// 		sum+=*f;
 // 		c2++;
 // 		c1++;
 // 	}
@@ -349,7 +342,7 @@ extern void calcolaFob(params* input, kmeans_data* data, int ipart, int start, i
 // 	float temp;
 // 	for(i=0; i<data->dim_source; i++){
 // 		distanza(ind+data->index[i*input->m+ipart]*data->d, ind2, end-start, &temp);
-// 		ret+=pow2(temp, 2.0);
+// 		ret+=temp;
 // 		ind2+=data->d;
 // 	}
 // 	*r=ret;
@@ -533,17 +526,31 @@ void calcolaNN(params* input, int query){
 	VECTOR m;
 	int* di;
 	float* ind=distanze;
+	int dStar=input->d/input->m;
 	int* ind2;
-	float* ind3;
+	float *ind3, *ind4, *ind5;
 	float temp;
 	//-----
 	
 	if(input->knn<4500){
 		if(input->symmetric==0){
+			input->distanze_asimmetriche=alloc_matrix(input->k, input->m);
+			ind3=input->distanze_asimmetriche;
+			ind4=input->codebook;
+			for(i=0; i<input->k; i++){
+				ind5=input->qs+query*input->d;
+				for(j=0; j<input->m; j++){
+					distanza(ind4, ind5, dStar, ind3);
+					ind3++;
+					ind4+=dStar;
+					ind5+=dStar;
+				}
+			}
 			for(i=0; i<input->n; i++){
-				*ind=dist_asimmetrica(input, input->qs, query, i);
+				*ind=dist_asimmetrica(input, i);
 				ind++;
 			}
+			_mm_free(input->distanze_asimmetriche);
 		}else{
 			for(i=0; i<input->n; i++){
 				dist(input, input->query_pq, query, i, ind);
@@ -673,7 +680,6 @@ void pqnn_search_esaustiva(params* input){
 		_mm_free(input->distanze_simmetriche);
 	}else{
 		_mm_free(input->query_pq);
-		_mm_free(input->distanze_asimmetriche);
 	}
 }
 

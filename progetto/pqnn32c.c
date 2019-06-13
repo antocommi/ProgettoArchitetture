@@ -854,6 +854,7 @@ void pqnn_search_non_esaustiva(params* input){
 				curr_pq++;
 			}
 		}
+		
 		//A questo punto i knn vicini sono in qp_heap->arr
 		arr = qp_heap->arr;
 		for(s=0;s<input->knn;s++){

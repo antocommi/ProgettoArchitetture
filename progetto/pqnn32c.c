@@ -838,6 +838,7 @@ void pqnn_search_non_esaustiva(params* input){
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
 			}
+			
 			// for(int l=0;l<input->d;l++){
 			// 	printf("%.2f ",input->qc[curr_qc*input->d+l]);
 			// }

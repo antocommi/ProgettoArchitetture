@@ -11,4 +11,3 @@
 
 gcc -O3 -m32 ./progetto/pqnn32c.c -o ./progetto/pqnn32c -lm
 ./progetto/pqnn32c ./progetto/prova/prova -noexaustive -kc 350 -nr 400 -adc -knn 4
-

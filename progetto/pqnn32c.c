@@ -439,14 +439,12 @@ void calcolaPQ(kmeans_data* data, int start, int end){
 		ind2=data->dest+start;// destinazione
 		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
 			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
-			// printf("--2--\n");			
 			if(temp<min){ 
 				min=temp;
 				*ind=j;
 			}
 			ind2+=data->d;
 		}
-		// printf("distanza minima trovata: %f\n",min );
 		ind+=m;
 		ind1+=data->d;
 	}
@@ -594,7 +592,7 @@ void pqnn_index_non_esaustiva(params* input){
 	int c, k, x, jk, *index, tmp;
 	struct kmeans_data* data;
 
-	k=input->k;
+	k = input->k;
 	d = input->d;
 	knn = input->knn;
 	m = input->m;
@@ -650,6 +648,15 @@ void pqnn_index_non_esaustiva(params* input){
 	data->n_centroidi = input->kc;
 	data->d=input->d; 
 	data->dim_source = input->nr;
+	
+	// for(i=0;i<10;i++){
+	// 	printf("<------------>\n");
+	// 	for(j=0;j<input->d/2;j++){
+	// 		printf("%.2f ",input->qc[i*input->d+j]);
+	// 	}
+	// 	printf("\n");
+	// }
+
 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
 	
 	// Settagio parametri k-means
@@ -663,6 +670,10 @@ void pqnn_index_non_esaustiva(params* input){
 
 	calcolaPQ(data, 0, input->d);
 	
+	// for(i=0;i<input->nr;i++){
+	// 	printf("%d %d\n",i,input->qc_indexes[i]);
+	// }
+
 	calcola_residui(input);
 
 	memcpy(input->residual_codebook, input->residual_set, input->k*input->d*sizeof(float));
@@ -710,7 +721,7 @@ void pqnn_index_non_esaustiva(params* input){
 	// 		input->index_voronoi[jk+l] = input->index_voronoi[jk+l-1] + x;
 	// 		x = tmp;
 	// 	}
-	// 	for(int i=0;i<n;i++){
+	// for(int i=0;i<n;i++){
 	// 		x = i*m+j;
 	// 		c = input->pq[x];
 	// 		l = n*j + input->index_voronoi[jk+c] + offset[c]++;
@@ -731,11 +742,6 @@ void pqnn_index_non_esaustiva(params* input){
 		c = input->qc_indexes[i];
 		input->index_entry[c]++;
 	}
-	// printf("\n");
-	// for(i=0;i<5;i++){
-	// 	printf(" %d", input->index_entry[i]);
-	// }
-	// printf("\n");
 
 	x = input->index_entry[0];
 	input->index_entry[0] = 0;
@@ -745,22 +751,21 @@ void pqnn_index_non_esaustiva(params* input){
 		x = tmp;
 	}
 
-	for(int i=0;i<n;i++){
+	for(i=0;i<n;i++){
 		c = input->qc_indexes[i];
 		l = input->index_entry[c] + offset[c]++;
 		input->celle_entry[l] = i;
 	}
 
-	// for(i=input->n/10;i<input->n;i++)
-	// 	printf("%d \n",input->qc_indexes[i]);
-
-	for(i=0;i<10;i++){
-		printf("<------------->\n");
+	for(i=0;i<input->kc;i++){
+		printf("%d: ",i);
 		for(j=0;j<input->d;j++){
-			printf(" %.2f",input->residual_set[i*input->d+j]);
+			printf(" %.2f", input->qc[i*input->d+j]);
 		}
 		printf("\n");
 	}
+	
+	exit(-1);
 
 	_mm_free(input->residual_set);
 	_mm_free(offset);
@@ -768,23 +773,20 @@ void pqnn_index_non_esaustiva(params* input){
 }
 
 void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
-	int i, j, l, dStar;
-	float *rx, *ry, *result, tmp;
+	int i, j, dStar;
+	float *rx, *ci, *result, tmp;
 	dStar = input->d/input->m;
 	result = input->distanze_asimmetriche;
 	rx = residuo;
-	ry = input->residual_codebook;
+	ci = input->residual_codebook;
 	for(j=0;j<input->m;j++){
 		for(i=0;i<input->k;i++){
-			distanza(rx,ry,dStar,result);
-			// *result = tmp;
+			distanza(rx, ci, dStar, result);
 			result++;
-			assert(result>=input->distanze_asimmetriche);
-			assert(result<=input->distanze_asimmetriche+input->m*input->k);
-			ry += input->d;
+			ci += input->d;
 		}
 		rx += dStar;
-		ry = j*dStar + input->residual_codebook;
+		ci = j*dStar + input->residual_codebook;
 	}
 }
 
@@ -812,10 +814,9 @@ void pqnn_search_non_esaustiva(params* input){
 		input->distanze_asimmetriche = _mm_malloc(sizeof(float)*input->k*input->m,16);
 		if(input->distanze_asimmetriche==NULL) exit(-1);
 	}
-	
-
 
 	for(query=0; query<input->nq; query++){
+		
 		q_x = &input->qs[query*input->d]; //prende l indirizzo del vettore di query
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 
@@ -823,6 +824,7 @@ void pqnn_search_non_esaustiva(params* input){
 			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
+
 		arr = qc_heap->arr;
 
 		
@@ -833,19 +835,13 @@ void pqnn_search_non_esaustiva(params* input){
 		for(int i=0; i<input->w; i++){
 			curr_qc = arr[i].index;
 			curr_pq = input->index_entry[curr_qc];
-			compute_residual(input, residuo, curr_qc, query, input->qs);
+			
+			compute_residual(input, residuo, curr_qc, 0, input->qs);
 
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
 			}
 
-			// for(s=0;s<input->m*input->k;s++){
-			// 	if(s==input->k)
-			// 		exit(-1);
-			// 	printf(" %.2f", input->distanze_asimmetriche[s]);
-			// }
-
-			// exit(-1);
 			if(curr_qc==input->kc-1) 
 				residui_da_visitare=input->n;
 			else 
@@ -866,11 +862,12 @@ void pqnn_search_non_esaustiva(params* input){
 		
 		//A questo punto i knn vicini sono in qp_heap->arr
 		arr = qp_heap->arr;
+
 		for(s=0;s<input->knn;s++){
 			input->ANN[query*input->knn+s] = arr[s].index;
-			printf(" %d", arr[s].index);
+			// printf(" %d", arr[s].index);
 		}
-		printf("\n");
+		// printf("\n");
 
 		
 		_mm_free(qp_heap->arr);

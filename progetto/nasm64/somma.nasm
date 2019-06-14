@@ -18,18 +18,18 @@ somma:
 		;pushaq
 
         xor rcx, rcx
-        ;jmp cicloR
-        sub rdx, 4
+
+        sub rdx, 8
 cicloQ: cmp rcx, rdx
         jg endQ
 
-        vmovups xmm0, [rsi+4*rcx]
-        vmovups xmm1, [rdi+4*rcx]
-        vaddps xmm0, xmm1
-        vmovups [rsi+4*rcx], xmm0
-        add rcx, 4
+        vmovups ymm0, [rsi+4*rcx]
+        vmovups ymm1, [rdi+4*rcx]
+        vaddps ymm0, ymm1
+        vmovups [rsi+4*rcx], ymm0
+        add rcx, 8
         jmp cicloQ
-endQ:   add rdx, 4
+endQ:   add rdx, 8
 
 cicloR: cmp rcx, rdx
         jge endR

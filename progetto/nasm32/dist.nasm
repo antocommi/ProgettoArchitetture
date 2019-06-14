@@ -82,7 +82,7 @@ cicloQ:	cmp esi, edi
 		pinsrd xmm1, [eax], 3
 		inc dword [ebp+i]			;  quarto parametro
 
-		mulps xmm1, xmm1
+		;mulps xmm1, xmm1
 		addps xmm0, xmm1
 		;-----------------------------------------
 		add esi, 4
@@ -101,7 +101,7 @@ cicloR:	cmp esi, edi
 		mov [ebp+i], esi			;  quarto parametro
 		call dist_matrix
 		movss xmm1, [eax]
-		mulss xmm1, xmm1
+		;mulss xmm1, xmm1
 		addss xmm0, xmm1
 		inc esi
 		jmp cicloR

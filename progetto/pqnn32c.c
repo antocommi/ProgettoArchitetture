@@ -391,7 +391,7 @@ void distanza(float* punto1, float* punto2, int dimensione, float* r){
 	float* ind=punto1;
 	float* ind2=punto2;
 	for(i=0; i<dimensione; i++){
-		ret+=pow2(*ind++ - *ind2++, 2.0);
+		ret+=pow2(*(ind++) - *(ind2++), 2.0);
 	}
 	*r=ret;
 }
@@ -756,6 +756,7 @@ void pqnn_index_non_esaustiva(params* input){
 		input->celle_entry[l] = i;
 	}
 
+<<<<<<< HEAD
 	for(i=0;i<input->kc;i++){
 		printf("%d: ",i);
 		for(j=0;j<input->d;j++){
@@ -765,6 +766,18 @@ void pqnn_index_non_esaustiva(params* input){
 	}
 	
 	exit(-1);
+=======
+	// for(i=input->n/10;i<input->n;i++)
+	// 	printf("%d \n",input->qc_indexes[i]);
+
+	// for(i=0;i<10;i++){
+	// 	printf("<------------->\n");
+	// 	for(j=0;j<input->d;j++){
+	// 		printf(" %.2f",input->residual_set[i*input->d+j]);
+	// 	}
+	// 	printf("\n");
+	// }
+>>>>>>> 0fc14941381dcc9b5fbb6e4088080f05fe18c418
 
 	_mm_free(input->residual_set);
 	_mm_free(offset);
@@ -823,6 +836,10 @@ void pqnn_search_non_esaustiva(params* input){
 			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
+<<<<<<< HEAD
+=======
+		arr = qc_heap->arr; 
+>>>>>>> 0fc14941381dcc9b5fbb6e4088080f05fe18c418
 
 		arr = qc_heap->arr;		
 
@@ -832,6 +849,7 @@ void pqnn_search_non_esaustiva(params* input){
 		for(int i=0; i<input->w; i++){
 			curr_qc = arr[i].index;
 			curr_pq = input->index_entry[curr_qc];
+<<<<<<< HEAD
 			
 			compute_residual(input, residuo, curr_qc, 0, input->qs);
 
@@ -839,6 +857,19 @@ void pqnn_search_non_esaustiva(params* input){
 				creaMatricedistanzeAsimmetriche(input,residuo);
 			}
 
+=======
+			compute_residual(input, residuo, curr_qc, query, input->qs);
+			//controllare qui
+			if(input->symmetric==0){
+				creaMatricedistanzeAsimmetriche(input,residuo);
+			}
+			
+			// for(int l=0;l<input->d;l++){
+			// 	printf("%.2f ",input->qc[curr_qc*input->d+l]);
+			// }
+			// printf("\n");
+			
+>>>>>>> 0fc14941381dcc9b5fbb6e4088080f05fe18c418
 			if(curr_qc==input->kc-1) 
 				residui_da_visitare=input->n;
 			else 

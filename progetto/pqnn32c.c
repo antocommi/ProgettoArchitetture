@@ -414,7 +414,6 @@ void creaMatricedistanze(params* input, float* codebook){
 			ind2=codebook+j*d;
 			for(k=0; k<input->m; k++){
 				distanza(ind1, ind2, dStar, &temp);
-				// dist_simmetricaI(input, input->residual_codebook, i, j, k*dStar, (k+1)*dStar, &temp);
 				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
 				ind1+=dStar;
 				ind2+=dStar;
@@ -825,9 +824,7 @@ void pqnn_search_non_esaustiva(params* input){
 			insert(qc_heap, dist, i);
 		}
 
-		arr = qc_heap->arr;
-
-		
+		arr = qc_heap->arr;		
 
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 

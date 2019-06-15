@@ -164,7 +164,6 @@ typedef struct kmeans_data{
 struct entry_heap{
 	
 	float dist;
-	
 	int index;
 };
 
@@ -198,6 +197,23 @@ Heap* CreateHeap(int capacity){
     if ( h->arr == NULL) exit(-1);	
     return h;	
 }	
+
+int PopMaxIndex(Heap *h){
+    int pop_index;
+	float pop_dist;
+    if(h->count==0){
+        printf("\n__Heap is Empty__\n");
+        return -1;
+    }
+    // replace first node by last and delete last
+    pop_index = h->arr[0].index;
+	// pop_dist = h->arr[0].dist;
+    h->arr[0].index = h->arr[h->count-1].index;
+    h->arr[0].dist = h->arr[h->count-1].dist;
+    h->count--;
+    heapify_top_bottom(h, 0);
+    return pop_index;
+}
 
 void insert(Heap *h, float key, int qc_index){	
     if( h->count < h->capacity){	
@@ -796,7 +812,7 @@ void pqnn_search_non_esaustiva(params* input){
 	struct entry_heap* arr;
 	float *residuo, *q_x, *dista; 
 	float somma=0, temp;
-	int dS=((input->d)/(input->m));
+	int dS=input->d/input->m;
 
 	residuo= _mm_malloc(sizeof(float)*input->d,16);
 	if(residuo==NULL) exit(-1);
@@ -811,14 +827,17 @@ void pqnn_search_non_esaustiva(params* input){
 
 	if(input->symmetric==1){
 		creaMatricedistanze(input, input->residual_codebook);
+		printf("\nSimmetrica\n");
 	}else{
 		input->distanze_asimmetriche = _mm_malloc(sizeof(float)*input->k*input->m,16);
 		if(input->distanze_asimmetriche==NULL) exit(-1);
+		printf("\nAsimmetrica\n");
+
 	}
 
 	for(query=0; query<input->nq; query++){
 		
-		q_x = &input->qs[query*input->d]; //prende l indirizzo del vettore di query
+		q_x = input->qs+query*input->d; //prende l indirizzo del vettore di query
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
 
 		for(i=0;i<input->kc;i++){
@@ -832,12 +851,15 @@ void pqnn_search_non_esaustiva(params* input){
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		
 		for(i=0; i<input->w; i++){
-
 			curr_qc = arr[i].index;
+			// curr_qc = PopMaxIndex(qc_heap); 
 			curr_pq = input->index_entry[curr_qc];
-			
-			compute_residual(input, residuo, curr_qc, 0, input->qs);
-
+			assert(curr_qc<input->kc);
+			assert(curr_pq<input->n);
+			assert(curr_qc>=0);
+			assert(curr_pq>=0);
+			compute_residual(input, residuo, curr_qc, 0, q_x);
+		
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
 			}else{
@@ -860,7 +882,7 @@ void pqnn_search_non_esaustiva(params* input){
 				residui_da_visitare = input->index_entry[curr_qc+1];
 			
 			while(curr_pq<residui_da_visitare){
-				curr_residual=input->celle_entry[curr_pq];
+				curr_residual = input->celle_entry[curr_pq];
 				ind_centroide = input->pq+curr_residual*input->m;
 				for(s=0;s<input->m;s++){
 					if(input->symmetric==0){
@@ -869,29 +891,48 @@ void pqnn_search_non_esaustiva(params* input){
 					}else{
 						ci = *(ind_centroide+s);
 						cj = pq_residuo[s];
-						assert(ci<input->k && cj<input->k);
+						assert(ci<input->k && cj<input->k && ci>=cj);
 						if(ci!=cj){
 							calcolaCentroidi(&ci,&cj);
 							somma += input->distanze_simmetriche[s+calcolaIndice(ci, cj)*input->m];
 						}
 					}
 				}
-				insert(qp_heap, somma, curr_pq);
+				// // Stampa residuo query 1 con centroide 1
+				// if(query==1 && i==1){
+				// 		ind_centroide= input->pq+curr_residual*input->m;
+				// 		printf("residuo:\n");
+				// 		for(j=0;j<input->d;j++){
+				// 			printf(" %.2f\n",residuo[j]);
+				// 		}
+				// 		printf("\nquantizzatore esteso\n");
+				// 		for(j=0;j<input->m;j++){
+							
+				// 			for(int ll=0;ll<dS;ll++){
+				// 				printf(" %.2f\n", input->residual_codebook[(*ind_centroide)*input->d+j*dS+ll]);
+				// 			}
+				// 			ind_centroide++;
+				// 		}
+				// 		printf("\nsomma=%.2f\n",somma);
+				// 		exit(-1);
+				// }
+				insert(qp_heap,somma, curr_pq++);
 				somma=0;
-				curr_pq++;
 			}
 		}
 		
 		//A questo punto i knn vicini sono in qp_heap->arr
 		arr = qp_heap->arr;
-
-		for(s=0;s<input->knn;s++){
-			input->ANN[query*input->knn+s] = arr[s].index;
+		for(s=input->knn-1;s>=0;s--){
+			// input->ANN[query*input->knn+s] = arr[s].index;
+			printf("query:%d index:%d dist:%.2f ", query, qp_heap->arr[0].index, sqrtf(qp_heap->arr[0].dist));
+			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
 		}
 
+		printf("\n");
 		_mm_free(qp_heap->arr);
-		_mm_free(qc_heap->arr);
 		_mm_free(qp_heap);
+		_mm_free(qc_heap->arr);
 		_mm_free(qc_heap);
 	}
 	_mm_free(residuo);

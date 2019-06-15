@@ -578,32 +578,49 @@ void calcolaNN(params* input, int query, VECTOR m){
 		}else{
 			calcolaSimmetriche(input, distanze, query);
 		}
-		ind=m;
 
-		for(i=0; i<input->knn; i++){
-			*ind++=1.79E+308;
-		}
-
-		ind3=distanze;
-		for(i=0; i<input->n; i++){
+		if(input->knn>1){
+			//knn>1
 			ind=m;
-			ind2=input->ANN+query*input->knn;
-			for(j=0; j<input->knn; j++){
-				if(*ind3<*ind){
-					for(k=input->knn-1; k>j; k--){
-						if(m[k-1]!=-1){
+			for(i=0; i<input->knn; i++){
+				*ind++=1.79E+308;
+			}
+
+			ind3=distanze;
+			for(i=0; i<input->n; i++){
+				ind=m;
+				ind2=input->ANN+query*input->knn;
+				for(j=0; j<input->knn; j++){
+					if(*ind3<*ind){
+						for(k=input->knn-1; k>j; k--){
+							if(m[k-1!=-1]) break;
+						}
+						for(k; k>j; k--){
 							input->ANN[query*input->knn+k]=input->ANN[query*input->knn+k-1];
 							m[k]=m[k-1];
 						}
+						*ind2=i;
+						*ind=*ind3;
+						break;
 					}
-					*ind2=i;
-					*ind=*ind3;
-					break;
+					ind++;
+					ind2++;
 				}
-				ind++;
-				ind2++;
+				ind3++;
 			}
-			ind3++;
+		}else{
+			//knn=1
+			float min=1.79E+308;
+
+			ind3=distanze;
+			ind2=input->ANN+query;
+			for(i=0; i<input->n; i++){
+				if(*ind3<min){
+					min=*ind3;
+					*ind2=i;
+				}
+				ind3++;
+			}
 		}
 	}else{
 		di=(int*) _mm_malloc(input->n*sizeof(int), 32);

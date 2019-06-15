@@ -812,7 +812,7 @@ void pqnn_search_non_esaustiva(params* input){
 	struct entry_heap* arr;
 	float *residuo, *q_x, *dista; 
 	float somma=0, temp;
-	int dS=((input->d)/(input->m));
+	int dS=input->d/input->m;
 
 	residuo= _mm_malloc(sizeof(float)*input->d,16);
 	if(residuo==NULL) exit(-1);
@@ -844,15 +844,15 @@ void pqnn_search_non_esaustiva(params* input){
 			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
-		
+
 		arr = qc_heap->arr;		
 
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
 		
 		for(i=0; i<input->w; i++){
-			// curr_qc = arr[i].index;
-			curr_qc = PopMaxIndex(qc_heap); 
+			curr_qc = arr[i].index;
+			// curr_qc = PopMaxIndex(qc_heap); 
 			curr_pq = input->index_entry[curr_qc];
 			assert(curr_qc<input->kc);
 			assert(curr_pq<input->n);
@@ -882,7 +882,7 @@ void pqnn_search_non_esaustiva(params* input){
 				residui_da_visitare = input->index_entry[curr_qc+1];
 			
 			while(curr_pq<residui_da_visitare){
-				curr_residual=input->celle_entry[curr_pq];
+				curr_residual = input->celle_entry[curr_pq];
 				ind_centroide = input->pq+curr_residual*input->m;
 				for(s=0;s<input->m;s++){
 					if(input->symmetric==0){
@@ -891,7 +891,7 @@ void pqnn_search_non_esaustiva(params* input){
 					}else{
 						ci = *(ind_centroide+s);
 						cj = pq_residuo[s];
-						assert(ci<input->k && cj<input->k);
+						assert(ci<input->k && cj<input->k && ci>=cj);
 						if(ci!=cj){
 							calcolaCentroidi(&ci,&cj);
 							somma += input->distanze_simmetriche[s+calcolaIndice(ci, cj)*input->m];

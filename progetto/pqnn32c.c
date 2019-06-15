@@ -389,11 +389,11 @@ extern void pqnn32_index(params* input);
 extern int* pqnn32_search(params* input);
 
 //funzioni fatte da noi
-
-int calcolaIndice(int i, int j){
-	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
-	return i*(i-1)/2+j;
-}
+extern int calcolaIndice(int i, int j);
+// int calcolaIndice(int i, int j){
+// 	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
+// 	return i*(i-1)/2+j;
+// }
 
 float pow2(float f, float s){
 	//non modificata rispetto a file pqnn32_opt1.c
@@ -439,32 +439,32 @@ void creaMatricedistanze(params* input, float* codebook){
 	}
 }
 
-
-void calcolaPQ(kmeans_data* data, int start, int end){
-	// Dei primi input->k ed i primi input->kc già si conosce l'index
-	// Per cui si può evitare di calcolare il più vicino.  
-	int i, j;
-	int m=data->index_columns;
-	float min;
-	float temp;
-	float *ind1, *ind2;
-	int* ind=data->index+start/((data->d)/(data->index_columns));
-	ind1=data->source+start;
-	for(i=0; i<data->dim_source; i++){// per ogni vettore del dataset
-		min=FLT_MAX; //modificato
-		ind2=data->dest+start;// destinazione
-		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
-			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
-			if(temp<min){ 
-				min=temp;
-				*ind=j;
-			}
-			ind2+=data->d;
-		}
-		ind+=m;
-		ind1+=data->d;
-	}
-}
+extern void calcolaPQ(kmeans_data* data, int start, int end);
+// void calcolaPQ(kmeans_data* data, int start, int end){
+// 	// Dei primi input->k ed i primi input->kc già si conosce l'index
+// 	// Per cui si può evitare di calcolare il più vicino.  
+// 	int i, j;
+// 	int m=data->index_columns;
+// 	float min;
+// 	float temp;
+// 	float *ind1, *ind2;
+// 	int* ind=data->index+start/((data->d)/(data->index_columns));
+// 	ind1=data->source+start;
+// 	for(i=0; i<data->dim_source; i++){// per ogni vettore del dataset
+// 		min=FLT_MAX; //modificato
+// 		ind2=data->dest+start;// destinazione
+// 		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
+// 			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
+// 			if(temp<min){ 
+// 				min=temp;
+// 				*ind=j;
+// 			}
+// 			ind2+=data->d;
+// 		}
+// 		ind+=m;
+// 		ind1+=data->d;
+// 	}
+// }
 
 float absf(float f){
 	if(f>0){
@@ -569,22 +569,22 @@ VECTOR qp_of_r(params* input, int r){
 }
 
 
-// extern void compute_residual_opt(params* input, float* res, int qc_i, int y,float* src);
-void compute_residual(params* input, float* res, int qc_i, int y,float* src){
-	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
-	// y 	: indice del punto y appartenente al dataset ds in input
-	// -----------------------------------------
-	// ritorna un puntatore al residuo r(y)
-	int i;
-	float *p_src,*p_qc,*p_res;
-	p_src = src+y*input->d;
-	p_qc = input->qc+qc_i*input->d;
-	p_res = res;
-	for(i=0; i<input->d;i++){
-		*res=*p_src++ - *p_qc++; // r(y) = y - qc(y)
-		res++;
-	}
-}
+extern void compute_residual_opt(params* input, float* res, int qc_i, int y,float* src);
+// void compute_residual(params* input, float* res, int qc_i, int y,float* src){
+// 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
+// 	// y 	: indice del punto y appartenente al dataset ds in input
+// 	// -----------------------------------------
+// 	// ritorna un puntatore al residuo r(y)
+// 	int i;
+// 	float *p_src,*p_qc,*p_res;
+// 	p_src = src+y*input->d;
+// 	p_qc = input->qc+qc_i*input->d;
+// 	p_res = res;
+// 	for(i=0; i<input->d;i++){
+// 		*res=*p_src++ - *p_qc++; // r(y) = y - qc(y)
+// 		res++;
+// 	}
+// }
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
@@ -596,7 +596,7 @@ void calcola_residui(params* input){
 	for(int y=0;y<input->n;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		// OTTIMIZZABILE
-		compute_residual(input, ry, *qc_i++, y, input->ds); // calcolo del residuo r(y) = y - qc(y)
+		compute_residual_opt(input, ry, *qc_i++, y, input->ds); // calcolo del residuo r(y) = y - qc(y)
 		ry += input->d;
 	}
 
@@ -858,7 +858,7 @@ void pqnn_search_non_esaustiva(params* input){
 			assert(curr_pq<input->n);
 			assert(curr_qc>=0);
 			assert(curr_pq>=0);
-			compute_residual(input, residuo, curr_qc, 0, q_x);
+			compute_residual_opt(input, residuo, curr_qc, 0, q_x);
 		
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);

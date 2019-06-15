@@ -932,7 +932,7 @@ void pqnn_search_non_esaustiva(params* input){
 		arr = qp_heap->arr;
 		for(s=input->knn-1;s>=0;s--){
 			// input->ANN[query*input->knn+s] = arr[s].index;
-			printf("query:%d index:%d dist:%.2f ",query,qp_heap->arr[0].index,sqrtf(qp_heap->arr[0].dist));
+			printf("query:%d index:%d dist:%.2f ", query, qp_heap->arr[0].index, sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
 		}
 

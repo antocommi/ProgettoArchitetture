@@ -68,7 +68,7 @@ cicloR1:cmp esi, eax
         jmp cicloR1
 fineR1: add eax, 4       
 cicloR2:cmp esi, eax
-        jg fine
+        jge fine
         movss xmm0, [ebx+4*esi]
         subss xmm0, [ecx+4*esi]
         movss [edx+4*esi], xmm0 

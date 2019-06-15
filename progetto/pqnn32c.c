@@ -859,13 +859,9 @@ void pqnn_search_non_esaustiva(params* input){
 			assert(curr_qc>=0);
 			assert(curr_pq>=0);
 			compute_residual(input, residuo, curr_qc, 0, q_x);
-
-			
 		
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
-				
-				
 			}else{
 				data->source = residuo;
 				data->d = input->d;
@@ -902,8 +898,7 @@ void pqnn_search_non_esaustiva(params* input){
 						}
 					}
 				}
-				
-				// // Stampa resido query 1 con centroide 1
+				// // Stampa residuo query 1 con centroide 1
 				// if(query==1 && i==1){
 				// 		ind_centroide= input->pq+curr_residual*input->m;
 				// 		printf("residuo:\n");
@@ -921,8 +916,6 @@ void pqnn_search_non_esaustiva(params* input){
 				// 		printf("\nsomma=%.2f\n",somma);
 				// 		exit(-1);
 				// }
-
-				
 				insert(qp_heap,somma, curr_pq++);
 				somma=0;
 			}

@@ -400,17 +400,19 @@ float pow2(float f, float s){
 	return f*f;
 }
 
-void distanza(float* punto1, float* punto2, int dimensione, float* r){
-	// estremi start incluso ed end escluso
-	int i;
-	float ret=0;
-	float* ind=punto1;
-	float* ind2=punto2;
-	for(i=0; i<dimensione; i++){
-		ret+=pow2(*(ind++) - *(ind2++), 2.0);
-	}
-	*r=ret;
-}
+extern void distanza(float* punto1, float* punto2, int dimensione, float* r);
+
+// void distanza(float* punto1, float* punto2, int dimensione, float* r){
+// 	// estremi start incluso ed end escluso
+// 	int i;
+// 	float ret=0;
+// 	float* ind=punto1;
+// 	float* ind2=punto2;
+// 	for(i=0; i<dimensione; i++){
+// 		ret+=pow2(*(ind++) - *(ind2++), 2.0);
+// 	}
+// 	*r=ret;
+// }
 
 void creaMatricedistanze(params* input, float* codebook){
 	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
@@ -822,8 +824,6 @@ void pqnn_search_non_esaustiva(params* input){
 	
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	if(data==NULL) exit(-1);
-	data->source=input->qs;
-	data->dest=input->qc;
 
 	if(input->symmetric==1){
 		creaMatricedistanze(input, input->residual_codebook);
@@ -880,7 +880,7 @@ void pqnn_search_non_esaustiva(params* input){
 				residui_da_visitare=input->n;
 			else 
 				residui_da_visitare = input->index_entry[curr_qc+1];
-			
+
 			while(curr_pq<residui_da_visitare){
 				curr_residual = input->celle_entry[curr_pq];
 				ind_centroide = input->pq+curr_residual*input->m;
@@ -891,10 +891,12 @@ void pqnn_search_non_esaustiva(params* input){
 					}else{
 						ci = *(ind_centroide+s);
 						cj = pq_residuo[s];
-						assert(ci<input->k && cj<input->k && ci>=cj);
+						assert(ci<input->k);
+						assert(cj<input->k);
 						if(ci!=cj){
 							calcolaCentroidi(&ci,&cj);
-							somma += input->distanze_simmetriche[s+calcolaIndice(ci, cj)*input->m];
+							assert(ci>=cj);
+							somma += (input->distanze_simmetriche[s+calcolaIndice(ci, cj)*input->m]);
 						}
 					}
 				}
@@ -907,7 +909,6 @@ void pqnn_search_non_esaustiva(params* input){
 				// 		}
 				// 		printf("\nquantizzatore esteso\n");
 				// 		for(j=0;j<input->m;j++){
-							
 				// 			for(int ll=0;ll<dS;ll++){
 				// 				printf(" %.2f\n", input->residual_codebook[(*ind_centroide)*input->d+j*dS+ll]);
 				// 			}
@@ -920,16 +921,16 @@ void pqnn_search_non_esaustiva(params* input){
 				somma=0;
 			}
 		}
-		
+		//44.22
 		//A questo punto i knn vicini sono in qp_heap->arr
 		arr = qp_heap->arr;
 		for(s=input->knn-1;s>=0;s--){
 			// input->ANN[query*input->knn+s] = arr[s].index;
-			printf("query:%d index:%d dist:%.2f ", query, qp_heap->arr[0].index, sqrtf(qp_heap->arr[0].dist));
+			printf("%.2f",sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
 		}
-
 		printf("\n");
+
 		_mm_free(qp_heap->arr);
 		_mm_free(qp_heap);
 		_mm_free(qc_heap->arr);

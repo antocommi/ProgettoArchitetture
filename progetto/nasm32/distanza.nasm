@@ -29,8 +29,8 @@ cicloQ:	cmp esi, ebx				;i < end-start
 		jg somme
 		
 		movups xmm1, [ecx+4*esi]
-		movups xmm2, [edx+4*esi]
 		movups xmm3, [ecx+4*esi+16]
+		movups xmm2, [edx+4*esi]
 		movups xmm4, [edx+4*esi+16]
 
 		subps xmm1, xmm2

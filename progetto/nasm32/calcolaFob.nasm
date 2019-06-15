@@ -92,7 +92,7 @@ ciclo:	cmp esi, 0
 		; popad
 
 		call distanza
-		movss xmm0, [temp]	;non necessaria, il valore è già in xmm0
+		;movss xmm0, [temp]	;non necessaria, il valore è già in xmm0
 		;mulss xmm0, xmm0
 
 		; pushad

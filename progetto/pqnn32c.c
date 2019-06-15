@@ -930,13 +930,12 @@ void pqnn_search_non_esaustiva(params* input){
 		
 		//A questo punto i knn vicini sono in qp_heap->arr
 		arr = qp_heap->arr;
-
 		for(s=input->knn-1;s>=0;s--){
 			// input->ANN[query*input->knn+s] = arr[s].index;
-			printf("%.2f ",sqrtf(qp_heap->arr[0].dist));
+			printf("query:%d index:%d dist:%.2f ",query,qp_heap->arr[0].index,sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
-
 		}
+
 		printf("\n");
 		_mm_free(qp_heap->arr);
 		_mm_free(qp_heap);

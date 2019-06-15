@@ -844,7 +844,7 @@ void pqnn_search_non_esaustiva(params* input){
 			distanza(q_x, input->qc + i*input->d, input->d, &dist); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
-
+		
 		arr = qc_heap->arr;		
 
 		qp_heap = CreateHeap(input->knn);

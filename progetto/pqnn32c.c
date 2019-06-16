@@ -888,14 +888,14 @@ void pqnn_search_non_esaustiva(params* input){
 				residui_da_visitare = input->index_entry[curr_qc+1];
 
 			while(indice_curr_pq<residui_da_visitare){
-				curr_residual = input->celle_entry[indice_curr_pq];
+				curr_residual = input->celle_entry[indice_curr_pq++];
 				ind_centroide = input->pq+curr_residual*input->m;
 				for(s=0;s<input->m;s++){
 					if(input->symmetric==0){
 						somma += input->distanze_asimmetriche[s*input->k+(*ind_centroide)];
 						ind_centroide++;
 					}else{
-						ci = *(ind_centroide+s);
+						ci = *ind_centroide++;
 						cj = pq_residuo[s];
 						assert(ci<input->k);
 						assert(cj<input->k);
@@ -908,7 +908,6 @@ void pqnn_search_non_esaustiva(params* input){
 				}
 				insert(qp_heap, somma, curr_residual);
 				somma=0;
-				indice_curr_pq++;
 			}
 		}
 		arr = qp_heap->arr;
@@ -916,9 +915,9 @@ void pqnn_search_non_esaustiva(params* input){
 			// input->ANN[query*input->knn+s] = arr[s].index;
 			//	printf("%.2f",sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
-			printf("%.2d ", input->ANN[query*input->knn+s]);
+			// printf("%.2d ", input->ANN[query*input->knn+s]);
 		}
-		printf("\n");
+		// printf("\n");
 
 		_mm_free(qp_heap->arr);
 		_mm_free(qp_heap);

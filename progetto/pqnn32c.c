@@ -772,8 +772,8 @@ void pqnn_index_non_esaustiva(params* input){
 		l = input->index_entry[c] + offset[c]++;
 		input->celle_entry[l] = i;
 	}
-	printf("%d \n",input->index_entry[3]-input->index_entry[2] );
-	for(j=input->index_entry[2];j<input->index_entry[3];j++){
+	printf("%d \n",input->index_entry[4]-input->index_entry[3] );
+	for(j=input->index_entry[3];j<input->index_entry[4];j++){
 		printf(" %d", input->celle_entry[j]);
 		if(j%8==0 && j!=0) printf("\n");
 		}
@@ -916,9 +916,9 @@ void pqnn_search_non_esaustiva(params* input){
 			// input->ANN[query*input->knn+s] = arr[s].index;
 			//	printf("%.2f",sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
-			//printf("%.2d ", input->ANN[query*input->knn+s]);
+			printf("%.2d ", input->ANN[query*input->knn+s]);
 		}
-		//printf("\n");
+		printf("\n");
 
 		_mm_free(qp_heap->arr);
 		_mm_free(qp_heap);

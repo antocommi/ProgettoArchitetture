@@ -772,6 +772,11 @@ void pqnn_index_non_esaustiva(params* input){
 		l = input->index_entry[c] + offset[c]++;
 		input->celle_entry[l] = i;
 	}
+	printf("%d \n",input->index_entry[3]-input->index_entry[2] );
+	for(j=input->index_entry[2];j<input->index_entry[3];j++){
+		printf(" %d", input->celle_entry[j]);
+		if(j%8==0 && j!=0) printf("\n");
+		}
 
 	_mm_free(input->residual_set);
 	_mm_free(offset);
@@ -794,6 +799,7 @@ void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 		rx += dStar;
 		ci = j*dStar + input->residual_codebook;
 	}
+
 }
 
 void calcolaCentroidi(int* ci, int* cj){
@@ -926,10 +932,11 @@ void pqnn_search_non_esaustiva(params* input){
 		arr = qp_heap->arr;
 		for(s=input->knn-1;s>=0;s--){
 			// input->ANN[query*input->knn+s] = arr[s].index;
-			printf("%.2f",sqrtf(qp_heap->arr[0].dist));
+		//	printf("%.2f",sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
+			//printf("%.2d ", input->ANN[query*input->knn+s]);
 		}
-		printf("\n");
+		//printf("\n");
 
 		_mm_free(qp_heap->arr);
 		_mm_free(qp_heap);

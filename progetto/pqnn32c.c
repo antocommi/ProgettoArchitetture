@@ -439,7 +439,7 @@ void creaMatricedistanze(params* input, float* codebook){
 	}
 }
 
-extern void calcolaPQ(kmeans_data* data, int start, int end);
+extern void calcolaPQ(kmeans_data* data, int partition, int start, int end);
 // void calcolaPQ(kmeans_data* data, int start, int end){
 // 	// Dei primi input->k ed i primi input->kc già si conosce l'index
 // 	// Per cui si può evitare di calcolare il più vicino.  
@@ -493,7 +493,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 	int incr, incr2;
 	int index_col=data->index_columns;
 	int ipart=start/(input->d/input->m);
-	calcolaPQ(data, start, end);
+	calcolaPQ(data,ipart ,start, end);
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && absf(fob1-fob2)/fob1 > input->eps); t++){
@@ -533,7 +533,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			//
 			ci+=input->d;
 		}
-		calcolaPQ(data, start, end);
+		calcolaPQ(data, ipart, start, end);
 		fob1=fob2;
 		fob2=0;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
@@ -684,7 +684,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->n_centroidi = input->kc;
 	data->dim_source = input->n-input->nr;
 
-	calcolaPQ(data, 0, input->d);
+	calcolaPQ(data,0, 0, input->d);
 	
 	// for(i=0;i<input->nr;i++){
 	// 	printf("%d %d\n",i,input->qc_indexes[i]);
@@ -716,7 +716,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->n_centroidi = input->k;
 	
 	for(i=0;i<input->m;i++){
-		calcolaPQ(data, i*dStar, (i+1)*dStar);
+		calcolaPQ(data, i, i*dStar, (i+1)*dStar);
 	}
 	
 	// Aggiunta dei punti y del dataset in celle_voronoi 
@@ -872,7 +872,7 @@ void pqnn_search_non_esaustiva(params* input){
 				data->n_centroidi = input->k;
 				data->dim_source = 1;
 				for(s=0;s<input->m;s++){
-					calcolaPQ(data,s*dS,(s+1)*dS);
+					calcolaPQ(data,s,s*dS,(s+1)*dS);
 				}
 			}
 

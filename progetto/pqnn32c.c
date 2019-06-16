@@ -718,33 +718,6 @@ void pqnn_index_non_esaustiva(params* input){
 	for(i=0;i<input->m;i++){
 		calcolaPQ(data, i, i*dStar, (i+1)*dStar);
 	}
-	
-	// Aggiunta dei punti y del dataset in celle_voronoi 
-	// secondo index_voronoi[i] che indica l'inizio della i-esima cella 
-	// sul vettore celle_voronoi rispetto ad ogni sotto-gruppo
-	
-	// for(j=0;j<m;j++){
-	// 	jk = j*k;
-	// 	memset(offset,0,input->k*sizeof(int));
-	// 	for(i=0;i<n;i++){
-	// 		// column major order
-	// 		input->index_voronoi[jk + input->pq[i*m+j] ]++; 
-	// 	}
-	// 	x = input->index_voronoi[jk];
-	// 	input->index_voronoi[jk] = 0;
-	// 	for(l=1;l<k;l++){
-	// 		tmp = input->index_voronoi[jk+l];
-	// 		input->index_voronoi[jk+l] = input->index_voronoi[jk+l-1] + x;
-	// 		x = tmp;
-	// 	}
-	// for(int i=0;i<n;i++){
-	// 		x = i*m+j;
-	// 		c = input->pq[x];
-	// 		l = n*j + input->index_voronoi[jk+c] + offset[c]++;
-	// 		input->celle_voronoi[l] = i;
-	// 	}
-	// }
-	// _mm_free(offset);
 
 	// TOLTO inizializzaSecLiv
 	// Aggiunta dei punti r(y) del residual_set in celle_entry 
@@ -776,7 +749,7 @@ void pqnn_index_non_esaustiva(params* input){
 	for(j=input->index_entry[3];j<input->index_entry[4];j++){
 		printf(" %d", input->celle_entry[j]);
 		if(j%8==0 && j!=0) printf("\n");
-		}
+	}
 
 	_mm_free(input->residual_set);
 	_mm_free(offset);
@@ -789,15 +762,14 @@ void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 	dStar = input->d/input->m;
 	result = input->distanze_asimmetriche;
 	rx = residuo;
-	ci = input->residual_codebook;
 	for(j=0;j<input->m;j++){
+		ci = j*dStar + input->residual_codebook;
 		for(i=0;i<input->k;i++){
 			distanza(rx, ci, dStar, result);
 			result++;
 			ci += input->d;
 		}
 		rx += dStar;
-		ci = j*dStar + input->residual_codebook;
 	}
 
 }
@@ -860,10 +832,6 @@ void pqnn_search_non_esaustiva(params* input){
 			curr_qc = arr[i].index;
 			// curr_qc = PopMaxIndex(qc_heap); 
 			indice_curr_pq = input->index_entry[curr_qc];
-			assert(curr_qc<input->kc);
-			assert(indice_curr_pq<input->n);
-			assert(curr_qc>=0);
-			assert(indice_curr_pq>=0);
 			compute_residual_opt(input, residuo, curr_qc, 0, q_x);
 		
 			if(input->symmetric==0){
@@ -890,6 +858,7 @@ void pqnn_search_non_esaustiva(params* input){
 			while(indice_curr_pq<residui_da_visitare){
 				curr_residual = input->celle_entry[indice_curr_pq++];
 				ind_centroide = input->pq+curr_residual*input->m;
+
 				for(s=0;s<input->m;s++){
 					if(input->symmetric==0){
 						somma += input->distanze_asimmetriche[s*input->k+(*ind_centroide)];
@@ -897,15 +866,13 @@ void pqnn_search_non_esaustiva(params* input){
 					}else{
 						ci = *ind_centroide++;
 						cj = pq_residuo[s];
-						assert(ci<input->k);
-						assert(cj<input->k);
 						if(ci!=cj){
 							calcolaCentroidi(&ci,&cj);
-							assert(ci>=cj);
 							somma += (input->distanze_simmetriche[s+calcolaIndice(ci, cj)*input->m]);
 						}
 					}
 				}
+
 				insert(qp_heap, somma, curr_residual);
 				somma=0;
 			}
@@ -913,11 +880,11 @@ void pqnn_search_non_esaustiva(params* input){
 		arr = qp_heap->arr;
 		for(s=input->knn-1;s>=0;s--){
 			// input->ANN[query*input->knn+s] = arr[s].index;
-			//	printf("%.2f",sqrtf(qp_heap->arr[0].dist));
+				printf("%.2f",sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
 			// printf("%.2d ", input->ANN[query*input->knn+s]);
 		}
-		// printf("\n");
+		printf("\n");
 
 		_mm_free(qp_heap->arr);
 		_mm_free(qp_heap);

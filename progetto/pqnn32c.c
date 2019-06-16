@@ -813,7 +813,7 @@ void calcolaCentroidi(int* ci, int* cj){
 
 void pqnn_search_non_esaustiva(params* input){
 	int i, q, query, j, p, h, s, residui_da_visitare, curr_residual, *ind_centroide;
-	int curr_qc, curr_pq, *pq_residuo, ci, cj;
+	int curr_qc, indice_curr_pq, *pq_residuo, ci, cj;
 	Heap* qc_heap, *qp_heap;
 	struct kmeans_data* data;
 	float dist;
@@ -859,11 +859,11 @@ void pqnn_search_non_esaustiva(params* input){
 		for(i=0; i<input->w; i++){
 			curr_qc = arr[i].index;
 			// curr_qc = PopMaxIndex(qc_heap); 
-			curr_pq = input->index_entry[curr_qc];
+			indice_curr_pq = input->index_entry[curr_qc];
 			assert(curr_qc<input->kc);
-			assert(curr_pq<input->n);
+			assert(indice_curr_pq<input->n);
 			assert(curr_qc>=0);
-			assert(curr_pq>=0);
+			assert(indice_curr_pq>=0);
 			compute_residual_opt(input, residuo, curr_qc, 0, q_x);
 		
 			if(input->symmetric==0){
@@ -887,8 +887,8 @@ void pqnn_search_non_esaustiva(params* input){
 			else 
 				residui_da_visitare = input->index_entry[curr_qc+1];
 
-			while(curr_pq<residui_da_visitare){
-				curr_residual = input->celle_entry[curr_pq];
+			while(indice_curr_pq<residui_da_visitare){
+				curr_residual = input->celle_entry[indice_curr_pq];
 				ind_centroide = input->pq+curr_residual*input->m;
 				for(s=0;s<input->m;s++){
 					if(input->symmetric==0){
@@ -906,33 +906,15 @@ void pqnn_search_non_esaustiva(params* input){
 						}
 					}
 				}
-				// // Stampa residuo query 1 con centroide 1
-				// if(query==1 && i==1){
-				// 		ind_centroide= input->pq+curr_residual*input->m;
-				// 		printf("residuo:\n");
-				// 		for(j=0;j<input->d;j++){
-				// 			printf(" %.2f\n",residuo[j]);
-				// 		}
-				// 		printf("\nquantizzatore esteso\n");
-				// 		for(j=0;j<input->m;j++){
-				// 			for(int ll=0;ll<dS;ll++){
-				// 				printf(" %.2f\n", input->residual_codebook[(*ind_centroide)*input->d+j*dS+ll]);
-				// 			}
-				// 			ind_centroide++;
-				// 		}
-				// 		printf("\nsomma=%.2f\n",somma);
-				// 		exit(-1);
-				// }
-				insert(qp_heap,somma, curr_pq++);
+				insert(qp_heap, somma, curr_residual);
 				somma=0;
+				indice_curr_pq++;
 			}
 		}
-		//44.22
-		//A questo punto i knn vicini sono in qp_heap->arr
 		arr = qp_heap->arr;
 		for(s=input->knn-1;s>=0;s--){
 			// input->ANN[query*input->knn+s] = arr[s].index;
-		//	printf("%.2f",sqrtf(qp_heap->arr[0].dist));
+			//	printf("%.2f",sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
 			//printf("%.2d ", input->ANN[query*input->knn+s]);
 		}

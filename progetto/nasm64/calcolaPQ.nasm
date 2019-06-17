@@ -4,12 +4,12 @@ extern distanza
 
 section .data
 max dd 1.79E+308
-;f db '%f ', 10, 0
-d1 db '%ld ';, 10, 0
-d2 db 'i%ld j%ld ', 10, 0
-d3 db '%ld %ld %ld ', 10, 0
-d4 db '%ld %ld %ld %ld ', 10, 0
-break db 'breakpoint', 10, 0
+; f db '%f ', 10, 0
+; d1 db '%ld ';, 10, 0
+; d2 db 'i%ld j%ld ', 10, 0
+; d3 db '%ld %ld %ld ', 10, 0
+; d4 db '%ld %ld %ld %ld ', 10, 0
+; break db 'breakpoint', 10, 0
 
 section .bss
 

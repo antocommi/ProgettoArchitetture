@@ -78,13 +78,12 @@ typedef struct {
 	// nns: matrice row major order di interi a 32 bit utilizzata per memorizzare gli ANN
 	// sulla riga i-esima si trovano gli ID (a partire da 0) degli ANN della query i-esima
 	//
-	int* ANN;
+	int* ANN; //dimensione: nq*knn
 	VECTOR vq;
 	int* pq;
 	int* query_pq;
 
-	MATRIX codebook; // per E. contiene quantizzatori prodotto. Per N.E. contiene quantizzatori grossolani
-	
+	MATRIX codebook; // per Ex contiene quantizzatori prodotto. Per NotEx contiene quantizzatori grossolani
 	MATRIX distanze_simmetriche;
 	int nDist;
 	MATRIX distanze_asimmetriche;
@@ -92,8 +91,9 @@ typedef struct {
 	// Strutture ad-hoc ricerca non esaustiva
 
 	// Vettore contenente alla posizione i l'indice di qc(Y_i) in codebook
-	int * qc_indexes;
+	int *qc_indexes;
 
+	// Coarse q. dim: input.kc x input.d
 	MATRIX qc;
 
 	// Residual product quantizators in non exhaustive search
@@ -104,19 +104,15 @@ typedef struct {
 	MATRIX residual_set;
 
 	// Lista di liste (secondo livello dell'inverted index)
-	struct entry* v; 
+	// struct entry *v; 
+	float *zero; 
 
-	float* zero;
+	int* celle_voronoi;
+	int* index_voronoi;
+
+	int* index_entry;
+	int* celle_entry;
 } params;
-
-//Entry della s.d. multilivello
-struct entry{
-	int index;
-	VECTOR q;
-	//temporaneo
-	//Serve per gestire liste a dimensione sconosciuta. 
-	struct entry * next;
-};
 
 typedef struct{
 
@@ -588,7 +584,6 @@ void calcolaNN(params* input, int query, VECTOR m){
 			ind++;
 		}
 	}
-
 	if(input->knn>1){
 		//knn>1
 		ind=m;
@@ -794,7 +789,7 @@ void pqnn_search_esaustiva(params* input){
 void pqnn_index_non_esaustiva(params* input){
 	int i, j, l, d, m, knn, dStar, *offset, *offset2, n;
 	int c, k, x, jk, *index, tmp;
-	struct kmeans_data* data;
+	kmeans_data* data;
 
 	k = input->k;
 	d = input->d;
@@ -820,7 +815,7 @@ void pqnn_index_non_esaustiva(params* input){
 	if(input->index_voronoi==NULL) exit(-1);
 	memset(input->index_voronoi,0,sizeof(int)*input->k*input->m);
 
-	data = _mm_malloc(sizeof(struct kmeans_data),16);
+	data = _mm_malloc(sizeof(kmeans_data),16);
 	dStar = input->d/input->m;
 
 	//AL momento sceglie i primi nr come elementi del learning set. 
@@ -942,7 +937,7 @@ void pqnn_search_non_esaustiva(params* input){
 	int i, q, query, j, p, h, s, residui_da_visitare, curr_residual, *ind_centroide;
 	int curr_qc, indice_curr_pq, *pq_residuo, ci, cj;
 	Heap* qc_heap, *qp_heap;
-	struct kmeans_data* data;
+	kmeans_data* data;
 	float dist;
 	struct entry_heap* arr;
 	float *residuo, *q_x, *dista; 
@@ -955,7 +950,7 @@ void pqnn_search_non_esaustiva(params* input){
 	pq_residuo = _mm_malloc(sizeof(int)*input->m,16);
 	if(pq_residuo==NULL) exit(-1);
 	
-	data = _mm_malloc(sizeof(struct kmeans_data),16);
+	data = _mm_malloc(sizeof(kmeans_data),16);
 	if(data==NULL) exit(-1);
 
 	if(input->symmetric==1){

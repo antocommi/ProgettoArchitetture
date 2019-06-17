@@ -37,13 +37,12 @@ typedef struct {
 	// nns: matrice row major order di interi a 32 bit utilizzata per memorizzare gli ANN
 	// sulla riga i-esima si trovano gli ID (a partire da 0) degli ANN della query i-esima
 	//
-	int* ANN;
+	int* ANN; //dimensione: nq*knn
 	VECTOR vq;
 	int* pq;
 	int* query_pq;
 
-	MATRIX codebook; // per E. contiene quantizzatori prodotto. Per N.E. contiene quantizzatori grossolani
-	
+	MATRIX codebook; // per Ex contiene quantizzatori prodotto. Per NotEx contiene quantizzatori grossolani
 	MATRIX distanze_simmetriche;
 	int nDist;
 	MATRIX distanze_asimmetriche;
@@ -51,8 +50,9 @@ typedef struct {
 	// Strutture ad-hoc ricerca non esaustiva
 
 	// Vettore contenente alla posizione i l'indice di qc(Y_i) in codebook
-	int * qc_indexes;
+	int *qc_indexes;
 
+	// Coarse q. dim: input.kc x input.d
 	MATRIX qc;
 
 	// Residual product quantizators in non exhaustive search
@@ -63,9 +63,12 @@ typedef struct {
 	MATRIX residual_set;
 
 	// Lista di liste (secondo livello dell'inverted index)
-	struct entry* v; 
+	// struct entry *v; 
 
-	float* zero;
+	float *zero;
+
+	int* index_entry;
+	int* celle_entry;
 } params;
 
 struct entry{
@@ -130,7 +133,6 @@ int main(int argc, char** argv) {
     printf("qc equ %ld\n", offsetof(params, qc));
     printf("residual_codebook equ %ld\n", offsetof(params, residual_codebook));
     printf("residual_set equ %ld\n", offsetof(params, residual_set));
-    printf("v equ %ld\n", offsetof(params, v));
     printf("zero equ %ld\n", offsetof(params, zero));
 
 

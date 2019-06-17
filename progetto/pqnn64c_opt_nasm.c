@@ -103,19 +103,9 @@ typedef struct {
 	MATRIX residual_set;
 
 	// Lista di liste (secondo livello dell'inverted index)
-	struct entry* v;
 
 	float* zero;
 } params;
-
-//Entry della s.d. multilivello
-struct entry{
-	int index;
-	VECTOR q;
-	//temporaneo
-	//Serve per gestire liste a dimensione sconosciuta.
-	struct entry * next;
-};
 
 typedef struct{
 

@@ -18,7 +18,7 @@ global dist_matrix
 
 m equ 40
 distanze_simmetriche equ 128
-zero equ 192
+zero equ 184
 
 dist_matrix:
 		push rbp

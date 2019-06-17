@@ -95,7 +95,7 @@ cicloQ1: cmp r11, rdi
         ; vmovaps [rsi+r11*4+480],ymm15 
 		add r11,64 ;????
         jmp cicloQ1
-fineQ:  add rdi, 56
+fineQ1:  add rdi, 56
 cicloR1:cmp r11, rdi
         jg fineR1
 		vmovaps ymm0, [r9+r11*4]
@@ -106,9 +106,9 @@ cicloR1:cmp r11, rdi
 fineR1:  add rdi, 8
 cicloR2: cmp r11, rdi
         jge fine
-        vmovss ymm0, [r9+4*r11]
-        vsubss ymm0, [r10+4*r11]
-        vmovss [rsi+4*r11], ymm0 
+        vmovss xmm0, [r9+4*r11]
+        vsubss xmm0, [r10+4*r11]
+        vmovss [rsi+4*r11], xmm0 
         inc r11
         jmp cicloR2
 

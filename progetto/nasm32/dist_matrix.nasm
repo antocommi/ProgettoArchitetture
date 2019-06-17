@@ -17,7 +17,7 @@ input equ 8
 
 m equ 28
 distanze_simmetriche equ 96
-zero equ 128
+zero equ 124
 
 dist_matrix:
 		push ebp

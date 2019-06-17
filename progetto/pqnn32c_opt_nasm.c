@@ -592,7 +592,7 @@ void pqnn_index(params* input) {
 	if(input->exaustive==1){
 		pqnn_index_esaustiva(input);
 	}else{
-		pqnn_index_non_esaustiva(input);
+		//pqnn_index_non_esaustiva(input);
 	}
 
     // -------------------------------------------------
@@ -608,7 +608,7 @@ void pqnn_search(params* input) {
 	if(input->exaustive==1){
 		pqnn_search_esaustiva(input);
 	}else{
-		pqnn_search_non_esaustiva(input);
+		//pqnn_search_non_esaustiva(input);
 	}
 
 	// Restituisce il risultato come una matrice di nq * knn

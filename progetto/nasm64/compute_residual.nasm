@@ -40,14 +40,14 @@ compute_residual:
 		
 cicloQ1: cmp r11, rdi
         jg fineQ1
-		vmovaps zmm0, [r9+r11*4]
-        ; vmovaps ymm1, [r9+r11*4+32]
-        vmovaps zmm2, [r9+r11*4+64]
-        ; vmovaps ymm3, [r9+r11*4+96]        
-        vmovaps zmm4, [r9+r11*4+128]
-        ; vmovaps ymm5, [r9+r11*4+160]
-        vmovaps zmm6, [r9+r11*4+192]
-        ; vmovaps ymm7, [r9+r11*4+224]
+		vmovaps ymm0, [r9+r11*4]
+        vmovaps ymm1, [r9+r11*4+32]
+        vmovaps ymm2, [r9+r11*4+64]
+        vmovaps ymm3, [r9+r11*4+96]        
+        vmovaps ymm4, [r9+r11*4+128]
+        vmovaps ymm5, [r9+r11*4+160]
+        vmovaps ymm6, [r9+r11*4+192]
+        vmovaps ymm7, [r9+r11*4+224]
 
 
         ; vmovaps ymm8, [r9+r11*4+256]
@@ -59,14 +59,14 @@ cicloQ1: cmp r11, rdi
         ; vmovaps ymm14, [r9+r11*4+448]
         ; vmovaps ymm15, [r9+r11*4+480]
 
-        vsubps zmm0, [r10+r11*4]
-       ; vsubps ymm1, [r10+r11*4+32] 
-        vsubps zmm2, [r10+r11*4+64] 
-       ; vsubps ymm3, [r10+r11*4+96] 
-        vsubps zmm4, [r10+r11*4+128]         
-        ;vsubps ymm5, [r10+r11*4+160] 
-        vsubps zmm6, [r10+r11*4+192] 
-       ; vsubps ymm7, [r10+r11*4+224]
+        vsubps ymm0, [r10+r11*4]
+        vsubps ymm1, [r10+r11*4+32] 
+        vsubps ymm2, [r10+r11*4+64] 
+        vsubps ymm3, [r10+r11*4+96] 
+        vsubps ymm4, [r10+r11*4+128]         
+        vsubps ymm5, [r10+r11*4+160] 
+        vsubps ymm6, [r10+r11*4+192] 
+        vsubps ymm7, [r10+r11*4+224]
         
         ; vsubps ymm8, [r10+r11*4+256]
         ; vsubps ymm9, [r10+r11*4+288] 
@@ -77,13 +77,13 @@ cicloQ1: cmp r11, rdi
         ; vsubps ymm14, [r10+r11*4+448] 
         ; vsubps ymm15, [r10+r11*4+480]  
 		
-        vmovaps [rsi+r11*4],zmm0 
-        ;vmovaps [rsi+r11*4+32],ymm1
-        vmovaps [rsi+r11*4+64],zmm2 
-        ;vmovaps [rsi+r11*4+96],ymm3 
-        vmovaps [rsi+r11*4+128],zmm4 
-        ;vmovaps [rsi+r11*4+160],ymm5 
-        vmovaps [rsi+r11*4+192],zmm6 
+        vmovaps [rsi+r11*4],ymm0 
+        vmovaps [rsi+r11*4+32],ymm1
+        vmovaps [rsi+r11*4+64],ymm2 
+        vmovaps [rsi+r11*4+96],ymm3 
+        vmovaps [rsi+r11*4+128],ymm4 
+        vmovaps [rsi+r11*4+160],ymm5 
+        vmovaps [rsi+r11*4+192],ymm6 
         ;vmovaps [rsi+r11*4+224],ymm7 
         ; vmovaps [rsi+r11*4+256],ymm8
         ; vmovaps [rsi+r11*4+288],ymm9 

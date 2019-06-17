@@ -114,7 +114,7 @@ typedef struct {
 	// Lista di liste (secondo livello dell'inverted index)
 	// struct entry *v; 
 
-	float *zero; //SERVE?
+	float *zero; 
 
 	int* celle_voronoi;
 	int* index_voronoi;
@@ -634,6 +634,10 @@ void pqnn_index_non_esaustiva(params* input){
 	m = input->m;
 	n = input->n;
 
+	input->zero = _mm_malloc(sizeof(float),16);
+	if(input->zero==NULL) exit(-1);
+	*(input->zero) = 0; 
+
 	input->index_entry = _mm_malloc(sizeof(int)*input->kc,16);
 	if(input->index_entry==NULL) exit(-1);
 	memset(input->index_entry,0,input->kc*sizeof(int));
@@ -802,6 +806,21 @@ void calcolaCentroidi(int* ci, int* cj){
 	}
 }
 
+ float* dist_matrix(params* input, int centroide1, int centroide2, int ipart){
+	// estremi start incluso ed end escluso
+	if(centroide1==centroide2){
+		return input->zero;
+	}else{
+		//column major order-------------------------------------------
+		if(centroide1<centroide2){
+			return input->distanze_simmetriche+ipart+calcolaIndice(centroide2, centroide1)*input->m;
+		}else{
+			return input->distanze_simmetriche+ipart+calcolaIndice(centroide1, centroide2)*input->m;
+		}
+		//-------------------------------------------
+	}
+}
+
 void pqnn_search_non_esaustiva(params* input){
 	int i, q, query, j, p, h, s, residui_da_visitare, curr_residual, *ind_centroide;
 	int curr_qc, indice_curr_pq, *pq_residuo, ci, cj;
@@ -832,15 +851,15 @@ void pqnn_search_non_esaustiva(params* input){
 
 	}
 
-	for(s=0;s<input->m;s++){
-		for(i=0;i<input->k;i++){
-			for(j=0;j<i;j++){
-				printf("(%d,%d)=%f ",i,j,input->distanze_simmetriche[s+calcolaIndice(i, j)*input->m]);
-			}
-		}
-	}
+	// for(s=0;s<input->m;s++){
+	// 	for(i=0;i<input->k;i++){
+	// 		for(j=0;j<i;j++){
+	// 			printf("(%d,%d)=%f ",i,j,input->distanze_simmetriche[s+calcolaIndice(i, j)*input->m]);
+	// 		}
+	// 	}
+	// }
 	
-	exit(-1);
+	// exit(-1);
 
 	for(query=0; query<input->nq; query++){
 		
@@ -898,13 +917,9 @@ void pqnn_search_non_esaustiva(params* input){
 					}else{
 						ci = *ind_centroide++;
 						cj = pq_residuo[s];
-						if(ci!=cj){
-							calcolaCentroidi(&ci,&cj);
-							somma += (input->distanze_simmetriche[s+calcolaIndice(ci, cj)*input->m]);
-						}
+						somma += *(dist_matrix(input,ci,cj,s));
 					}
 				}
-
 				insert(qp_heap, somma, curr_residual);
 				somma=0;
 			}

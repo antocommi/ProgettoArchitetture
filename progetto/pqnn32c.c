@@ -614,9 +614,6 @@ void pqnn_index_non_esaustiva(params* input){
 	m = input->m;
 	n = input->n;
 
-	// offset = _mm_malloc(sizeof(int)*input->k,16);
-	// if(offset==NULL) exit(-1);
-
 	input->index_entry = _mm_malloc(sizeof(int)*input->kc,16);
 	if(input->index_entry==NULL) exit(-1);
 	memset(input->index_entry,0,input->kc*sizeof(int));
@@ -664,14 +661,6 @@ void pqnn_index_non_esaustiva(params* input){
 	data->n_centroidi = input->kc;
 	data->d=input->d; 
 	data->dim_source = input->nr;
-	
-	// for(i=0;i<10;i++){
-	// 	printf("<------------>\n");
-	// 	for(j=0;j<input->d/2;j++){
-	// 		printf("%.2f ",input->qc[i*input->d+j]);
-	// 	}
-	// 	printf("\n");
-	// }
 
 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
 	
@@ -745,11 +734,12 @@ void pqnn_index_non_esaustiva(params* input){
 		l = input->index_entry[c] + offset[c]++;
 		input->celle_entry[l] = i;
 	}
-	printf("%d \n",input->index_entry[4]-input->index_entry[3] );
-	for(j=input->index_entry[3];j<input->index_entry[4];j++){
-		printf(" %d", input->celle_entry[j]);
-		if(j%8==0 && j!=0) printf("\n");
-	}
+
+	// printf("%d \n",input->index_entry[4]-input->index_entry[3] );
+	// for(j=input->index_entry[3];j<input->index_entry[4];j++){
+	// 	printf(" %d", input->celle_entry[j]);
+	// 	if(j%8==0 && j!=0) printf("\n");
+	// }
 
 	_mm_free(input->residual_set);
 	_mm_free(offset);
@@ -765,6 +755,15 @@ void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 	for(j=0;j<input->m;j++){
 		ci = j*dStar + input->residual_codebook;
 		for(i=0;i<input->k;i++){
+			// printf("\n<--------------->\nres_query:");
+			// for(int h=0;h<dStar;h++){
+			// 	printf(" %.2f",*(rx+h));
+			// }
+			// printf("\nresiduo: ");
+			// for(int h=0;h<dStar;h++){
+			// 	printf(" %.2f",*(ci+h));
+			// }
+			// printf("\n<--------------->\n");
 			distanza(rx, ci, dStar, result);
 			result++;
 			ci += input->d;
@@ -836,6 +835,10 @@ void pqnn_search_non_esaustiva(params* input){
 		
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
+				// for(h=0;h<input->k;h+=1){
+				// 	printf("%.1f, ", input->distanze_asimmetriche[h]);
+				// 	if(h != 0 && h%8==0) printf("\n");
+				// }
 			}else{
 				data->source = residuo;
 				data->d = input->d;
@@ -858,7 +861,6 @@ void pqnn_search_non_esaustiva(params* input){
 			while(indice_curr_pq<residui_da_visitare){
 				curr_residual = input->celle_entry[indice_curr_pq++];
 				ind_centroide = input->pq+curr_residual*input->m;
-
 				for(s=0;s<input->m;s++){
 					if(input->symmetric==0){
 						somma += input->distanze_asimmetriche[s*input->k+(*ind_centroide)];
@@ -880,11 +882,11 @@ void pqnn_search_non_esaustiva(params* input){
 		arr = qp_heap->arr;
 		for(s=input->knn-1;s>=0;s--){
 			// input->ANN[query*input->knn+s] = arr[s].index;
-				printf("%.2f",sqrtf(qp_heap->arr[0].dist));
+			// printf("%.2f ",sqrtf(qp_heap->arr[0].dist));
 			input->ANN[query*input->knn+s] = PopMaxIndex(qp_heap);
 			// printf("%.2d ", input->ANN[query*input->knn+s]);
 		}
-		printf("\n");
+		// printf("\n");
 
 		_mm_free(qp_heap->arr);
 		_mm_free(qp_heap);

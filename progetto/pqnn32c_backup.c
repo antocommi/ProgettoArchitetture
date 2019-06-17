@@ -114,11 +114,29 @@ typedef struct {
 	// Lista di liste (secondo livello dell'inverted index)
 	// struct entry *v; 
 
-	float *zero;
+	float *zero; 
+
+	int* celle_voronoi;
+	int* index_voronoi;
 
 	int* index_entry;
 	int* celle_entry;
 } params;
+
+//Entry della s.d. multilivello 
+// DA ELIMINARE NON SERVE PIÙ
+struct entry{
+	int index;
+
+	// Residuo q di dimensione d.
+	// VECTOR q;
+	
+	// VECTOR indexes;
+	
+	//temporaneo
+	//Serve per gestire liste a dimensione sconosciuta. 
+	struct entry * next;
+};
 
 typedef struct kmeans_data{
 
@@ -144,6 +162,7 @@ typedef struct kmeans_data{
 } kmeans_data;
 
 struct entry_heap{
+	
 	float dist;
 	int index;
 };
@@ -271,6 +290,283 @@ void heapify_top_bottom(Heap *h, int parent_node){
 }
 
 
+/*
+ * 
+ *	Le funzioni sono state scritte assumento che le matrici siano memorizzate 
+ * 	mediante un array (float*), in modo da occupare un unico blocco
+ * 	di memoria, ma a scelta del candidato possono essere 
+ * 	memorizzate mediante array di array (float**).
+ * 
+ * 	In entrambi i casi il candidato dovrà inoltre scegliere se memorizzare le
+ * 	matrici per righe (row-major order) o per colonne (column major-order).
+ *
+ * 	L'assunzione corrente è che le matrici siano in row-major order.
+ * 
+ */
+
+void* get_block(int size, int elements) { 
+	return _mm_malloc(elements*size,16); 
+}
+
+
+void free_block(void* p) { 
+	_mm_free(p);
+}
+
+
+MATRIX alloc_matrix(int rows, int cols) {
+	return (MATRIX) get_block(sizeof(float),rows*cols);
+}
+
+
+void dealloc_matrix(MATRIX mat) {
+	free_block(mat);
+}
+
+
+/*
+ * 
+ * 	load_data
+ * 	=========
+ * 
+ *	Legge da file una matrice di N righe
+ * 	e M colonne e la memorizza in un array lineare in row-major order
+ * 
+ * 	Codifica del file:
+ * 	primi 4 byte: numero di righe (N) --> numero intero a 32 bit
+ * 	successivi 4 byte: numero di colonne (M) --> numero intero a 32 bit
+ * 	successivi N*M*4 byte: matrix data in row-major order --> numeri floating-point a precisione doppia
+ * 
+ *****************************************************************************
+ *	Se lo si ritiene opportuno, è possibile cambiare la codifica in memoria
+ * 	della matrice. 
+ *****************************************************************************
+ * 
+ */
+MATRIX load_data(char* filename, int *n, int *d) {	
+	FILE* fp;
+	int rows, cols, status, i;
+	
+	fp = fopen(filename, "rb");
+	
+	if (fp == NULL) {
+		printf("'%s' : bad data file name!\n", filename);
+		exit(0);
+	}
+	
+	status = fread(&cols, sizeof(int), 1, fp);
+	status = fread(&rows, sizeof(int), 1, fp);
+		
+	MATRIX data = alloc_matrix(rows,cols);
+	status = fread(data, sizeof(float), rows*cols, fp);
+	fclose(fp);
+	
+	*n = rows;
+	*d = cols;
+	
+	return data;
+}
+
+
+void save_ANN(char* filename, int* ANN, int nq, int knn) {	
+	FILE* fp;
+	int i, j;
+	char fpath[256];
+	
+	sprintf(fpath, "%s.ann", filename);
+	fp = fopen(fpath, "w");
+	for (i = 0; i < nq; i++) {
+		for (j = 0; j < knn; j++)
+			fprintf(fp, "%d ", ANN[i*knn+j]);
+		fprintf(fp, "\n");
+	}
+	fclose(fp);
+}
+
+
+
+extern void pqnn32_index(params* input);
+extern int* pqnn32_search(params* input);
+
+//funzioni fatte da noi
+extern int calcolaIndice(int i, int j);
+// int calcolaIndice(int i, int j){
+// 	//funzione che calcola l'indice per la matrice delle distanze_simmetriche
+// 	return i*(i-1)/2+j;
+// }
+
+float pow2(float f, float s){
+	//non modificata rispetto a file pqnn32_opt1.c
+	return f*f;
+}
+
+extern void distanza(float* punto1, float* punto2, int dimensione, float* r);
+
+// void distanza(float* punto1, float* punto2, int dimensione, float* r){
+// 	// estremi start incluso ed end escluso
+// 	int i;
+// 	float ret=0;
+// 	float* ind=punto1;
+// 	float* ind2=punto2;
+// 	for(i=0; i<dimensione; i++){
+// 		ret+=pow2(*(ind++) - *(ind2++), 2.0);
+// 	}
+// 	*r=ret;
+// }
+
+void creaMatricedistanze(params* input, float* codebook){
+	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
+	// puntatore alla src dei centroidi
+	// int i, j, k;
+	// int dStar=input->d/input->m;
+	// int d=input->d;
+	// float temp;
+	// float *ind1, *ind2;
+	// input->nDist=input->k*(input->k+1)/2;
+	// input->distanze_simmetriche = alloc_matrix(input->m, input->nDist);
+	// if(input->distanze_simmetriche==NULL) exit(-1);
+	// for(i=1; i<input->k; i++){
+	// 	for(j=0; j<i; j++){
+	// 		ind1=codebook+i*d;
+	// 		ind2=codebook+j*d;
+	// 		for(k=0; k<input->m; k++){
+	// 			distanza(ind1, ind2, dStar, &temp);
+	// 			input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
+	// 			ind1+=dStar;
+	// 			ind2+=dStar;
+	// 		}
+	// 	}
+	// }
+
+	int i, j, k;
+	int dStar=input->d/input->m;
+	int d=input->d;
+	float *ind1, *ind2;
+	input->nDist=input->k*(input->k+1)/2;
+	
+	input->distanze_simmetriche = (float*) alloc_matrix(input->m, input->nDist);
+	if(input->distanze_simmetriche==NULL) exit(-1);
+	for(i=1; i<input->k; i++){
+		for(j=0; j<i; j++){
+			ind1=codebook+i*d;
+			ind2=codebook+j*d;
+			for(k=0; k<input->m; k++){
+				distanza(ind1, ind2, dStar, input->distanze_simmetriche+k+calcolaIndice(i, j)*input->m);
+				ind1+=dStar;
+				ind2+=dStar;
+			}
+		}
+	}
+}
+
+extern void calcolaPQ(kmeans_data* data, int partition, int start, int end);
+// void calcolaPQ(kmeans_data* data, int start, int end){
+// 	// Dei primi input->k ed i primi input->kc già si conosce l'index
+// 	// Per cui si può evitare di calcolare il più vicino.  
+// 	int i, j;
+// 	int m=data->index_columns;
+// 	float min;
+// 	float temp;
+// 	float *ind1, *ind2;
+// 	int* ind=data->index+start/((data->d)/(data->index_columns));
+// 	ind1=data->source+start;
+// 	for(i=0; i<data->dim_source; i++){// per ogni vettore del dataset
+// 		min=FLT_MAX; //modificato
+// 		ind2=data->dest+start;// destinazione
+// 		for(j=0; j<data->n_centroidi; j++){// cerca il centroide + vicino
+// 			distanza(ind1, ind2, end-start, &temp);//calcolando la distanza
+// 			if(temp<min){ 
+// 				min=temp;
+// 				*ind=j;
+// 			}
+// 			ind2+=data->d;
+// 		}
+// 		ind+=m;
+// 		ind1+=data->d;
+// 	}
+// }
+
+float absf(float f){
+	if(f>0){
+		return f;
+	}
+	return -f;
+}
+
+void stampaCentroidiGrossolani(params* input){
+	int i;
+	for(i=0;i<input->nr;i++){
+		printf("%3d ",input->qc_indexes[i]);
+		if(i%8==0 && i!=0) printf("\n");
+		if(i==input->kc) printf("\n-------------------------\n");
+	}
+}
+
+void kmeans(params* input, kmeans_data* data, int start, int end){
+	// estremi start incluso ed end escluso
+	int i, j, k, t;
+	int count;
+	float fob1, fob2;
+	float temp;
+	float *ind, *ind2, *ci, *distanze;
+	int* ind3;
+	int incr, incr2;
+	int index_col=data->index_columns;
+	int ipart=start/(input->d/input->m);
+	calcolaPQ(data,ipart ,start, end);
+	fob1=0; //Valori della funzione obiettivo
+	fob2=0;
+	for(t=0; t<input->tmin || (t<input->tmax && absf(fob1-fob2)/fob1 > input->eps); t++){
+		ci=data->dest+start;
+		for(i=0; i<data->n_centroidi; i++){
+			count=0;
+			ind=ci;
+			memset(ci, 0, (end-start)*sizeof(float));
+			//
+			// INIZIO: RICALCOLO NUOVI CENTROIDI
+			//
+			ind3=data->index+ipart;
+			for(j=0; j<data->dim_source; j++){
+				if(*ind3==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
+					count++;
+					ind=ci;
+					for(k=start; k<end; k++){
+						*ind+=data->source[j*input->d+k];
+						ind++;
+
+					}
+				}
+				ind3+=index_col;
+			}
+			ind=ci;
+			for(j=start; j<end; j++){
+				if(count!=0){ 
+					// Alcune partizioni potrebbero essere vuote
+					// Specie se ci sono degli outliers
+					*ind=*ind/count;
+				}
+				ind++;
+			}
+			
+			//
+			// FINE: RICALCOLO NUOVI CENTROIDI
+			//
+			ci+=input->d;
+		}
+		calcolaPQ(data, ipart, start, end);
+		fob1=fob2;
+		fob2=0;
+		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
+		ind=data->dest+start;
+		ind2=data->source+start;
+		
+		for(i=0; i<data->dim_source; i++){
+			distanza(ind+data->index[i*index_col+ipart]*input->d, ind2, end-start, &temp);
+			fob2+=pow2(temp, 2.0);
+			ind2+=input->d;
+		}
+	}
+}
 
 // Ritorna il quantizzatore prodotto completo (con d dimensioni) del residuo r
 VECTOR qp_of_r(params* input, int r){
@@ -294,6 +590,21 @@ VECTOR qp_of_r(params* input, int r){
 
 
 extern void compute_residual_opt(params* input, float* res, int qc_i, int y,float* src);
+// void compute_residual(params* input, float* res, int qc_i, int y,float* src){
+// 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
+// 	// y 	: indice del punto y appartenente al dataset ds in input
+// 	// -----------------------------------------
+// 	// ritorna un puntatore al residuo r(y)
+// 	int i;
+// 	float *p_src,*p_qc,*p_res;
+// 	p_src = src+y*input->d;
+// 	p_qc = input->qc+qc_i*input->d;
+// 	p_res = res;
+// 	for(i=0; i<input->d;i++){
+// 		*res=*p_src++ - *p_qc++; // r(y) = y - qc(y)
+// 		res++;
+// 	}
+// }
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
@@ -334,6 +645,13 @@ void pqnn_index_non_esaustiva(params* input){
 	input->celle_entry = _mm_malloc(sizeof(int)*input->n,16);
 	if(input->celle_entry==NULL) exit(-1);
 
+	input->celle_voronoi = _mm_malloc(sizeof(int)*input->n*input->m,16);
+	if(input->celle_voronoi==NULL) exit(-1);
+	
+	input->index_voronoi = _mm_malloc(sizeof(int)*input->k*input->m,16);
+	if(input->index_voronoi==NULL) exit(-1);
+	memset(input->index_voronoi,0,sizeof(int)*input->k*input->m);
+
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	dStar = input->d/input->m;
 
@@ -372,11 +690,11 @@ void pqnn_index_non_esaustiva(params* input){
 	
 	// Settagio parametri k-means
 	data->source = & input->ds[(input->nr)*input->d];
-	data->dest = input->qc;
+	//data->dest = input->qc;
 	data->index = &input->qc_indexes[input->nr];
-	data->index_columns=1;
+	//data->index_columns=1;
 	data->index_rows = input->n-input->nr;
-	data->n_centroidi = input->kc;
+	//data->n_centroidi = input->kc;
 	data->dim_source = input->n-input->nr;
 
 	calcolaPQ(data,0, 0, input->d);
@@ -403,12 +721,12 @@ void pqnn_index_non_esaustiva(params* input){
 
 	// // Aggiunta degli n-nr
 	data->source = input->ds+input->nr*input->d;
-	data->dest = input->residual_codebook;
+	//data->dest = input->residual_codebook;
 	data->dim_source = input->n-input->nr;
 	data->index = input->pq+input->nr*input->m;
-	data->index_columns=input->m;
+	//data->index_columns=input->m;
 	data->index_rows = input->n-input->nr;
-	data->n_centroidi = input->k;
+	//data->n_centroidi = input->k;
 	
 	for(i=0;i<input->m;i++){
 		calcolaPQ(data, i, i*dStar, (i+1)*dStar);
@@ -461,6 +779,15 @@ void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 	for(j=0;j<input->m;j++){
 		ci = j*dStar + input->residual_codebook;
 		for(i=0;i<input->k;i++){
+			// printf("\n<--------------->\nres_query:");
+			// for(int h=0;h<dStar;h++){
+			// 	printf(" %.2f",*(rx+h));
+			// }
+			// printf("\nresiduo: ");
+			// for(int h=0;h<dStar;h++){
+			// 	printf(" %.2f",*(ci+h));
+			// }
+			// printf("\n<--------------->\n");
 			distanza(rx, ci, dStar, result);
 			result++;
 			ci += input->d;
@@ -468,6 +795,30 @@ void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 		rx += dStar;
 	}
 
+}
+
+void calcolaCentroidi(int* ci, int* cj){
+	int tmp;
+	if(*ci < *cj){
+		tmp = *cj;
+		*cj = *ci;
+		*ci = tmp;
+	}
+}
+
+ float* dist_matrix(params* input, int centroide1, int centroide2, int ipart){
+	// estremi start incluso ed end escluso
+	if(centroide1==centroide2){
+		return input->zero;
+	}else{
+		//column major order-------------------------------------------
+		if(centroide1<centroide2){
+			return input->distanze_simmetriche+ipart+calcolaIndice(centroide2, centroide1)*input->m;
+		}else{
+			return input->distanze_simmetriche+ipart+calcolaIndice(centroide1, centroide2)*input->m;
+		}
+		//-------------------------------------------
+	}
 }
 
 void pqnn_search_non_esaustiva(params* input){
@@ -591,3 +942,279 @@ void pqnn_search_non_esaustiva(params* input){
 	_mm_free(data);
 }
 
+
+
+/*
+ *	pqnn_index
+ * 	==========
+ */
+void pqnn_index(params* input) {
+	// TODO: Gestire liberazione della memoria.
+	if(input->exaustive==1){
+		printf("ricerca esaustiva disattivata");
+	}else{
+		pqnn_index_non_esaustiva(input);
+	}
+    
+    //pqnn32_index(input); // Chiamata funzione assembly
+
+    // -------------------------------------------------
+}
+
+
+/*
+ *	pqnn_search
+ * 	===========
+ */
+void pqnn_search(params* input) {
+	if(input->exaustive==0){
+		pqnn_search_non_esaustiva(input);
+	}
+		
+
+    //pqnn32_search(input); // Chiamata funzione assembly
+
+	// Restituisce il risultato come una matrice di nq * knn
+	// identificatori associati agli ANN approssimati delle nq query.
+	// La matrice è memorizzata per righe
+    // -------------------------------------------------
+
+}
+
+
+int main(int argc, char** argv) {
+	
+	char fname[256];
+	int i, j;
+	
+	//
+	// Imposta i valori di default dei parametri
+	//
+
+	params* input = malloc(sizeof(params));
+
+	input->filename = NULL;
+	input->exaustive = 1;
+	input->symmetric = 1;
+	input->knn = 1;
+	input->nr = input->n/20;
+	input->m = 8;
+	input->k = 256;
+	input->kc = 8192;
+	input->w = 16;
+	input->eps = 0.01;
+	input->tmin = 10;
+	input->tmax = 100;
+	input->silent = 0;
+	input->display = 0;
+
+	//
+	// Legge i valori dei parametri da riga comandi
+	//
+
+	int par = 1;
+	while(par < argc) {
+		if (par == 1) {
+			input->filename = argv[par];
+			par++;
+		} else if (strcmp(argv[par],"-s") == 0) {
+			input->silent = 1;
+			par++;
+		} else if (strcmp(argv[par],"-d") == 0) {
+			input->display = 1;
+			par++;
+		} else if (strcmp(argv[par],"-knn") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing knn value!\n");
+				exit(1);
+			}
+			input->knn = atoi(argv[par]);
+			par++;
+		} else if (strcmp(argv[par],"-m") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing m value!\n");
+				exit(1);
+			}
+			input->m = atoi(argv[par]);
+			par++;
+		} else if (strcmp(argv[par],"-k") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing k value!\n");
+				exit(1);
+			}
+			input->k = atoi(argv[par]);
+			par++;
+		} else if (strcmp(argv[par],"-kc") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing kc value!\n");
+				exit(1);
+			}
+			input->kc = atoi(argv[par]);
+			par++;
+		} else if (strcmp(argv[par],"-w") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing w value!\n");
+				exit(1);
+			}
+			input->w = atoi(argv[par]);
+			par++;
+		} else if (strcmp(argv[par],"-nr") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing nr value!\n");
+				exit(1);
+			}
+			input->nr = atoi(argv[par]);
+			par++;
+		} else if (strcmp(argv[par],"-eps") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing eps value!\n");
+				exit(1);
+			}
+			input->eps = atof(argv[par]);
+			par++;
+		} else if (strcmp(argv[par],"-tmin") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing tmin value!\n");
+				exit(1);
+			}
+			input->tmin = atoi(argv[par]);
+			par++;
+		} else if (strcmp(argv[par],"-tmax") == 0) {
+			par++;
+			if (par >= argc) {
+				printf("Missing tmax value!\n");
+				exit(1);
+			}
+			input->tmax = atoi(argv[par]);
+			par++;
+ 		} else if (strcmp(argv[par],"-exaustive") == 0) {
+ 			input->exaustive = 1;
+ 			par++;
+ 		} else if (strcmp(argv[par],"-noexaustive") == 0) {
+ 			input->exaustive = 0;
+ 			par++;
+ 		} else if (strcmp(argv[par],"-sdc") == 0) {
+ 			input->symmetric = 1;
+ 			par++;
+ 		} else if (strcmp(argv[par],"-adc") == 0) {
+ 			input->symmetric = 0;
+ 			par++;
+		} else
+			par++;
+	}
+	
+	//
+	// Visualizza la sintassi del passaggio dei parametri da riga comandi
+	//
+
+	if (!input->silent) {
+		printf("Usage: %s <data_name> [-d][-s][-exaustive|-noexaustive][-sdc|-adc][...]\n", argv[0]);
+		printf("\nParameters:\n");
+		printf("\t-d : display ANNs\n");
+		printf("\t-s : silent\n");
+		printf("\t-m: PQ groups\n");
+		printf("\t-k: PQ centroids\n");
+		printf("\t-kc: coarse VQ centroids\n");
+		printf("\t-w: coarse VQ centroids to be selected\n");
+		printf("\t-nr: residual sample size\n");
+		printf("\t-eps: k-means termination threshold\n");
+		printf("\t-tmin: min k-means iterations\n");
+		printf("\t-tmax: max k-means iterations\n");
+		printf("\n");
+	}
+	
+	//
+	// Legge il data set ed il query set
+	//
+	
+	if (input->filename == NULL || strlen(input->filename) == 0) {
+		printf("Missing input file name!\n");
+		exit(1);
+	}
+	
+	sprintf(fname, "%s.ds", input->filename);
+	input->ds = load_data(fname, &input->n, &input->d);
+	
+
+	sprintf(fname, "%s.qs", input->filename);
+	input->qs = load_data(fname, &input->nq, &input->d);
+
+	//
+	// Visualizza il valore dei parametri
+	//
+	
+	if (!input->silent) {
+		printf("Input file name: '%s'\n", input->filename);
+		printf("Data set size [n]: %d\n", input->n);
+		printf("Number of dimensions [d]: %d\n", input->d);
+		printf("Query set size [nq]: %d\n", input->nq);
+		printf("Number of ANN [knn]: %d\n", input->knn);
+		printf("PQ groups [m]: %d\n", input->m);
+		printf("PQ centroids [k]: %d\n", input->k);
+		if (!input->exaustive) {
+			printf("Coarse VQ centroids [kc]: %d\n", input->kc);
+			printf("Coarse VQ centroids to be selected [w]: %d\n", input->w);
+			printf("Number of residuals used to determine PQ centroids [nr]: %d\n", input->nr);
+		}
+		printf("K-means parameters: eps = %.4f, tmin = %d, tmax = %d\n", input->eps, input->tmin, input->tmax);
+	}
+	
+	//
+	// Costruisce i quantizzatori
+	//
+	
+	clock_t t = clock();
+	pqnn_index(input);
+	t = clock() - t;
+	
+	if (!input->silent)
+		printf("\nIndexing time = %.3f secs\n", ((float)t)/CLOCKS_PER_SEC);
+	else
+		printf("%.3f\n", ((float)t)/CLOCKS_PER_SEC);
+
+	//
+	// Determina gli ANN
+	//
+	
+	input->ANN = calloc(input->nq*input->knn,sizeof(int));
+
+	t = clock();
+	pqnn_search(input);
+	t = clock() - t;
+	
+	if (!input->silent)
+		printf("\nSearching time = %.3f secs\n", ((float)t)/CLOCKS_PER_SEC);
+	else
+		printf("%.3f\n", ((float)t)/CLOCKS_PER_SEC);
+	
+	//
+	// Salva gli ANN
+	//
+	
+ 	if (input->ANN != NULL)
+ 	{
+ 		if (!input->silent && input->display) {
+ 			printf("\nANN:\n");
+ 			for (i = 0; i < input->nq; i++) {
+				printf("query #%d:", i);
+				for (j = 0; j < input->knn; j++)
+					printf(" %d", input->ANN[i*input->knn+j]);
+				printf("\n");
+ 			}
+ 		}
+ 		save_ANN(input->filename, input->ANN, input->nq, input->knn);
+	}
+	
+	if (!input->silent)
+		printf("\nDone.\n");
+
+	return 0;
+}

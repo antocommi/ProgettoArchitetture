@@ -17,14 +17,13 @@ qc equ 112
 d equ 16
 
 
-
 compute_residual:
 		push rbp
 		mov	rbp, rsp
 		;pushaq
 		
-		
-		mov r9,[rdi+d]
+		mov eax, [rdi+d]
+		mov r9, rax
         mov r10, r9 
 		imul r9, rcx
 		imul r9, 4             ; poi modificare  on shift a sinistra
@@ -35,19 +34,19 @@ compute_residual:
 		add r10, [rdi+qc]
        
         xor r11, r11
-        mov rdi, [rdi+d] ;rdi=d
+        mov edi, eax ;rdi=d
         sub rdi, 64     ;????
 		
 cicloQ1: cmp r11, rdi
         jg fineQ1
-		vmovaps ymm0, [r9+r11*4]
-        vmovaps ymm1, [r9+r11*4+32]
-        vmovaps ymm2, [r9+r11*4+64]
-        vmovaps ymm3, [r9+r11*4+96]        
-        vmovaps ymm4, [r9+r11*4+128]
-        vmovaps ymm5, [r9+r11*4+160]
-        vmovaps ymm6, [r9+r11*4+192]
-        vmovaps ymm7, [r9+r11*4+224]
+		vmovups ymm0, [r9+r11*4]
+        vmovups ymm1, [r9+r11*4+32]
+        vmovups ymm2, [r9+r11*4+64]
+        vmovups ymm3, [r9+r11*4+96]        
+        vmovups ymm4, [r9+r11*4+128]
+        vmovups ymm5, [r9+r11*4+160]
+        vmovups ymm6, [r9+r11*4+192]
+        vmovups ymm7, [r9+r11*4+224]
 
 
         ; vmovaps ymm8, [r9+r11*4+256]
@@ -77,13 +76,13 @@ cicloQ1: cmp r11, rdi
         ; vsubps ymm14, [r10+r11*4+448] 
         ; vsubps ymm15, [r10+r11*4+480]  
 		
-        vmovaps [rsi+r11*4],ymm0 
-        vmovaps [rsi+r11*4+32],ymm1
-        vmovaps [rsi+r11*4+64],ymm2 
-        vmovaps [rsi+r11*4+96],ymm3 
-        vmovaps [rsi+r11*4+128],ymm4 
-        vmovaps [rsi+r11*4+160],ymm5 
-        vmovaps [rsi+r11*4+192],ymm6 
+        vmovups [rsi+r11*4],ymm0 
+        vmovups [rsi+r11*4+32],ymm1
+        vmovups [rsi+r11*4+64],ymm2 
+        vmovups [rsi+r11*4+96],ymm3 
+        vmovups [rsi+r11*4+128],ymm4 
+        vmovups [rsi+r11*4+160],ymm5 
+        vmovups [rsi+r11*4+192],ymm6 
         ;vmovaps [rsi+r11*4+224],ymm7 
         ; vmovaps [rsi+r11*4+256],ymm8
         ; vmovaps [rsi+r11*4+288],ymm9 
@@ -98,9 +97,9 @@ cicloQ1: cmp r11, rdi
 fineQ1:  add rdi, 56
 cicloR1:cmp r11, rdi
         jg fineR1
-		vmovaps ymm0, [r9+r11*4]
+		vmovups ymm0, [r9+r11*4]
         vsubps ymm0, [r10+r11*4]
-        vmovaps [rsi+r11*4],ymm0 
+        vmovups [rsi+r11*4],ymm0 
         add r11,8 ;????
         jmp cicloQ1
 fineR1:  add rdi, 8
@@ -112,7 +111,7 @@ cicloR2: cmp r11, rdi
         inc r11
         jmp cicloR2
 
-fine:	popaq						; ripristina i registri generali
+fine:	;popaq						; ripristina i registri generali
 		mov		rsp, rbp			; ripristina lo Stack Pointer
 		pop		rbp				; ripristina il Base Pointer
 		ret						; torna alla funzione C chiamante

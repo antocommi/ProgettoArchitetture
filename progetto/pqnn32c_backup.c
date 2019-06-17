@@ -334,13 +334,6 @@ void pqnn_index_non_esaustiva(params* input){
 	input->celle_entry = _mm_malloc(sizeof(int)*input->n,16);
 	if(input->celle_entry==NULL) exit(-1);
 
-	input->celle_voronoi = _mm_malloc(sizeof(int)*input->n*input->m,16);
-	if(input->celle_voronoi==NULL) exit(-1);
-	
-	input->index_voronoi = _mm_malloc(sizeof(int)*input->k*input->m,16);
-	if(input->index_voronoi==NULL) exit(-1);
-	memset(input->index_voronoi,0,sizeof(int)*input->k*input->m);
-
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	dStar = input->d/input->m;
 

@@ -1,5 +1,5 @@
 /**************************************************************************************
- *
+ * 
  * CdL Magistrale in Ingegneria Informatica
  * Corso di Architetture e Programmazione dei Sistemi di Elaborazione - a.a. 2018/19
  * 
@@ -46,9 +46,14 @@
 #include <time.h>
 #include <xmmintrin.h>
 #include <limits.h>
+#include <stddef.h>
 
 #define	MATRIX		float*
 #define	VECTOR		float*
+
+#define DATASET		0
+#define QUERYSET	1
+
 
 typedef struct {
 	char* filename; //
@@ -73,12 +78,13 @@ typedef struct {
 	// nns: matrice row major order di interi a 32 bit utilizzata per memorizzare gli ANN
 	// sulla riga i-esima si trovano gli ID (a partire da 0) degli ANN della query i-esima
 	//
-	int* ANN; //dimensione: nq*knn
+	int* ANN;
 	VECTOR vq;
 	int* pq;
 	int* query_pq;
 
-	MATRIX codebook; // per Ex contiene quantizzatori prodotto. Per NotEx contiene quantizzatori grossolani
+	MATRIX codebook; // per E. contiene quantizzatori prodotto. Per N.E. contiene quantizzatori grossolani
+	
 	MATRIX distanze_simmetriche;
 	int nDist;
 	MATRIX distanze_asimmetriche;
@@ -86,9 +92,8 @@ typedef struct {
 	// Strutture ad-hoc ricerca non esaustiva
 
 	// Vettore contenente alla posizione i l'indice di qc(Y_i) in codebook
-	int *qc_indexes;
+	int * qc_indexes;
 
-	// Coarse q. dim: input.kc x input.d
 	MATRIX qc;
 
 	// Residual product quantizators in non exhaustive search
@@ -99,15 +104,21 @@ typedef struct {
 	MATRIX residual_set;
 
 	// Lista di liste (secondo livello dell'inverted index)
-	// struct entry *v; 
+	struct entry* v; 
 
-	float *zero;
-
-	int* index_entry;
-	int* celle_entry;
+	float* zero;
 } params;
 
-typedef struct kmeans_data{
+//Entry della s.d. multilivello
+struct entry{
+	int index;
+	VECTOR q;
+	//temporaneo
+	//Serve per gestire liste a dimensione sconosciuta. 
+	struct entry * next;
+};
+
+typedef struct{
 
 	// Sorgente da cui si impara il codebook
 	float* source;
@@ -127,10 +138,11 @@ typedef struct kmeans_data{
 	int n_centroidi;
 
 	int d;
-	
 } kmeans_data;
 
+
 struct entry_heap{
+	
 	float dist;
 	int index;
 };
@@ -256,6 +268,100 @@ void heapify_top_bottom(Heap *h, int parent_node){
         heapify_top_bottom(h, min);
     }
 }
+
+/*
+ * 
+ *	Le funzioni sono state scritte assumento che le matrici siano memorizzate 
+ * 	mediante un array (float*), in modo da occupare un unico blocco
+ * 	di memoria, ma a scelta del candidato possono essere 
+ * 	memorizzate mediante array di array (float**).
+ * 
+ * 	In entrambi i casi il candidato dovrà inoltre scegliere se memorizzare le
+ * 	matrici per righe (row-major order) o per colonne (column major-order).
+ *
+ * 	L'assunzione corrente è che le matrici siano in row-major order.
+ * 
+ */
+
+
+void* get_block(int size, int elements) { 
+	return _mm_malloc(elements*size,16); 
+}
+
+
+void free_block(void* p) { 
+	_mm_free(p);
+}
+
+
+MATRIX alloc_matrix(int rows, int cols) {
+	return (MATRIX) get_block(sizeof(float),rows*cols);
+}
+
+
+void dealloc_matrix(MATRIX mat) {
+	free_block(mat);
+}
+
+/*
+ * 
+ * 	load_data
+ * 	=========
+ * 
+ *	Legge da file una matrice di N righe
+ * 	e M colonne e la memorizza in un array lineare in row-major order
+ * 
+ * 	Codifica del file:
+ * 	primi 4 byte: numero di righe (N) --> numero intero a 32 bit
+ * 	successivi 4 byte: numero di colonne (M) --> numero intero a 32 bit
+ * 	successivi N*M*4 byte: matrix data in row-major order --> numeri floating-point a precisione doppia
+ * 
+ *****************************************************************************
+ *	Se lo si ritiene opportuno, è possibile cambiare la codifica in memoria
+ * 	della matrice. 
+ *****************************************************************************
+ * 
+ */
+MATRIX load_data(char* filename, int *n, int *d) {	
+	FILE* fp;
+	int rows, cols, status, i;
+	
+	fp = fopen(filename, "rb");
+	
+	if (fp == NULL) {
+		printf("'%s' : bad data file name!\n", filename);
+		exit(0);
+	}
+	
+	status = fread(&cols, sizeof(int), 1, fp);
+	status = fread(&rows, sizeof(int), 1, fp);
+		
+	MATRIX data = alloc_matrix(rows,cols);
+	status = fread(data, sizeof(float), rows*cols, fp);
+	fclose(fp);
+	
+	*n = rows;
+	*d = cols;
+	
+	return data;
+}
+
+void save_ANN(char* filename, int* ANN, int nq, int knn) {	
+	FILE* fp;
+	int i, j;
+	char fpath[256];
+	
+	sprintf(fpath, "%s.ann", filename);
+	fp = fopen(fpath, "w");
+	for (i = 0; i < nq; i++) {
+		for (j = 0; j < knn; j++)
+			fprintf(fp, "%d ", ANN[i*knn+j]);
+		fprintf(fp, "\n");
+	}
+	fclose(fp);
+}
+
+//funzioni fatte da noi
 
 float pow2(float f, float s){
 	return f*f;
@@ -548,6 +654,21 @@ VECTOR qp_of_r(params* input, int r){
 }
 
 extern void compute_residual_opt(params* input, float* res, int qc_i, int y,float* src);
+// void compute_residual(params* input, float* res, int qc_i, int y,float* src){
+// 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
+// 	// y 	: indice del punto y appartenente al dataset ds in input
+// 	// -----------------------------------------
+// 	// ritorna un puntatore al residuo r(y)
+// 	int i;
+// 	float *p_src,*p_qc,*p_res;
+// 	p_src = src+y*input->d;
+// 	p_qc = input->qc+qc_i*input->d;
+// 	p_res = res;
+// 	for(i=0; i<input->d;i++){
+// 		*res=*p_src++ - *p_qc++; // r(y) = y - qc(y)
+// 		res++;
+// 	}
+// }
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
@@ -562,8 +683,6 @@ void calcola_residui(params* input){
 		compute_residual_opt(input, ry, *qc_i++, y, input->ds); // calcolo del residuo r(y) = y - qc(y)
 		ry += input->d;
 	}
-
-	
 }
 
 void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
@@ -575,13 +694,101 @@ void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 	for(j=0;j<input->m;j++){
 		ci = j*dStar + input->residual_codebook;
 		for(i=0;i<input->k;i++){
+			// printf("\n<--------------->\nres_query:");
+			// for(int h=0;h<dStar;h++){
+			// 	printf(" %.2f",*(rx+h));
+			// }
+			// printf("\nresiduo: ");
+			// for(int h=0;h<dStar;h++){
+			// 	printf(" %.2f",*(ci+h));
+			// }
+			// printf("\n<--------------->\n");
 			distanza(rx, ci, dStar, result);
 			result++;
 			ci += input->d;
 		}
 		rx += dStar;
 	}
+}
 
+void calcolaCentroidi(int* ci, int* cj){
+	int tmp;
+	if(*ci < *cj){
+		tmp = *cj;
+		*cj = *ci;
+		*ci = tmp;
+	}
+}
+
+void pqnn_index_esaustiva(params* input){
+	int i, j, dStar;
+	int d2=0;
+	input->zero=_mm_malloc(sizeof(float), 16);
+	*input->zero=0;
+	float *ind1, *ind2;
+	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
+	dStar=input->d/input->m;
+	input->codebook = alloc_matrix(input->k, input->d); // row-major-order?
+	if(input->codebook==NULL) exit(-1);
+	ind1=input->codebook;
+	ind2=input->ds;
+
+	memcpy(input->codebook, input->ds, input->k*input->d*sizeof(float));
+	kmeans_data* data=_mm_malloc(sizeof(kmeans_data), 16);
+	data->source=input->ds;
+	data->dim_source=input->n;
+	data->index=input->pq;
+	data->dest=input->codebook;
+	data->index_rows=input->n;
+	data->index_columns=input->m;
+	data->n_centroidi=input->k;
+	data->d=input->d;
+	for(i=0; i<input->m; i++){
+		kmeans(input, data, d2, d2+dStar);
+		d2+=dStar;
+	}
+
+	if(input->symmetric==1){
+		creaMatricedistanze(input, input->codebook);
+	}
+	_mm_free(data);
+}
+
+void pqnn_search_esaustiva(params* input){
+	int i, j, c, part;
+	int *ipq, *ind;
+	if(input->symmetric==1){
+		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
+		if(input->query_pq==NULL) exit(-1);
+		c=input->d/input->m;
+		kmeans_data* data=_mm_malloc(sizeof(kmeans_data), 16);
+		data->source=input->qs;
+		data->dim_source=input->nq;
+		data->index=input->query_pq;
+		data->dest=input->codebook;
+		data->index_rows=input->nq;
+		data->index_columns=input->m;
+		data->n_centroidi=input->k;
+		data->d=input->d;
+		part=0;
+		for(j=0; j<input->m; j++){
+			calcolaPQ(data, j, part, part+c);
+			part+=c;
+		}
+		_mm_free(data);
+	}
+	VECTOR m=(VECTOR) _mm_malloc(input->knn*sizeof(float),16);
+	for(i=0; i<input->nq; i++){
+		calcolaNN(input, i, m);
+	}
+	_mm_free(m);
+	_mm_free(input->codebook);
+	_mm_free(input->pq);
+	if(input->symmetric==1){
+		_mm_free(input->distanze_simmetriche);
+	}else{
+		_mm_free(input->query_pq);
+	}
 }
 
 void pqnn_index_non_esaustiva(params* input){
@@ -605,6 +812,13 @@ void pqnn_index_non_esaustiva(params* input){
 
 	input->celle_entry = _mm_malloc(sizeof(int)*input->n,16);
 	if(input->celle_entry==NULL) exit(-1);
+
+	input->celle_voronoi = _mm_malloc(sizeof(int)*input->n*input->m,16);
+	if(input->celle_voronoi==NULL) exit(-1);
+	
+	input->index_voronoi = _mm_malloc(sizeof(int)*input->k*input->m,16);
+	if(input->index_voronoi==NULL) exit(-1);
+	memset(input->index_voronoi,0,sizeof(int)*input->k*input->m);
 
 	data = _mm_malloc(sizeof(struct kmeans_data),16);
 	dStar = input->d/input->m;
@@ -644,11 +858,11 @@ void pqnn_index_non_esaustiva(params* input){
 	
 	// Settagio parametri k-means
 	data->source = & input->ds[(input->nr)*input->d];
-	data->dest = input->qc;
+	//data->dest = input->qc;
 	data->index = &input->qc_indexes[input->nr];
-	data->index_columns=1;
+	//data->index_columns=1;
 	data->index_rows = input->n-input->nr;
-	data->n_centroidi = input->kc;
+	//data->n_centroidi = input->kc;
 	data->dim_source = input->n-input->nr;
 
 	calcolaPQ(data,0, 0, input->d);
@@ -675,12 +889,12 @@ void pqnn_index_non_esaustiva(params* input){
 
 	// // Aggiunta degli n-nr
 	data->source = input->ds+input->nr*input->d;
-	data->dest = input->residual_codebook;
+	//data->dest = input->residual_codebook;
 	data->dim_source = input->n-input->nr;
 	data->index = input->pq+input->nr*input->m;
-	data->index_columns=input->m;
+	//data->index_columns=input->m;
 	data->index_rows = input->n-input->nr;
-	data->n_centroidi = input->k;
+	//data->n_centroidi = input->k;
 	
 	for(i=0;i<input->m;i++){
 		calcolaPQ(data, i, i*dStar, (i+1)*dStar);
@@ -845,77 +1059,6 @@ void pqnn_search_non_esaustiva(params* input){
 	_mm_free(data);
 }
 
-void pqnn_index_esaustiva(params* input){
-	int i, j, dStar;
-	int d2=0;
-	input->zero=_mm_malloc(sizeof(float), 16);
-	*input->zero=0;
-	float *ind1, *ind2;
-	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16); 
-	dStar=input->d/input->m;
-	input->codebook = alloc_matrix(input->k, input->d); // row-major-order?
-	if(input->codebook==NULL) exit(-1);
-	ind1=input->codebook;
-	ind2=input->ds;
-
-	memcpy(input->codebook, input->ds, input->k*input->d*sizeof(float));
-	kmeans_data* data=_mm_malloc(sizeof(kmeans_data), 16);
-	data->source=input->ds;
-	data->dim_source=input->n;
-	data->index=input->pq;
-	data->dest=input->codebook;
-	data->index_rows=input->n;
-	data->index_columns=input->m;
-	data->n_centroidi=input->k;
-	data->d=input->d;
-	for(i=0; i<input->m; i++){
-		kmeans(input, data, d2, d2+dStar);
-		d2+=dStar;
-	}
-
-	if(input->symmetric==1){
-		creaMatricedistanze(input, input->codebook);
-	}
-	_mm_free(data);
-}
-
-void pqnn_search_esaustiva(params* input){
-	int i, j, c, part;
-	int *ipq, *ind;
-	if(input->symmetric==1){
-		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 16);
-		if(input->query_pq==NULL) exit(-1);
-		c=input->d/input->m;
-		kmeans_data* data=_mm_malloc(sizeof(kmeans_data), 16);
-		data->source=input->qs;
-		data->dim_source=input->nq;
-		data->index=input->query_pq;
-		data->dest=input->codebook;
-		data->index_rows=input->nq;
-		data->index_columns=input->m;
-		data->n_centroidi=input->k;
-		data->d=input->d;
-		part=0;
-		for(j=0; j<input->m; j++){
-			calcolaPQ(data, j, part, part+c);
-			part+=c;
-		}
-		_mm_free(data);
-	}
-	VECTOR m=(VECTOR) _mm_malloc(input->knn*sizeof(float),16);
-	for(i=0; i<input->nq; i++){
-		calcolaNN(input, i, m);
-	}
-	_mm_free(m);
-	_mm_free(input->codebook);
-	_mm_free(input->pq);
-	if(input->symmetric==1){
-		_mm_free(input->distanze_simmetriche);
-	}else{
-		_mm_free(input->query_pq);
-	}
-}
-
 /*
  *	pqnn_index
  * 	==========
@@ -950,7 +1093,6 @@ void pqnn_search(params* input) {
     // -------------------------------------------------
 
 }
-
 
 int main(int argc, char** argv) {
 	char fname[256];

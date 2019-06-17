@@ -1,0 +1,12 @@
+nasm -f elf64 calcolaIndice.nasm
+nasm -f elf64 distanza.nasm
+nasm -f elf64 dist_matrix.nasm
+nasm -f elf64 dist.nasm
+nasm -f elf64 calcolaFob.nasm
+nasm -f elf64 calcolaPQ.nasm
+nasm -f elf64 calcolaSimmetriche.nasm
+nasm -f elf64 somma.nasm
+nasm -f elf64 creaMatriceDistanze.nasm
+nasm -f elf64 compute_residual.nasm
+gcc -O3 -m64 -no-pie -mavx calcolaIndice.o distanza.o dist_matrix.o dist.o calcolaFob.o calcolaPQ.o calcolaSimmetriche.o somma.o creaMatriceDistanze.o compute_residual.o pqnn64c_11.c -o pqnn64c_11 -lm
+./pqnn64c_11 $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30}

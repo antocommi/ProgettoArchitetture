@@ -1,0 +1,9 @@
+nasm -f elf32 calcolaIndice.nasm
+nasm -f elf32 distanza.nasm
+nasm -f elf32 calcolaPQ.nasm
+nasm -f elf32 dist_matrix.nasm
+nasm -f elf32 dist.nasm
+nasm -f elf32 calcolaFob.nasm
+nasm -f elf32 compute_residual_opt.nasm
+gcc -O3 -m32 -msse calcolaIndice.o distanza.o calcolaPQ.o dist_matrix.o dist.o calcolaFob.o compute_residual_opt.o pqnn32c_11.c -o pqnn32c_11 -lm
+./pqnn32c $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30}

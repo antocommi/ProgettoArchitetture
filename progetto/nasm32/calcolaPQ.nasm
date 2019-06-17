@@ -2,7 +2,7 @@ extern distanza
 extern printf
 
 section .data
-max dd 1.79E+308
+max dd 1.79E+38
 ;f db '%f ', 10, 0
 d1 db '%d ', 10, 0
 d2 db 'i%d j%d ', 10, 0

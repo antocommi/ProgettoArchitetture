@@ -11,4 +11,4 @@ nasm -f elf64 creaMatriceDistanze.nasm
 nasm -f elf64 compute_residual.nasm
 cd ..
 gcc -O3 -m64 -no-pie -mavx ./nasm64/calcolaIndice.o ./nasm64/distanza.o ./nasm64/dist_matrix.o ./nasm64/dist.o ./nasm64/calcolaFob.o ./nasm64/calcolaPQ.o ./nasm64/calcolaSimmetriche.o ./nasm64/somma.o ./nasm64/creaMatriceDistanze.o ./nasm64/compute_residual.o pqnn64c.c -o pqnn64c
-./pqnn64c ./prova/prova $1 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12 $13 $14 $15 $16 $17 $18 $19 $20 $21 $22 $23 $24 $25 $26 $27 $28 $29 $30
+./pqnn64c ./prova/prova $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30}

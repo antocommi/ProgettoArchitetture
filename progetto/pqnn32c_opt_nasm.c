@@ -408,7 +408,7 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		calcolaFob(input, data, ipart, start, end, &fob2);
 	}
-	//printf("%d\n", t);
+	printf("%d\n", t);
 }
 
 void creaMatricedistanze(params* input, float* codebook){
@@ -435,188 +435,79 @@ void creaMatricedistanze(params* input, float* codebook){
 	}
 }
 
-void bubbleSort(VECTOR arr, int* arr2, int n, int nit){ 
-	int i, j, t1;
-	float t2;
-	int scambi=1; 
-	for (i = 0; i < nit && scambi==1; i++){
-		scambi=0;
-    	for (j = n-2; j > i-1; j--)  
-        	if (arr[j] > arr[j+1]){
-				t2=arr[j];
-				arr[j]=arr[j+1];
-				arr[j+1]=t2;
-				t1=arr2[j];
-				arr2[j]=arr2[j+1];
-				arr2[j+1]=t1;
-				scambi=1;
-			}
-	}
-}
-
-void merge(VECTOR arr, int* arr2, int i, int j, int k){
-	VECTOR a=(VECTOR) _mm_malloc(k-i+1 ,16);
-	int* b=(int*) _mm_malloc(k-i+1 ,16);
-	int c=0;
-	int i2=i;
-	int j1=j;
-	while(i<j && j1<k){
-		if(arr[i]<arr[j]){
-			a[c]=arr[i];
-			b[c]=arr2[i];
-			i++;
-		}else{
-			a[c]=arr[j1];
-			b[c]=arr2[j1];
-			j1++;
-		}
-		c++;
-	}
-	while(i<j){
-		a[c]=arr[i];
-		b[c]=arr2[i];
-		i++;
-		c++;
-	}
-	while(j1<k){
-		a[c]=arr[j1];
-		b[c]=arr2[j1];
-		j1++;
-		c++;
-	}
-	c=i2;
-	while(i2<k){
-		arr[i2]=a[i2-c];
-		arr2[i2]=b[i2-c];
-		i2++;
-	}
-	_mm_free(a);
-	_mm_free(b);
-}
-
-void mergesort(VECTOR arr, int* arr2, int i1, int i2){
-	double t1;
-	int t2;
-	if(i2-i1<2) return;
-	if(i2-i2==2){
-		if(arr[i1]<=arr[i2]) return;
-		t1=arr[i1];
-		arr[i1]=arr[i2];
-		arr[i2]=t1;
-		t2=arr2[i1];
-		arr2[i1]=arr2[i2];
-		arr2[i2]=t2;
-		return;
-	}
-	t2=(i2+i1)/2;
-	mergesort(arr, arr2, i1, t2);
-	mergesort(arr, arr2, t2, i2);
-	merge(arr, arr2, i1, t2, i2);
-}
-
-typedef struct{
-	float dist;
-	int ind;
-} vec;
-
 void calcolaNN(params* input, int query, VECTOR m){
 	int i, j, k;
 	VECTOR distanze=alloc_matrix(input->n, 1);
-	int* di;
 	float* ind=distanze;
 	int* ind2;
 	float *ind3, *ind4, *ind5;
 	int dStar=input->d/input->m;
 
-	if(input->knn<4500){
 	if(input->symmetric==0){
-			input->distanze_asimmetriche=alloc_matrix(input->k, input->m);
-			ind3=input->distanze_asimmetriche;
-			ind4=input->codebook;
-			for(i=0; i<input->k; i++){
-				ind5=input->qs+query*input->d;
-				for(j=0; j<input->m; j++){
-					distanza(ind4, ind5, dStar, ind3);
-					ind3++;
-					ind4+=dStar;
-					ind5+=dStar;
-				}
-			}
-			for(i=0; i<input->n; i++){
-				*ind=dist_asimmetrica(input, i);
-				ind++;
-			}
-			_mm_free(input->distanze_asimmetriche);
-		}else{
-			for(i=0; i<input->n; i++){
-				dist(input, input->query_pq, query, i, ind);
-				ind++;
+		input->distanze_asimmetriche=alloc_matrix(input->k, input->m);
+		ind3=input->distanze_asimmetriche;
+		ind4=input->codebook;
+		for(i=0; i<input->k; i++){
+			ind5=input->qs+query*input->d;
+			for(j=0; j<input->m; j++){
+				distanza(ind4, ind5, dStar, ind3);
+				ind3++;
+				ind4+=dStar;
+				ind5+=dStar;
 			}
 		}
+		for(i=0; i<input->n; i++){
+			*ind=dist_asimmetrica(input, i);
+			ind++;
+		}
+		_mm_free(input->distanze_asimmetriche);
+	}else{
+		for(i=0; i<input->n; i++){
+			dist(input, input->query_pq, query, i, ind);
+			ind++;
+		}
+	}
 
-		if(input->knn>1){
-			//knn>1
+	if(input->knn>1){
+		//knn>1
+		ind=m;
+		for(i=0; i<input->knn; i++){
+			*ind++=1.79E+308;
+		}
+		ind3=distanze;
+		for(i=0; i<input->n; i++){
 			ind=m;
-			for(i=0; i<input->knn; i++){
-				*ind++=1.79E+308;
-			}
-
-			ind3=distanze;
-			for(i=0; i<input->n; i++){
-				ind=m;
-				ind2=input->ANN+query*input->knn;
-				for(j=0; j<input->knn; j++){
-					if(*ind3<*ind){
-						for(k=input->knn-1; k>j; k--){
-							if(m[k-1!=-1]) break;
-						}
-						for(k; k>j; k--){
-							input->ANN[query*input->knn+k]=input->ANN[query*input->knn+k-1];
-							m[k]=m[k-1];
-						}
-						*ind2=i;
-						*ind=*ind3;
-						break;
+			ind2=input->ANN+query*input->knn;
+			for(j=0; j<input->knn; j++){
+				if(*ind3<*ind){
+					for(k=input->knn-1; k>j; k--){
+						if(m[k-1!=-1]) break;
 					}
-					ind++;
-					ind2++;
-				}
-				ind3++;
-			}
-		}else{
-			//knn=1
-			float min=1.79E+308;
-
-			ind3=distanze;
-			ind2=input->ANN+query;
-			for(i=0; i<input->n; i++){
-				if(*ind3<min){
-					min=*ind3;
+					for(k; k>j; k--){
+						input->ANN[query*input->knn+k]=input->ANN[query*input->knn+k-1];
+						m[k]=m[k-1];
+					}
 					*ind2=i;
+					*ind=*ind3;
+					break;
 				}
-				ind3++;
+				ind++;
+				ind2++;
 			}
+			ind3++;
 		}
 	}else{
-		di=(int*) _mm_malloc(input->n*sizeof(int), 32);
-		// //printf("breakpoint 1\n");
-		// if(input->symmetric==0){
-		// 	for(i=0; i<input->n; i++){
-		// 		distanze[i]=dist_asimmetrica(input, input->qs, query, i);
-		// 		di[i]=i;
-		// 	}
-		// }else{
-		// 	for(i=0; i<input->n; i++){
-		// 		distanze[i]=dist(input, input->query_pq, query, i);
-		// 		di[i]=i;
-		// 	}
-		// }
-		// bubbleSort(distanze, di, input->n, input->knn);
-		// //mergesort(distanze, di, 0, input->n);
-		// for(i=0; i<input->knn; i++){
-		// 	input->ANN[query*input->knn+i]=di[i];
-		// }
-		_mm_free(di);
+		//knn=1
+		float min=1.79E+308;
+		ind3=distanze;
+		ind2=input->ANN+query;
+		for(i=0; i<input->n; i++){
+			if(*ind3<min){
+				min=*ind3;
+				*ind2=i;
+			}
+			ind3++;
+		}
 	}
 	dealloc_matrix(distanze);
 }
@@ -701,10 +592,8 @@ void pqnn_index(params* input) {
 	if(input->exaustive==1){
 		pqnn_index_esaustiva(input);
 	}else{
-		//pqnn_index_non_esaustiva(input);
+		pqnn_index_non_esaustiva(input);
 	}
-    
-    //pqnn32_index(input); // Chiamata funzione assembly
 
     // -------------------------------------------------
 }
@@ -719,10 +608,8 @@ void pqnn_search(params* input) {
 	if(input->exaustive==1){
 		pqnn_search_esaustiva(input);
 	}else{
-		//pqnn_search_non_esaustiva(input);
+		pqnn_search_non_esaustiva(input);
 	}
-
-    //pqnn32_search(input); // Chiamata funzione assembly
 
 	// Restituisce il risultato come una matrice di nq * knn
 	// identificatori associati agli ANN approssimati delle nq query.

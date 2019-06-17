@@ -6,11 +6,7 @@ nasm -f elf32 dist.nasm
 
 cd ..
 gcc -O0 -m32 -msse  ./nasm32/calcolaIndice.o ./nasm32/calcolaPQ.o ./nasm32/compute_residual_opt.o ./nasm32/distanza.o pqnn32c.c -o pqnn32c -lm
-<<<<<<< HEAD
-./"pqnn32c" prova/prova -noexaustive -kc 350  -nr 400 -adc -knn 1
-=======
 ./"pqnn32c" prova/prova -noexaustive -kc 350  -nr 400 -sdc -knn 4
->>>>>>> e31c38df3b085795cb50556492a2b73e6de17366
 cd ..
 
 # VALGRIND

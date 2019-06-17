@@ -417,21 +417,41 @@ extern void distanza(float* punto1, float* punto2, int dimensione, float* r);
 void creaMatricedistanze(params* input, float* codebook){
 	// MODIFICATA SOLO CHIAMATA A FUNZIONE dist_simmetricaI(...) con aggiunta 
 	// puntatore alla src dei centroidi
+	// int i, j, k;
+	// int dStar=input->d/input->m;
+	// int d=input->d;
+	// float temp;
+	// float *ind1, *ind2;
+	// input->nDist=input->k*(input->k+1)/2;
+	// input->distanze_simmetriche = alloc_matrix(input->m, input->nDist);
+	// if(input->distanze_simmetriche==NULL) exit(-1);
+	// for(i=1; i<input->k; i++){
+	// 	for(j=0; j<i; j++){
+	// 		ind1=codebook+i*d;
+	// 		ind2=codebook+j*d;
+	// 		for(k=0; k<input->m; k++){
+	// 			distanza(ind1, ind2, dStar, &temp);
+	// 			input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
+	// 			ind1+=dStar;
+	// 			ind2+=dStar;
+	// 		}
+	// 	}
+	// }
+
 	int i, j, k;
 	int dStar=input->d/input->m;
 	int d=input->d;
-	float temp;
 	float *ind1, *ind2;
 	input->nDist=input->k*(input->k+1)/2;
-	input->distanze_simmetriche = alloc_matrix(input->m, input->nDist);
+	
+	input->distanze_simmetriche = (float*) alloc_matrix(input->m, input->nDist);
 	if(input->distanze_simmetriche==NULL) exit(-1);
 	for(i=1; i<input->k; i++){
 		for(j=0; j<i; j++){
 			ind1=codebook+i*d;
 			ind2=codebook+j*d;
 			for(k=0; k<input->m; k++){
-				distanza(ind1, ind2, dStar, &temp);
-				input->distanze_simmetriche[k+calcolaIndice(i, j)*input->m]=temp;
+				distanza(ind1, ind2, dStar, input->distanze_simmetriche+k+calcolaIndice(i, j)*input->m);
 				ind1+=dStar;
 				ind2+=dStar;
 			}
@@ -811,6 +831,16 @@ void pqnn_search_non_esaustiva(params* input){
 		printf("\nAsimmetrica\n");
 
 	}
+
+	for(s=0;s<input->m;s++){
+		for(i=0;i<input->k;i++){
+			for(j=0;j<i;j++){
+				printf("(%d,%d)=%f ",i,j,input->distanze_simmetriche[s+calcolaIndice(i, j)*input->m]);
+			}
+		}
+	}
+	
+	exit(-1);
 
 	for(query=0; query<input->nq; query++){
 		

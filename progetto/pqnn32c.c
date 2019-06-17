@@ -690,11 +690,11 @@ void pqnn_index_non_esaustiva(params* input){
 	
 	// Settagio parametri k-means
 	data->source = & input->ds[(input->nr)*input->d];
-	data->dest = input->qc;
+	//data->dest = input->qc;
 	data->index = &input->qc_indexes[input->nr];
-	data->index_columns=1;
+	//data->index_columns=1;
 	data->index_rows = input->n-input->nr;
-	data->n_centroidi = input->kc;
+	//data->n_centroidi = input->kc;
 	data->dim_source = input->n-input->nr;
 
 	calcolaPQ(data,0, 0, input->d);
@@ -721,12 +721,12 @@ void pqnn_index_non_esaustiva(params* input){
 
 	// // Aggiunta degli n-nr
 	data->source = input->ds+input->nr*input->d;
-	data->dest = input->residual_codebook;
+	//data->dest = input->residual_codebook;
 	data->dim_source = input->n-input->nr;
 	data->index = input->pq+input->nr*input->m;
-	data->index_columns=input->m;
+	//data->index_columns=input->m;
 	data->index_rows = input->n-input->nr;
-	data->n_centroidi = input->k;
+	//data->n_centroidi = input->k;
 	
 	for(i=0;i<input->m;i++){
 		calcolaPQ(data, i, i*dStar, (i+1)*dStar);

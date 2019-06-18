@@ -745,7 +745,7 @@ void pqnn_index_non_esaustiva(params* input){
 	
 	//nuova aggiunta
 	memcpy(input->qc, input->ds, input->kc*input->d*sizeof(float));
-	
+
 	// Settagio parametri k-means
 	data->source = input->ds;
 	data->dest = input->qc;
@@ -757,7 +757,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->dim_source = input->nr;
 
 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
-	
+
 	// Settagio parametri k-means
 	data->source = & input->ds[(input->nr)*input->d];
 	data->dest = input->qc;
@@ -768,7 +768,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->dim_source = input->n-input->nr;
 
 	calcolaPQ(data,0, 0, input->d);
-	
+
 	// for(i=0;i<input->nr;i++){
 	// 	printf("%d %d\n",i,input->qc_indexes[i]);
 	// }
@@ -797,7 +797,7 @@ void pqnn_index_non_esaustiva(params* input){
 	data->index_columns=input->m;
 	data->index_rows = input->n-input->nr;
 	data->n_centroidi = input->k;
-	
+
 	for(i=0;i<input->m;i++){
 		calcolaPQ(data, i, i*dStar, (i+1)*dStar);
 	}

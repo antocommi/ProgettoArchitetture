@@ -13,8 +13,11 @@ global compute_residual
 ; input equ 8 rdi
 
 
-qc equ 112
-d equ 16
+; qc equ 112
+; d equ 16
+
+qc equ 160
+d equ 28
 
 
 compute_residual:

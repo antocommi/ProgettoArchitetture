@@ -3,7 +3,7 @@
 extern distanza
 
 section .data
-max dd 1.79E+308
+max dd 1.79E+38
 ; f db '%f ', 10, 0
 ; d1 db '%ld ';, 10, 0
 ; d2 db 'i%ld j%ld ', 10, 0

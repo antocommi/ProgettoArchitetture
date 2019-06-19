@@ -51,16 +51,6 @@ cicloQ1: cmp r11, rdi
         vmovups ymm6, [r9+r11*4+192]
         vmovups ymm7, [r9+r11*4+224]
 
-
-        ; vmovaps ymm8, [r9+r11*4+256]
-        ; vmovaps ymm9, [r9+r11*4+288]
-        ; vmovaps ymm10, [r9+r11*4+320]
-        ; vmovaps ymm11, [r9+r11*4+352]
-        ; vmovaps ymm12, [r9+r11*4+384]
-        ; vmovaps ymm13, [r9+r11*4+416]
-        ; vmovaps ymm14, [r9+r11*4+448]
-        ; vmovaps ymm15, [r9+r11*4+480]
-
         vsubps ymm0, [r10+r11*4]
         vsubps ymm1, [r10+r11*4+32] 
         vsubps ymm2, [r10+r11*4+64] 
@@ -69,15 +59,6 @@ cicloQ1: cmp r11, rdi
         vsubps ymm5, [r10+r11*4+160] 
         vsubps ymm6, [r10+r11*4+192] 
         vsubps ymm7, [r10+r11*4+224]
-        
-        ; vsubps ymm8, [r10+r11*4+256]
-        ; vsubps ymm9, [r10+r11*4+288] 
-        ; vsubps ymm10, [r10+r11*4+320] 
-        ; vsubps ymm11, [r10+r11*4+352] 
-        ; vsubps ymm12, [r10+r11*4+384] 
-        ; vsubps ymm13, [r10+r11*4+416] 
-        ; vsubps ymm14, [r10+r11*4+448] 
-        ; vsubps ymm15, [r10+r11*4+480]  
 		
         vmovups [rsi+r11*4],ymm0 
         vmovups [rsi+r11*4+32],ymm1
@@ -86,15 +67,7 @@ cicloQ1: cmp r11, rdi
         vmovups [rsi+r11*4+128],ymm4 
         vmovups [rsi+r11*4+160],ymm5 
         vmovups [rsi+r11*4+192],ymm6 
-        ;vmovaps [rsi+r11*4+224],ymm7 
-        ; vmovaps [rsi+r11*4+256],ymm8
-        ; vmovaps [rsi+r11*4+288],ymm9 
-        ; vmovaps [rsi+r11*4+320],ymm10 
-        ; vmovaps [rsi+r11*4+352],ymm11 
-        ; vmovaps [rsi+r11*4+384],ymm12 
-        ; vmovaps [rsi+r11*4+416],ymm13 
-        ; vmovaps [rsi+r11*4+448],ymm14 
-        ; vmovaps [rsi+r11*4+480],ymm15 
+
 		add r11,64 ;????
         jmp cicloQ1
 fineQ1:  add rdi, 56

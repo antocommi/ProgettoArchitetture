@@ -56,9 +56,6 @@ cicloQ:	cmp rcx, rax
 		vinsertps xmm11, xmm0, 00110000b
 		inc rcx
 
-		;sposta xmm11 nella parte alta di ymm11
-		;vperm2f128 ymm11, ymm11, ymm11, 00000000b
-
 		call dist
 		vmovss xmm12, xmm0
 		inc rcx

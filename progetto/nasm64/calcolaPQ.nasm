@@ -75,40 +75,13 @@ forI:	cmp rcx, 0
 		mov rsi, r11
 		sal rsi, 2
 		add rsi, [r9+dest];ind2=dest+start
-
-; 		pushaq
-;  		cmp r11, 0
-;  		je boh
-;  		mov rsi, rcx
-;  		mov rdi, d1
-;  		call printf
-; boh:	popaq
 		
 		vmovss xmm5, xmm6	;max
 		xor rax, rax
 forJ:	cmp rax, r8
 		jge endJ
-		
-;  		pushaq
-;  		cmp r11, 0
-;  		je boh
-;  		mov rcx, rdx
-;  		mov rdx, rsi
-;  		mov rsi, rdi
-;  		mov rdi, d3
-;  		call printf
-;  boh:	popaq
 
 		call distanza
-
-; 		pushaq
-; 		cmp r11, 0
-; 		je boh2
-; 		mov rdx, rax
-; 		mov rsi, rcx
-; 		mov rdi, d2
-; 		call printf
-; boh2:	popaq
 
 		vcomiss xmm0, xmm5
 		jae endif
@@ -118,23 +91,10 @@ forJ:	cmp rax, r8
 endif:	add rsi, r12
 		inc rax
 
-		; pushaq
-		; mov edi, break
-		; call printf
-		; popaq
-
 		jmp forJ
 endJ:	add r10, rbx
 		add rdi, r12
 		dec rcx
-
-; 		pushaq
-;  		cmp r11, 0
-;  		je boh1
-;  		mov rsi, rcx
-;  		mov rdi, d1
-;  		call printf
-; boh1:	popaq
 
 		jmp forI
 endI:	;popad		;fine

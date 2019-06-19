@@ -29,12 +29,9 @@ dist_matrix:
 		;push rdx
 		;pushad	;inizio
 
-		;mov esi, [ebp+centroide1] rsi
-		;mov edi, [ebp+centroide2] rdx
 		mov rbx, rdi	;input
 		cmp rsi, rdx
 		jne else
-		;mov ebx, [ebp+input] rdi
 		mov rax, [rbx+zero]
 		jmp fine
 else:	;cmp esi, edi
@@ -49,7 +46,6 @@ cal:	call calcolaIndice
 		mov edx, [rbx+m]
 		imul rax, rdx
 		add rax, rcx
-		;imul rax, 4
 		sal rax, 2
 		add rax, [rbx+distanze_simmetriche]
 

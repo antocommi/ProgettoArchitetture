@@ -44,9 +44,7 @@ dist:
 		mov ebx , [rdi+m]
 		imul r9, rbx
 		imul r10, rbx
-		;imul r9, 4
 		sal r9, 2
-		;imul r10, 4
 		sal r10, 2
 		add r9, rsi
 		add r10, [rdi+pq]
@@ -81,7 +79,6 @@ cicloQ:	cmp rcx, rbx
 		vpinsrd xmm1, [rax], 3
 		inc rcx
 
-		;vmulps xmm1, xmm1
 		vaddps xmm0, xmm1
 
 		jmp cicloQ
@@ -96,10 +93,6 @@ cicloR:	cmp rcx, rbx
 		call dist_matrix
 		
 		vaddss xmm0, [rax]
-
-		;vmovss xmm1, [rax]
-		;vmulss xmm1, xmm1
-		;vaddss xmm0, xmm1
 
 		inc rcx
 		jmp cicloR

@@ -46,16 +46,6 @@ calcolaFob:
 		;pushaq
 		;pushad		;inizio
 
-		; pushaq
-		; mov r9, r8
-		; mov r8, rcx
-		; mov rcx, rdx
-		; mov rdx, rsi
-		; mov rsi, rdi
-		; mov rdi, d5
-		; call printf
-		; popaq
-
 		mov r9, rdi		;input
 		mov r10, rsi	;data
 		mov r11, rdx	;ipart
@@ -79,11 +69,6 @@ calcolaFob:
 		sal eax, 2
 		mov ecx, [r9+m]
 		sal ecx, 2
-
-		; pushaq
-		; mov rdi, break
-		; call printf
-		; popaq
 
 		vxorps xmm10, xmm10
 		mov ebx, [r10+dim_source]

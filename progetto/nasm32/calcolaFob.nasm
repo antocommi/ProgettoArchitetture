@@ -43,13 +43,6 @@ calcolaFob:
 		pushad		;inizio
 		sub esp, 16
 
-		; pushad
-		; push temp
-		; push f
-		; call printf
-		; add esp, 8
-		; popad
-
 		mov dword [ebp+cr], temp			;primo parametro distanza
 		mov eax, [ebp+end]
 		mov ebx, [ebp+start]
@@ -59,7 +52,6 @@ calcolaFob:
 		mov edx, [ebp+input]				;edx=input
 		imul ebx, 4							;solito problema
 		
-		;imul ebx, 4			;boh
 		mov eax, ebx
 		add ebx, [ecx+source]
 		mov [ebp+punto2], ebx				;terzo parametro distanza
@@ -84,23 +76,7 @@ calcolaFob:
 ciclo:	cmp esi, 0
 		jle fine
 
-		; pushad
-		; push esi
-		; push d1
-		; call printf
-		; add esp, 8
-		; popad
-
 		call distanza
-		;movss xmm0, [temp]	;non necessaria, il valore è già in xmm0
-		;mulss xmm0, xmm0
-
-		; pushad
-		; push esi
-		; push d1
-		; call printf
-		; add esp, 8
-		; popad
 		
 		addss xmm7, xmm0
 		add [ebp+punto2], edx		;aggiornamento terzo parametro

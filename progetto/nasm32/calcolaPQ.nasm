@@ -85,14 +85,6 @@ forI:	cmp esi, [edx+dim_source]
 forJ:	cmp edi, [edx+n_centroidi]
 		jge endJ						;controllare condizione
 
-		; pushad
-		; push edi
-		; push esi
-		; push dword d2
-		; call printf
-		; add esp, 12
-		; popad
-
 		call distanza
 		;movss xmm0, [temp]		;istruzione non necessaria, la funzione distanza ha già messo il risultato in xmm0
 		
@@ -102,20 +94,11 @@ forJ:	cmp edi, [edx+n_centroidi]
 
 		mov [ecx], edi
 
-endif:	;pop eax
-		;add eax, ebx
-		;push eax
-		add [ebp+punto1], ebx
+endif:	add [ebp+punto1], ebx
 
 		inc edi
 		jmp forJ
 endJ:
-
-		;pop eax
-		;add esp, 4	;sostituisce pop eax, forse è meglio
-		;pop eax
-		;add eax, ebx
-		;push eax
 		add [ebp+punto2], ebx
 
 		mov eax, [edx+index_columns]
@@ -129,11 +112,3 @@ endI:	add esp, 16
 		mov	esp, ebp
 		pop	ebp
 		ret
-
-
-;ecx ind
-;ebx 4*d
-;eax temporaneo puntatori e minimo
-;edx data
-;esi i
-;edi j

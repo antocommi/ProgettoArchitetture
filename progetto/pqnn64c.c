@@ -376,7 +376,6 @@ float dist_asimmetrica(params* input, int punto2){
 	float sum=0;
 	int* c2=input->pq+punto2*input->m;
 	for(i=0; i<input->m; i++){
-		//sum+=distanza(ind1, ind2+(*c2)*input->d, dStar);
 		sum+=input->distanze_asimmetriche[(*c2)*input->m+i];
 		c2++;
 	}
@@ -464,25 +463,19 @@ extern void somma(float* source, float* dest, int dim);
 
 void kmeans(params* input, kmeans_data* data, int start, int end){
 	// estremi start incluso ed end escluso
-	int i, j, k, t;
+	int i, j, t;
 	int count;
 	float fob1, fob2;
-	float fob11, fob22;
-	float temp;
-	float *ind, *ind2, *ci;
+	float *ind, *ci;
 	int* ind3;
-	int incr, incr2;
 	int m=data->index_columns;
 	int ipart=start/(input->d/m);
-	//printf("prima calcolapq %ld %d %d %d\n", (long)data, ipart, start, end);
-	//printf("%ld %ld\n", (long)data->source, (long)data->dest);
+
 	calcolaPQ(data, ipart, start, end);
-	//printf("dopo calcolapq\n");
 
 	fob1=0; //Valori della funzione obiettivo
 	fob2=0;
 	for(t=0; t<input->tmin || (t<input->tmax && fabs(fob1-fob2)/fob1 > input->eps); t++){
-		//printf("kmeans interation %d\n", t);
 		ci=data->dest+start;
 		for(i=0; i<data->n_centroidi; i++){
 			count=0;
@@ -491,25 +484,16 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 			//
 			// INIZIO: RICALCOLO NUOVI CENTROIDI
 			//
-			//printf("it:%d centr:%d 0\n", t, i);
 			ind3=data->index+ipart;
-			//printf("it:%d centr:%d 0.0\n", t, i);
 			ind=data->source+start;
-			//printf("it:%d centr:%d 0.1\n", t, i);
 			for(j=0; j<data->dim_source; j++){
-				//if(start>0)
-				//printf("it:%d centr:%d 0.1.1 %d\n", t, i, j);
 				if(*ind3==i){ // se q(Yj)==Ci -- se Yj appartiene alla cella di Voronoi di Ci
 					count++;
-					//printf("prima somma\n");
 					somma(ind, ci, end-start);
 				}
-				//if(start>0)
-				//printf("it:%d centr:%d 0.2 %d\n", t, i, j);
 				ind3+=m;
 				ind+=input->d;
 			}
-			//printf("it:%d centr:%d 1\n", t, i);
 			ind=ci;
 			for(j=start; j<end; j++){
 				if(count!=0){
@@ -519,22 +503,17 @@ void kmeans(params* input, kmeans_data* data, int start, int end){
 				}
 				ind++;
 			}
-			//printf("it:%d centr:%d 2\n", t, i);
 
 			//
 			// FINE: RICALCOLO NUOVI CENTROIDI
 			//
 			ci+=input->d;
 		}
-		//printf("breakpoint\n");
 		calcolaPQ(data, ipart, start, end);
 
 		fob1=fob2;
-		//fob11=fob22;
 		//CALCOLO NUOVO VALORE DELLA FUNZIONE OBIETTIVO
 		fob2=calcolaFob(input, data, ipart, start, end);
-		//printf("fob1:%f fob2:%f d:%f dn:%f", fob1, fob2, fabs(fob1-fob2), fabs(fob1-fob2)/fob1);
-		//getchar();
 	}
 	//printf("%d\n", t);
 }
@@ -573,7 +552,6 @@ extern void calcolaSimmetriche(params* input, float* ind, int query);
 void calcolaNN(params* input, int query, VECTOR m){
 	int i, j, k;
 	VECTOR distanze=alloc_matrix(input->n, 1);
-	int* di;
 	float* ind=distanze;
 	int* ind2;
 	float *ind3, *ind4, *ind5;
@@ -640,7 +618,6 @@ void calcolaNN(params* input, int query, VECTOR m){
 			}
 			ind3++;
 		}
-		//printf("%.2f\n", sqrtf(min));
 	}
 	dealloc_matrix(distanze);
 }
@@ -964,7 +941,7 @@ void pqnn_search_non_esaustiva(params* input){
 }
 
 void pqnn_index_esaustiva(params* input){
-	int i, j, dStar;
+	int i, dStar;
 	int d2=0;
 	input->zero=_mm_malloc(sizeof(float), 32);
 	*input->zero=0;
@@ -987,14 +964,10 @@ void pqnn_index_esaustiva(params* input){
 	data->index_columns=input->m;
 	data->n_centroidi=input->k;
 	data->d=input->d;
-	//printf("prima kmeans\n");
 	for(i=0; i<input->m; i++){
-		//printf("prima kmeans %d\n", i);
 		kmeans(input, data, d2, d2+dStar);
-		//printf("dopo kmeans %d\n", i);
 		d2+=dStar;
 	}
-	//printf("fine kmeans\n");
 
 	if(input->symmetric==1){
 		input->nDist=input->k*(input->k+1)/2;
@@ -1006,8 +979,7 @@ void pqnn_index_esaustiva(params* input){
 }
 
 void pqnn_search_esaustiva(params* input){
-	int i, j, c, part;
-	int *ipq, *ind;
+	int i, c, part;
 	if(input->symmetric==1){
 		input->query_pq=(int*)_mm_malloc(input->nq*input->m*sizeof(int), 32);
 		if(input->query_pq==NULL) exit(-1);
@@ -1022,8 +994,8 @@ void pqnn_search_esaustiva(params* input){
 		data->n_centroidi=input->k;
 		data->d=input->d;
 		part=0;
-		for(j=0; j<input->m; j++){
-			calcolaPQ(data, j, part, part+c);
+		for(i=0; i<input->m; i++){
+			calcolaPQ(data, i, part, part+c);
 			part+=c;
 		}
 		_mm_free(data);
@@ -1032,7 +1004,6 @@ void pqnn_search_esaustiva(params* input){
 	for(i=0; i<input->nq; i++){
 		calcolaNN(input, i, m);
 	}
-	//printf("prova 1\n");
 	_mm_free(m);
 	_mm_free(input->codebook);
 	_mm_free(input->pq);
@@ -1048,7 +1019,6 @@ void pqnn_search_esaustiva(params* input){
  * 	==========
  */
 void pqnn_index(params* input) {
-	// TODO: Gestire liberazione della memoria.
 	if(input->exaustive==1){
 		pqnn_index_esaustiva(input);
 	}else{
@@ -1064,7 +1034,6 @@ void pqnn_index(params* input) {
  * 	===========
  */
 void pqnn_search(params* input) {
-	int i, j;
 	if(input->exaustive==1){
 		pqnn_search_esaustiva(input);
 	}else{

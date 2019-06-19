@@ -24,7 +24,6 @@ distanza:
 
 		vxorps ymm0, ymm0
 		xor rbx, rbx
-		;jmp cicloR
 		sub rdx, 32
 cicloQ:	cmp rbx, rdx				;i < end-start
 		jg endQ

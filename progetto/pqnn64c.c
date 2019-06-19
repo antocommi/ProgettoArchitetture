@@ -107,7 +107,7 @@ typedef struct {
 	int* celle_entry;
 } params;
 
-typedef struct kmeans_data{
+typedef struct{
 
 	// Sorgente da cui si impara il codebook
 	float* source;
@@ -643,6 +643,21 @@ VECTOR qp_of_r(params* input, int r){
 }
 
 extern void compute_residual(params* input, float* res, int qc_i, int y,float* src);
+// void compute_residual(params* input, float* res, int qc_i, int y,float* src){
+// 	// qc_i : corrisponde all' indice del quantizzatore grossolano nel codebook in input
+// 	// y 	: indice del punto y appartenente al dataset ds in input
+// 	// -----------------------------------------
+// 	// ritorna un puntatore al residuo r(y)
+// 	int i;
+// 	float *p_src,*p_qc,*p_res;
+// 	p_src = src+y*input->d;
+// 	p_qc = input->qc+qc_i*input->d;
+// 	p_res = res;
+// 	for(i=0; i<input->d;i++){
+// 		*res=*p_src++ - *p_qc++; // r(y) = y - qc(y)
+// 		res++;
+// 	}
+// }
 
 // Calcola tutti i residui dei vettori appartenenti al learning set
 void calcola_residui(params* input){
@@ -654,6 +669,7 @@ void calcola_residui(params* input){
 	for(int y=0;y<input->n;y++){ // Per ogni y in Nr (learning-set):
 		// qc_i = input->qc_indexes[y]; // Calcola il suo quantizzatore grossolano qc(y)
 		// OTTIMIZZABILE
+		
 		compute_residual(input, ry, *qc_i++, y, input->ds); // calcolo del residuo r(y) = y - qc(y)
 		ry += input->d;
 	}
@@ -664,7 +680,7 @@ void calcola_residui(params* input){
 void pqnn_index_non_esaustiva(params* input){
 	int i, j, l, d, m, knn, dStar, *offset, *offset2, n;
 	int c, k, x, jk, *index, tmp;
-	struct kmeans_data* data;
+	kmeans_data* data;
 
 	k = input->k;
 	d = input->d;
@@ -672,41 +688,41 @@ void pqnn_index_non_esaustiva(params* input){
 	m = input->m;
 	n = input->n;
 
-	input->zero = _mm_malloc(sizeof(float),32);
+	input->zero = _mm_malloc(sizeof(float),16);
 	if(input->zero==NULL) exit(-1);
 	*(input->zero) = 0; 
 
-	input->index_entry = _mm_malloc(sizeof(int)*input->kc,32);
+	input->index_entry = _mm_malloc(sizeof(int)*input->kc,16);
 	if(input->index_entry==NULL) exit(-1);
 	memset(input->index_entry,0,input->kc*sizeof(int));
 
-	input->celle_entry = _mm_malloc(sizeof(int)*input->n,32);
+	input->celle_entry = _mm_malloc(sizeof(int)*input->n,16);
 	if(input->celle_entry==NULL) exit(-1);
 
-	data = _mm_malloc(sizeof(struct kmeans_data),32);
+	data = _mm_malloc(sizeof(kmeans_data),16);
 	dStar = input->d/input->m;
 
 	//AL momento sceglie i primi nr come elementi del learning set. 
-	input->residual_set = (float*) _mm_malloc(sizeof(float)*input->n*input->d, 32);
+	input->residual_set = (float*) _mm_malloc(sizeof(float)*input->n*input->d, 16);
 	if(input->residual_set==NULL) exit(-1);
 	
-	input->residual_codebook = (float*) _mm_malloc(sizeof(float)*input->k*input->d, 32);
+	input->residual_codebook = (float*) _mm_malloc(sizeof(float)*input->k*input->d, 16);
 	if(input->residual_codebook==NULL) exit(-1);
 
-	input->qc = (float*) _mm_malloc(sizeof(float)*input->kc*input->d, 32);
+	input->qc = (float*) _mm_malloc(sizeof(float)*input->kc*input->d, 16);
 	if(input->qc==NULL) exit(-1);
 
 	//inizializza vettore
-	input->qc_indexes = (int*) _mm_malloc(sizeof(int)*input->n,32);
+	input->qc_indexes = (int*) _mm_malloc(sizeof(int)*input->n,16);
 	if(input->qc_indexes==NULL) exit(-1);
 
 	// short ??
-	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 32);
+	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 16);
 	if(input->pq==NULL) exit(-1);
 	
 	//nuova aggiunta
 	memcpy(input->qc, input->ds, input->kc*input->d*sizeof(float));
-
+	
 	// Settagio parametri k-means
 	data->source = input->ds;
 	data->dest = input->qc;
@@ -716,23 +732,16 @@ void pqnn_index_non_esaustiva(params* input){
 	data->n_centroidi = input->kc;
 	data->d=input->d; 
 	data->dim_source = input->nr;
-
+	// printf("%p ",data);
 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
-
+	
 	// Settagio parametri k-means
 	data->source = & input->ds[(input->nr)*input->d];
-	data->dest = input->qc;
 	data->index = &input->qc_indexes[input->nr];
-	data->index_columns=1;
 	data->index_rows = input->n-input->nr;
-	data->n_centroidi = input->kc;
 	data->dim_source = input->n-input->nr;
 
 	calcolaPQ(data,0, 0, input->d);
-
-	// for(i=0;i<input->nr;i++){
-	// 	printf("%d %d\n",i,input->qc_indexes[i]);
-	// }
 
 	calcola_residui(input);
 
@@ -752,13 +761,10 @@ void pqnn_index_non_esaustiva(params* input){
 
 	// // Aggiunta degli n-nr
 	data->source = input->ds+input->nr*input->d;
-	data->dest = input->residual_codebook;
 	data->dim_source = input->n-input->nr;
 	data->index = input->pq+input->nr*input->m;
-	data->index_columns=input->m;
 	data->index_rows = input->n-input->nr;
-	data->n_centroidi = input->k;
-
+	
 	for(i=0;i<input->m;i++){
 		calcolaPQ(data, i, i*dStar, (i+1)*dStar);
 	}
@@ -767,7 +773,7 @@ void pqnn_index_non_esaustiva(params* input){
 	// Aggiunta dei punti r(y) del residual_set in celle_entry 
 	// secondo index_entry[i] che indica l'inizio della i-esima cella 
 	// sul vettore celle_entry.
-	offset = _mm_malloc(sizeof(int)*input->kc,32);
+	offset = _mm_malloc(sizeof(int)*input->kc,16);
 	if(offset==NULL) exit(-1);
 	memset(offset,0,input->kc*sizeof(int));
 
@@ -790,16 +796,160 @@ void pqnn_index_non_esaustiva(params* input){
 		input->celle_entry[l] = i;
 	}
 
-	// printf("%d \n",input->index_entry[4]-input->index_entry[3] );
-	// for(j=input->index_entry[3];j<input->index_entry[4];j++){
-	// 	printf(" %d", input->celle_entry[j]);
-	// 	if(j%8==0 && j!=0) printf("\n");
-	// }
-
 	_mm_free(input->residual_set);
 	_mm_free(offset);
 	_mm_free(data);
 }
+
+
+// void pqnn_index_non_esaustiva(params* input){
+// 	int i, j, l, d, m, knn, dStar, *offset, *offset2, n;
+// 	int c, k, x, jk, *index, tmp;
+// 	kmeans_data* data;
+
+// 	k = input->k;
+// 	d = input->d;
+// 	knn = input->knn;
+// 	m = input->m;
+// 	n = input->n;
+
+// 	if(input==NULL) {
+// 		printf("input non inizializzatooo");
+// 		exit(-1);
+// 	}
+
+// 	input->zero = _mm_malloc(sizeof(float),32);
+// 	if(input->zero==NULL) {
+// 		printf("non allocato zero");
+// 		exit(-1);
+// 	} 
+// 	*(input->zero) = 0; 
+
+// 	input->index_entry = _mm_malloc(sizeof(int)*input->kc,32);
+// 	if(input->index_entry==NULL) {
+// 		printf("non allocato index");
+// 		exit(-1);
+// 	} 
+// 	memset(input->index_entry,0,input->kc*sizeof(int));
+
+// 	input->celle_entry = _mm_malloc(sizeof(int)*input->n,32);
+// 	if(input->celle_entry==NULL) {
+// 		printf("non allocato celle");
+// 		exit(-1);
+// 	} 
+
+// 	data = malloc(sizeof(kmeans_data),32);
+// 	if(data==NULL){
+// 		printf("non allocato data");
+// 		exit(-1);
+// 	} 
+
+// 	dStar = input->d/input->m;
+
+// 	//AL momento sceglie i primi nr come elementi del learning set. 
+// 	input->residual_set = (float*) _mm_malloc(sizeof(float)*input->n*input->d, 32);
+// 	if(input->residual_set==NULL) exit(-1);
+	
+// 	input->residual_codebook = (float*) _mm_malloc(sizeof(float)*input->k*input->d, 32);
+// 	if(input->residual_codebook==NULL) exit(-1);
+
+// 	input->qc = (float*) _mm_malloc(sizeof(float)*input->kc*input->d, 32);
+// 	if(input->qc==NULL) exit(-1);
+
+// 	//inizializza vettore
+// 	input->qc_indexes = (int*) _mm_malloc(sizeof(int)*input->n,32);
+// 	if(input->qc_indexes==NULL) exit(-1);
+
+// 	// short ??
+// 	input->pq = (int*) _mm_malloc(input->n*input->m*sizeof(int), 32);
+// 	if(input->pq==NULL) exit(-1);
+// 	printf("aa\n");
+// 	//nuova aggiunta
+// 	memcpy(input->qc, input->ds, input->kc*input->d*sizeof(float));
+
+// 	// Settagio parametri k-means
+// 	data->source = input->ds;
+// 	data->dest = input->qc;
+// 	data->index = input->qc_indexes;
+// 	data->index_columns=1;
+// 	data->index_rows = input->nr;
+// 	data->n_centroidi = input->kc;
+// 	data->d=input->d; 
+// 	data->dim_source = input->nr;
+// 	kmeans(input, data, 0, input->d); //calcolo dei q. grossolani memorizzati messi in codebook
+// 	printf("aaa\n");
+// 	// Settagio parametri k-means
+// 	data->source = & input->ds[(input->nr)*input->d];
+// 	data->dest = input->qc;
+// 	data->index = &input->qc_indexes[input->nr];
+// 	data->index_columns=1;
+// 	data->index_rows = input->n-input->nr;
+// 	data->n_centroidi = input->kc;
+// 	data->dim_source = input->n-input->nr;
+
+// 	calcolaPQ(data,0, 0, input->d);
+
+// 	calcola_residui(input);
+
+// 	memcpy(input->residual_codebook, input->residual_set, input->k*input->d*sizeof(float));
+// 	data->dim_source=input->nr;
+// 	data->source = input->residual_set;
+// 	data->dest = input->residual_codebook;
+// 	data->index = input->pq;
+// 	data->index_columns=input->m;
+// 	data->index_rows =input->nr;
+// 	data->n_centroidi = input->k;
+
+// 	// calcolo dei quantizzatori prodotto
+// 	for(i=0;i<input->m;i++){
+// 		kmeans(input, data, i*dStar, (i+1)*dStar);
+// 	}
+
+// 	// // Aggiunta degli n-nr
+// 	data->source = input->ds+input->nr*input->d;
+// 	data->dest = input->residual_codebook;
+// 	data->dim_source = input->n-input->nr;
+// 	data->index = input->pq+input->nr*input->m;
+// 	data->index_columns=input->m;
+// 	data->index_rows = input->n-input->nr;
+// 	data->n_centroidi = input->k;
+
+// 	for(i=0;i<input->m;i++){
+// 		calcolaPQ(data, i, i*dStar, (i+1)*dStar);
+// 	}
+	
+// 	offset = _mm_malloc(sizeof(int)*input->kc,32);
+// 	if(offset==NULL) exit(-1);
+// 	memset(offset,0,input->kc*sizeof(int));
+// 	printf("---i---\n");
+// 	for(i=0;i<n;i++){
+// 		c = input->qc_indexes[i];
+// 		input->index_entry[c]++;
+// 	}
+// 	printf("---j---\n");
+// 	x = input->index_entry[0];
+// 	input->index_entry[0] = 0;
+// 	for(l=1;l<input->kc;l++){
+// 		tmp = input->index_entry[l];
+// 		input->index_entry[l] = input->index_entry[l-1] + x;
+// 		x = tmp;
+// 	}
+// 	printf("---o---\n");
+// 	for(i=0;i<n;i++){
+// 		c = input->qc_indexes[i];
+// 		l = input->index_entry[c] + offset[c]++;
+// 		input->celle_entry[l] = i;
+// 	}
+// 	printf("---00---\n");
+// 	// printf("%d \n",input->index_entry[4]-input->index_entry[3] );
+// 	// for(j=input->index_entry[3];j<input->index_entry[4];j++){
+// 	// 	printf(" %d", input->celle_entry[j]);
+// 	// 	if(j%8==0 && j!=0) printf("\n");
+// 	// }
+
+// 	_mm_free(input->residual_set);
+// 	_mm_free(offset);
+// }
 
 void creaMatricedistanzeAsimmetriche(params* input, float* residuo){
 	int i, j, dStar;
@@ -823,12 +973,17 @@ void pqnn_search_non_esaustiva(params* input){
 	int i, q, query, j, p, h, s, residui_da_visitare, curr_residual, *ind_centroide;
 	int curr_qc, indice_curr_pq, *pq_residuo, ci, cj;
 	Heap* qc_heap, *qp_heap;
-	struct kmeans_data* data;
+	kmeans_data* data;
 	float dist;
 	struct entry_heap* arr;
 	float *residuo, *q_x, *dista; 
 	float somma=0, temp;
 	int dS=input->d/input->m;
+
+	input->nDist = input->k*(input->k+1)/2;
+	
+	input->distanze_simmetriche = _mm_malloc(sizeof(float)*input->nDist*input->m, 32);
+	if(input->distanze_simmetriche==NULL) exit(-1);
 
 	residuo= _mm_malloc(sizeof(float)*input->d,32);
 	if(residuo==NULL) exit(-1);
@@ -836,9 +991,8 @@ void pqnn_search_non_esaustiva(params* input){
 	pq_residuo = _mm_malloc(sizeof(int)*input->m,32);
 	if(pq_residuo==NULL) exit(-1);
 	
-	data = _mm_malloc(sizeof(struct kmeans_data),32);
+	data = _mm_malloc(sizeof(kmeans_data),32);
 	if(data==NULL) exit(-1);
-
 	if(input->symmetric==1){
 		creaMatriceDistanze(input, input->residual_codebook);
 		printf("\nSimmetrica\n");
@@ -846,46 +1000,26 @@ void pqnn_search_non_esaustiva(params* input){
 		input->distanze_asimmetriche = _mm_malloc(sizeof(float)*input->k*input->m,32);
 		if(input->distanze_asimmetriche==NULL) exit(-1);
 		printf("\nAsimmetrica\n");
-
 	}
 
-	// for(s=0;s<input->m;s++){
-	// 	for(i=0;i<input->k;i++){
-	// 		for(j=0;j<i;j++){
-	// 			printf("(%d,%d)=%f ",i,j,input->distanze_simmetriche[s+calcolaIndice(i, j)*input->m]);
-	// 		}
-	// 	}
-	// }
-	
-	// exit(-1);
 
 	for(query=0; query<input->nq; query++){
-		
 		q_x = input->qs+query*input->d; //prende l indirizzo del vettore di query
 		qc_heap = CreateHeap(input->w); //Creazione MAX-HEAP
-
 		for(i=0;i<input->kc;i++){
 			dist=distanza(q_x, input->qc + i*input->d, input->d); //distanza tra la query e il centroide grossolano
 			insert(qc_heap, dist, i);
 		}
-
 		arr = qc_heap->arr;		
-
 		qp_heap = CreateHeap(input->knn);
 		//Ora in qc_heap ci sono i w centroidi grossolani più vicini. 
-		
 		for(i=0; i<input->w; i++){
 			curr_qc = arr[i].index;
 			// curr_qc = PopMaxIndex(qc_heap); 
 			indice_curr_pq = input->index_entry[curr_qc];
 			compute_residual(input, residuo, curr_qc, 0, q_x);
-		
 			if(input->symmetric==0){
 				creaMatricedistanzeAsimmetriche(input,residuo);
-				// for(h=0;h<input->k;h+=1){
-				// 	printf("%.1f, ", input->distanze_asimmetriche[h]);
-				// 	if(h != 0 && h%8==0) printf("\n");
-				// }
 			}else{
 				data->source = residuo;
 				data->d = input->d;
@@ -906,6 +1040,7 @@ void pqnn_search_non_esaustiva(params* input){
 				residui_da_visitare = input->index_entry[curr_qc+1];
 
 			while(indice_curr_pq<residui_da_visitare){
+				
 				curr_residual = input->celle_entry[indice_curr_pq++];
 				ind_centroide = input->pq+curr_residual*input->m;
 				for(s=0;s<input->m;s++){
@@ -1056,6 +1191,7 @@ int main(int argc, char** argv) {
 	//
 
 	params* input = malloc(sizeof(params));
+	if(input==NULL) exit(-1);
 
 	input->filename = NULL;
 	input->exaustive = 1;

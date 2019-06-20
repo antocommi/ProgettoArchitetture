@@ -1101,6 +1101,7 @@ int main(int argc, char** argv) {
 	input->tmax = 100;
 	input->silent = 0;
 	input->display = 0;
+	input->nr = 0;
 
 	//
 	// Legge i valori dei parametri da riga comandi
@@ -1236,7 +1237,11 @@ int main(int argc, char** argv) {
 	sprintf(fname, "%s.ds", input->filename);
 	input->ds = load_data(fname, &input->n, &input->d);
 
-	input->nr = input->n/20;
+	if (input->nr == 0){
+		input->nr = input->n/20;
+	}
+    	
+	
 
 	sprintf(fname, "%s.qs", input->filename);
 	input->qs = load_data(fname, &input->nq, &input->d);

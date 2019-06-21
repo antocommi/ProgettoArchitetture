@@ -1,16 +1,7 @@
-%include "sseutils64.nasm"
-
 extern distanza
 
 section .data
-d1 db '%d ', 10, 0
-d5 db '%ld %ld %ld %ld %ld ', 10, 0
-d3 db '%ld %ld %ld', 10, 0
-f db '%f ', 10, 0
-;break db 'breakpoint', 10, 0
-
 section .bss
-
 section .text
 
 global calcolaFob
@@ -70,7 +61,7 @@ calcolaFob:
 
 		vxorps xmm10, xmm10
 		mov ebx, [r10+dim_source]
-
+	
 		sub rbx, 4
 cicloQ:	cmp rbx, 0
 		jl somme
@@ -113,6 +104,7 @@ cicloQ:	cmp rbx, 0
 		sub rbx, 4
 		jmp cicloQ
 somme:	add rbx, 4
+
 cicloR:	cmp rbx, 0
 		jle fine
 

@@ -1,13 +1,6 @@
-%include "sseutils64.nasm"
-
 extern dist_matrix
-;extern printf
 
 section .data
-d1 db '%ld ', 10, 0
-d4 db '%ld %ld %ld %ld', 10, 0
-f db '%lf ', 10, 0
-;break db 'breakpoint', 10, 0
 section .bss
 section .text
 
@@ -51,6 +44,7 @@ dist:
 
 		vxorps xmm0, xmm0
 		xor rcx, rcx
+
 		sub rbx, 4
 cicloQ:	cmp rcx, rbx
 		jg fineQ

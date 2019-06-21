@@ -1,5 +1,3 @@
-%include "sseutils.nasm"
-
 section .data
 section .bss
 section .text

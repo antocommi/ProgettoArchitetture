@@ -1,13 +1,6 @@
-%include "sseutils64.nasm"
-
 extern distanza
 
 section .data
-d1 db '%ld ', 10, 0
-d3 db '%ld %ld %ld ', 10, 0
-d2 db '%ld %ld ', 10, 0
-;f db '%f ', 10, 0
-break db 'breakpoint', 10, 0
 section .bss
 section .text
 
@@ -63,8 +56,8 @@ forJ:   cmp r11, r10
         add rdi, r9
 
         xor r12, r12
-        sub rcx, 4
 
+        sub rcx, 4
 forKQ:  cmp r12, rcx
         jge endKQ
 
@@ -94,6 +87,7 @@ forKQ:  cmp r12, rcx
         add r12, 4
         jmp forKQ
 endKQ:  add rcx, 4
+
 forKR:  cmp r12, rcx
         jge endKR
 

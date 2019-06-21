@@ -1,16 +1,7 @@
-%include "sseutils64.nasm"
-
 extern dist
 
 section .data
-d1 db '%ld ', 10, 0
-d5 db '%ld %ld %ld %ld %ld ', 10, 0
-d3 db '%ld %ld %ld', 10, 0
-f db '%f ', 10, 0
-break db 'breakpoint', 10, 0
-
 section .bss
-
 section .text
 
 global calcolaSimmetriche
@@ -39,7 +30,6 @@ calcolaSimmetriche:
 		xor rcx, rcx
 
 		sub rax, 8
-
 cicloQ:	cmp rcx, rax
 		jg endQ
 

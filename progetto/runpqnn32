@@ -8,4 +8,5 @@ nasm -f elf32 calcolaFob.nasm
 nasm -f elf32 compute_residual_opt.nasm
 cd ..
 gcc -O3 -m32 -msse ./nasm32/calcolaIndice.o ./nasm32/distanza.o ./nasm32/calcolaPQ.o ./nasm32/dist_matrix.o ./nasm32/dist.o ./nasm32/calcolaFob.o ./nasm32/compute_residual_opt.o pqnn32c.c -o pqnn32c -lm
+#gcc -O0 -m32 -msse ./nasm32/compute_residual_opt.o pqnn32c.c -o pqnn32c -lm
 ./pqnn32c ./prova/prova $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30}

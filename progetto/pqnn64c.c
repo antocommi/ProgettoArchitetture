@@ -425,9 +425,7 @@ extern void calcolaPQ(kmeans_data* data, int partition, int start, int end);
 // 		min=1.79E+308;
 // 		ind2=data->dest+start;
 // 		for(j=0; j<data->n_centroidi; j++){
-// 			if(start>0)	printf("calcolapq %d %d\n", i, j);
 // 			temp=distanza(ind1, ind2, end-start);
-// 			if(start>0)	printf("calcolapq %d %d\n", i, j);
 // 			if(temp<min){
 // 				min=temp;
 // 				*ind=j;

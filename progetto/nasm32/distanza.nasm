@@ -1,8 +1,4 @@
-extern printf
-
 section .data
-d1 db '%d ', 10, 0
-;f db '%f ', 10, 0
 section .bss
 section .text
 

@@ -1,8 +1,4 @@
-%include "sseutils64.nasm"
-
 section .data
-d1 db 'indice %ld ', 10, 0
-ini db 'inizio somma', 10, 0
 section .bss
 section .text
 

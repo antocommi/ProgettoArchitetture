@@ -1,11 +1,4 @@
-%include "sseutils64.nasm"
-
 section .data
-d1 db '%ld ', 10, 0
-d3 db '%ld %ld %ld ', 10, 0
-d2 db '%ld %ld ', 10, 0
-;f db '%f ', 10, 0
-break db 'breakpoint', 10, 0
 section .bss
 section .text
 

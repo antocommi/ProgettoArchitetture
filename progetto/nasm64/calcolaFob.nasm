@@ -70,7 +70,7 @@ calcolaFob:
 
 		vxorps xmm10, xmm10
 		mov ebx, [r10+dim_source]
-
+	
 		sub rbx, 4
 cicloQ:	cmp rbx, 0
 		jl somme
@@ -113,6 +113,7 @@ cicloQ:	cmp rbx, 0
 		sub rbx, 4
 		jmp cicloQ
 somme:	add rbx, 4
+
 cicloR:	cmp rbx, 0
 		jle fine
 

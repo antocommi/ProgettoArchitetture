@@ -22,9 +22,10 @@ distanza:
 		mov edx, [ebp+punto2]
 		mov ebx, [ebp+dimensione]
 
-		sub ebx, 8
 		xorps xmm0, xmm0
 		xor esi, esi				;i=0
+
+		sub ebx, 8
 cicloQ:	cmp esi, ebx				;i < end-start
 		jg somme
 		
@@ -44,7 +45,8 @@ cicloQ:	cmp esi, ebx				;i < end-start
 		jmp cicloQ
 somme:	haddps xmm0, xmm0
 		haddps xmm0, xmm0
-		add ebx, 8		
+		add ebx, 8
+
 cicloR:	cmp esi, ebx
 		jge endloop
 		movss xmm1, [ecx+4*esi]

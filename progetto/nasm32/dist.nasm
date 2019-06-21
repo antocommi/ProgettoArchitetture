@@ -42,11 +42,12 @@ dist:
 		add ecx, [ebp+quantizer]	;c1=m*punto1+quantizer
 		add edx, [ebx+pq]			;c2=m*punto2+pq
 		mov [ebp+inputc], ebx		;  primo parametro
-		sub edi, 4
 
 		xorps xmm0, xmm0
 		xor esi, esi
 		mov dword [ebp+i], 0
+
+		sub edi, 4
 cicloQ:	cmp esi, edi
 		jg endQ
 		;-----------------------------------------

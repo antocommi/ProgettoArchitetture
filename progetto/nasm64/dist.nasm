@@ -51,6 +51,7 @@ dist:
 
 		vxorps xmm0, xmm0
 		xor rcx, rcx
+
 		sub rbx, 4
 cicloQ:	cmp rcx, rbx
 		jg fineQ

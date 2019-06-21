@@ -39,7 +39,6 @@ calcolaSimmetriche:
 		xor rcx, rcx
 
 		sub rax, 8
-
 cicloQ:	cmp rcx, rax
 		jg endQ
 

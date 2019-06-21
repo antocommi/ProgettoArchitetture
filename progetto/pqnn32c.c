@@ -1211,7 +1211,10 @@ int main(int argc, char** argv) {
 	sprintf(fname, "%s.ds", input->filename);
 	input->ds = load_data(fname, &input->n, &input->d);
 	
-	input->nr = input->n/20;
+	if(input->kc>input->n) {
+		printf("kc supera n\n");
+		exit(-1);
+	}
 
 	sprintf(fname, "%s.qs", input->filename);
 	input->qs = load_data(fname, &input->nq, &input->d);

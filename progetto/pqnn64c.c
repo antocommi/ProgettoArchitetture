@@ -1343,6 +1343,11 @@ int main(int argc, char** argv) {
 
 	input->nr = input->n/20;
 
+	if(input->kc>input->n) {
+		printf("kc supera n\n");
+		exit(-1);
+	}
+
 	sprintf(fname, "%s.qs", input->filename);
 	input->qs = load_data(fname, &input->nq, &input->d);
 

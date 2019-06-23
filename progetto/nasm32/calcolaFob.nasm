@@ -1,11 +1,6 @@
 extern distanza
-extern printf
 
 section .data
-;d1 db '%d ', 10, 0
-f db '%f ', 10, 0
-;break db 'breakpoint', 10, 0
-
 section .bss
 temp: resd 1
 
@@ -21,14 +16,12 @@ ipart equ 16
 data equ 12
 input equ 8
 
-;params
-m equ 28
-
 ;kmeans_data
 source equ 0
 dim_source equ 4
 index equ 8
 dest equ 12
+index_columns equ 20
 d equ 28
 
 punto1 equ -48
@@ -62,7 +55,7 @@ calcolaFob:
 		add ebx, [ecx+index]				;ebx=index[ipart]
 		add eax, [ecx+dest]					;eax=dest+start
 
-		mov edx, [edx+m]					;edx=m
+		mov edx, [ecx+index_columns]		;edx=m
 		imul edx, 4
 		mov ecx, [ecx+d]					;ecx=d
 		imul ecx, 4

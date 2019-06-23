@@ -425,9 +425,7 @@ extern void calcolaPQ(kmeans_data* data, int partition, int start, int end);
 // 		min=1.79E+308;
 // 		ind2=data->dest+start;
 // 		for(j=0; j<data->n_centroidi; j++){
-// 			if(start>0)	printf("calcolapq %d %d\n", i, j);
 // 			temp=distanza(ind1, ind2, end-start);
-// 			if(start>0)	printf("calcolapq %d %d\n", i, j);
 // 			if(temp<min){
 // 				min=temp;
 // 				*ind=j;
@@ -1206,7 +1204,7 @@ int main(int argc, char** argv) {
 	input->tmax = 100;
 	input->silent = 0;
 	input->display = 0;
-
+	input->nr = 0;
 	//
 	// Legge i valori dei parametri da riga comandi
 	//
@@ -1341,7 +1339,14 @@ int main(int argc, char** argv) {
 	sprintf(fname, "%s.ds", input->filename);
 	input->ds = load_data(fname, &input->n, &input->d);
 
-	input->nr = input->n/20;
+	if(input->nr==0){
+		input->nr = input->n/20;
+	}
+
+	if(input->kc>input->n) {
+		printf("kc supera n\n");
+		exit(-1);
+	}
 
 	sprintf(fname, "%s.qs", input->filename);
 	input->qs = load_data(fname, &input->nq, &input->d);
